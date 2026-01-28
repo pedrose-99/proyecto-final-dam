@@ -10,7 +10,10 @@ Comparador de precios de supermercados.
 ## Ejecutar
 
 ```bash
-docker-compose up --build
+docker-compose up --build 
+o
+docker-compose up --build -d
+
 ```
 
 ## URLs
