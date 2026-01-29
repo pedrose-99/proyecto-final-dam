@@ -1,0 +1,33 @@
+extend type Query {
+    # Busca dónde se vende un producto específico
+    storesByProduct(productId: ID!): [ProductStore]
+}
+
+extend type Mutation {
+    # Vincula un producto existente con una tienda existente
+    linkProductToStore(
+        productId: ID!, 
+        storeId: ID!, 
+        url: String!, 
+        stock: Int
+    ): ProductStore
+
+    # Permite actualizar si hay stock o cambiar la URL de una oferta
+    updateProductStore(
+        productId: ID!, 
+        storeId: ID!, 
+        available: Boolean
+    ): ProductStore
+}
+
+type ProductStore {
+    storeProductId: ID
+    productId: Product
+    storeId: Store
+    externaId: Int
+    url: String
+    currentPrice: Float
+    lastUpdate: String
+    available: Boolean
+    stock: Int
+}

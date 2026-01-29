@@ -1,0 +1,23 @@
+extend type Query {
+    allProducts: [Product]
+    productByEan(ean: String!): Product
+    productsByCategory(categoryId: ID!): [Product]
+}
+
+extend type Mutation {
+    createProduct(name: String!, ean: String!, brand: String, categoryId: ID!): Product
+    updateProduct(id: ID!, name: String, brand: String, image_url: String): Product
+    deleteProduct(id: ID!): Boolean
+}
+
+type Product {
+    productId: ID
+    name: String
+    brand: String
+    description: String
+    ean: String
+    imageUrl: String
+    quantity: Float
+    unit: String
+    categoryId: Category # Relación con el tipo Category
+}

@@ -1,0 +1,21 @@
+extend type Query {
+    allStores: [Store]
+    storeById(id: ID!): Store
+}
+
+extend type Mutation {
+    createStore(name: String!, website: String!, logo: String): Store
+    updateStore(id: ID!, name: String, active: Boolean): Store
+    deleteStore(id: ID!): Boolean
+}
+
+type Store {
+    storeId: ID
+    name: String
+    slug: String
+    logo: String
+    website: String
+    active: Boolean
+    scrapingUrl: String
+    scrapingConf: String
+}

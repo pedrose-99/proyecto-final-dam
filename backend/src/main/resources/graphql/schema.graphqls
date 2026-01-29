@@ -1,2 +1,12 @@
-# SmartCart GraphQL Schema
+# Definición de los tipos raíz
+type Query {
+    _empty: String
+}
+
+type Mutation {
+    _empty: String
+}
+
+# Tipos escalares personalizados si fueran necesarios (como fechas)
+scalar DateTime
 

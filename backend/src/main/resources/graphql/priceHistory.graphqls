@@ -1,0 +1,26 @@
+extend type Query {
+    # Historial de precios de un producto en todas las tiendas
+    priceHistoryByProduct(productId: ID!): [PriceHistory]
+    # Historial específico de un producto en una tienda concreta
+    priceHistoryByProductAndStore(productId: ID!, storeId: ID!): [PriceHistory]
+}
+
+extend type Mutation {
+    # El Scraper llamará a esto cada vez que encuentre un precio
+    registerNewPrice(
+        productId: ID!, 
+        storeId: ID!, 
+        price: Float!, 
+        originalPrice: Float,
+        isOnSale: Boolean
+    ): PriceHistory
+}
+
+type PriceHistory {
+    priceHistoryId: ID
+    productStoreId: ProductStore
+    storeId: Store
+    price: Float
+    isOnSale: Boolean
+    recordedAt: String
+}

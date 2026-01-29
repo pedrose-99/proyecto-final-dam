@@ -1,14 +1,13 @@
 package com.smartcart.smartcart.modules.product.entity;
 
 
-import org.springframework.data.annotation.Id;
-
 import com.smartcart.smartcart.modules.category.entity.Category;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
