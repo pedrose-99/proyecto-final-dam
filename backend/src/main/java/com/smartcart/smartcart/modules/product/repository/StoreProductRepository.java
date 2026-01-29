@@ -1,5 +1,10 @@
 package com.smartcart.smartcart.modules.product.repository;
 
-public interface StoreProductRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.smartcart.smartcart.modules.product.entity.ProductStore;
+
+public interface StoreProductRepository extends JpaRepository<ProductStore, Integer> {
+
 
 }
