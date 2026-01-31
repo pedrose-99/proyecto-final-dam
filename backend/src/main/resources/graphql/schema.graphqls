@@ -1,2 +1,5 @@
 # SmartCart GraphQL Schema
 
+type Query {
+    ping: String
+}
