@@ -34,3 +34,5 @@ build/
 
 ###Archivo .env###
 .env
+#Archivo .env 
+.env

@@ -10,3 +10,6 @@ type Mutation {
 # Tipos escalares personalizados si fueran necesarios (como fechas)
 scalar DateTime
 
+type Query {
+    ping: String
+}
