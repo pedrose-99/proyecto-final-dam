@@ -2,11 +2,14 @@ package com.smartcart.smartcart.modules.product.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.smartcart.smartcart.modules.product.dto.ProductStoreDTO;
 import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
+import com.smartcart.smartcart.modules.product.mapper.ProductStoreMapper;
 import com.smartcart.smartcart.modules.product.repository.ProductRepository;
 import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
 import com.smartcart.smartcart.modules.store.entity.Store;
@@ -54,8 +57,14 @@ public class ProductStoreService {
 }
 
     
-    public List<ProductStore> findStoresByProductId(Integer productId) {
-        return productStoreRepository.findByProductIdList(productId);
+    // Cambiamos el retorno de List<ProductStore> a List<ProductStoreDTO>
+    public List<ProductStoreDTO> findStoresByProductId(Integer productId) {
+    List<ProductStore> stores = productStoreRepository.findByProductIdList(productId);
+    
+    
+    return stores.stream()
+                 .map(ProductStoreMapper::toDTO)
+                 .collect(Collectors.toList());
     }
 
     

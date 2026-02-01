@@ -9,6 +9,7 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import com.smartcart.smartcart.modules.product.dto.ProductStoreDTO;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.product.service.ProductStoreService;
 
@@ -24,7 +25,7 @@ public class ProductStoreController {
     }
 
     @QueryMapping
-    public List<ProductStore> storesByProduct(@Argument Integer productId) {
+    public List<ProductStoreDTO> storesByProduct(@Argument Integer productId) {
         return productStoreService.findStoresByProductId(productId);
     }
     

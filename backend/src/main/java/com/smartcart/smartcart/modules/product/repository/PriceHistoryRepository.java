@@ -11,4 +11,5 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Inte
     List<PriceHistory> findByProductStoreIdList(Integer productId);
 
     List<PriceHistory> findByProductStoreId(Integer productId, Integer storeId);
+    
 }

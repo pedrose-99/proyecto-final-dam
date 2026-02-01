@@ -7,6 +7,8 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import com.smartcart.smartcart.modules.product.dto.PriceHistoryDTO;
+import com.smartcart.smartcart.modules.product.dto.PriceUpdateDTO;
 import com.smartcart.smartcart.modules.product.entity.PriceHistory;
 import com.smartcart.smartcart.modules.product.service.PriceHistoryService;
 
@@ -19,20 +21,17 @@ public class PriceHistoryController {
     }
 
     @QueryMapping
-    public List<PriceHistory> priceHistoryByProduct(@Argument Integer productId) {
+    public List<PriceHistoryDTO> priceHistoryByProduct(@Argument Integer productId) {
         return priceHistoryService.findByProductId(productId);
     }
 
-    
     @QueryMapping
-    public List<PriceHistory> priceHistoryByProductAndStore(@Argument Integer productId, @Argument Integer storeId) {
+    public List<PriceHistoryDTO> priceHistoryByProductAndStore(@Argument Integer productId, @Argument Integer storeId) {
         return priceHistoryService.priceHistoryByProductAndStore(productId, storeId);
     }
 
     @MutationMapping
-    public PriceHistory registerNewPrice(@Argument Integer productId, @Argument Integer storeId, 
-                                         @Argument Double price, @Argument Double originalPrice, 
-                                         @Argument Boolean isOnSale) {
-        return priceHistoryService.register(productId, storeId, price, originalPrice, isOnSale);
+    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) { // Usamos el DTO como entrada
+        return priceHistoryService.register(input);
     }
 }

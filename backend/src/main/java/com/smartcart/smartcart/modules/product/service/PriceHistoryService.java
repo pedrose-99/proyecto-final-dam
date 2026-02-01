@@ -1,12 +1,14 @@
 package com.smartcart.smartcart.modules.product.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.smartcart.smartcart.modules.product.dto.PriceHistoryDTO;
+import com.smartcart.smartcart.modules.product.dto.PriceUpdateDTO;
 import com.smartcart.smartcart.modules.product.entity.PriceHistory;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
+import com.smartcart.smartcart.modules.product.mapper.PriceHistoryMapper;
 import com.smartcart.smartcart.modules.product.repository.PriceHistoryRepository;
 import com.smartcart.smartcart.modules.product.repository.ProductRepository;
 import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
@@ -31,38 +33,37 @@ public class PriceHistoryService {
         this.storeRepository = storeRepository;
     }
 
-    @Transactional 
-    public PriceHistory register(Integer productId, Integer storeId, Double price, 
-                                 Double originalPrice, Boolean isOnSale) {
-    
-        ProductStore ps = productStoreRepository.findByProductId(productId, storeId)
-        .orElseThrow(() -> new RuntimeException("Relación Producto-Tienda no encontrada"));
+   @Transactional 
+    public PriceHistoryDTO register(PriceUpdateDTO input) {
+        ProductStore ps = productStoreRepository.findByProductId(input.getProductId(), input.getStoreId())
+            .orElseThrow(() -> new RuntimeException("Relación no encontrada"));
 
-        //Actualizamos el precio actual
-        ps.setCurrentPrice(price);
-        ps.setAvailable(true);
+        boolean priceChanged = ps.getCurrentPrice() == null || !ps.getCurrentPrice().equals(input.getPrice());
+
+        ps.setCurrentPrice(input.getPrice());
+        ps.setAvailable(input.getPrice() > 0);
+        ps.setStock(input.getStock()); 
+        ps.setExternaId(input.getExternaId()); 
         productStoreRepository.save(ps);
 
-        //Creamos el historial de precios
-        PriceHistory history = new PriceHistory();
-        history.setProductStoreId(ps);
-        history.setStoreId(ps.getStoreId());
-        history.setPrice(price);
-        history.setOriginalPrice(originalPrice);
-        history.setIsOnSale(isOnSale);
-        history.setRecordedAt(LocalDateTime.now());
-
-        return priceHistoryRepository.save(history);
+        if (priceChanged) {
+            PriceHistory history = PriceHistoryMapper.toEntity(input, ps);
+            return PriceHistoryMapper.toDTO(priceHistoryRepository.save(history));
+        }
+        return null; 
     }
 
-    //Consulta por producto
-    public List<PriceHistory> findByProductId(Integer productId) {
 
-    return priceHistoryRepository.findByProductStoreIdList(productId);
-}
-    
-    //Consulta por producto y tienda
-    public List<PriceHistory> priceHistoryByProductAndStore(Integer productId, Integer storeId) {
-        return priceHistoryRepository.findByProductStoreId(productId, storeId);
+    //Consulta por producto
+   public List<PriceHistoryDTO> findByProductId(Integer productId) {
+        return priceHistoryRepository.findByProductStoreIdList(productId).stream()
+                .map(PriceHistoryMapper::toDTO)
+                .toList();
+    }
+
+    public List<PriceHistoryDTO> priceHistoryByProductAndStore(Integer productId, Integer storeId) {
+        return priceHistoryRepository.findByProductStoreId(productId, storeId).stream()
+                .map(PriceHistoryMapper::toDTO)
+                .toList();
     }
 }

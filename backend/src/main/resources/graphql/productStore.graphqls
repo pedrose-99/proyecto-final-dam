@@ -1,6 +1,6 @@
 extend type Query {
     # Busca dónde se vende un producto específico
-    storesByProduct(productId: ID!): [ProductStore]
+    storesByProduct(productId: ID!): [ProductStoreDTO]
 }
 
 extend type Mutation {
@@ -10,24 +10,26 @@ extend type Mutation {
         storeId: ID!, 
         url: String!, 
         stock: Int
-    ): ProductStore
+    ): ProductStoreDTO
 
     # Permite actualizar si hay stock o cambiar la URL de una oferta
     updateProductStore(
         productId: ID!, 
         storeId: ID!, 
         available: Boolean
-    ): ProductStore
+    ): ProductStoreDTO
 }
 
-type ProductStore {
+type ProductStoreDTO {
     storeProductId: ID
-    productId: Product
-    storeId: Store
-    externaId: Int
-    url: String
+    productName: String
+    productBrand: String
+    ean: String
+    storeName: String
     currentPrice: Float
-    lastUpdate: String
+    url: String
     available: Boolean
     stock: Int
+    externaId: Int
+    unit: String
 }

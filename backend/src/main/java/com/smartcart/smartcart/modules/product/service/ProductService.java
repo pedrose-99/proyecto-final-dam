@@ -9,13 +9,17 @@ import org.springframework.stereotype.Service;
 
 import com.smartcart.smartcart.modules.category.entity.Category;
 import com.smartcart.smartcart.modules.category.repository.CategoryRepository;
+import com.smartcart.smartcart.modules.product.dto.ProductDTO;
 import com.smartcart.smartcart.modules.product.entity.Product;
+import com.smartcart.smartcart.modules.product.mapper.ProductMapper;
+import com.smartcart.smartcart.modules.product.repository.ProductRepository;
 
 
 
 
 @Service
 public class ProductService {
+    
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
@@ -24,17 +28,17 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<Product> findAll() { return productRepository.findAll(); }
+    public List<ProductDTO> findAll() { 
+        return productRepository.findAll().stream()
+                .map(ProductMapper::toDTO)
+                .toList(); 
+    }
 
-    @Repository
-    public interface ProductRepository extends JpaRepository<Product, Integer> {
-    
-    Optional<Product> findByEan(String ean);
-    
-}
-    public Product findByEan(String ean) {
 
-        return productRepository.findByEan(ean).orElseThrow(() -> new RuntimeException("Product not found"));
+    public ProductDTO findByEan(String ean) {
+        Product p = productRepository.findByEan(ean)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        return ProductMapper.toDTO(p);
     }
     
     public Product create(String name, String ean, String brand, Integer categoryId) {

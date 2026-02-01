@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 
 public interface ProductStoreRepository extends JpaRepository<ProductStore, Integer> {
@@ -13,4 +14,6 @@ public interface ProductStoreRepository extends JpaRepository<ProductStore, Inte
     List<ProductStore> findByProductIdList(Integer productId);
 
     Optional<ProductStore> findByProductId(Integer productId, Integer storeId);
+
+    
 }
