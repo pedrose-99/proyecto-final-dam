@@ -15,7 +15,8 @@ import java.util.Map;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "smartcart.scraping")
-public class ScrapingConfig {
+public class ScrapingConfig
+{
 
     private boolean enabled = true;
     private int defaultIntervalHours = 12;
@@ -26,7 +27,8 @@ public class ScrapingConfig {
     private Map<String, StoreConfig> stores = new HashMap<>();
 
     @Data
-    public static class StoreConfig {
+    public static class StoreConfig
+    {
         private boolean enabled = true;
         private String baseUrl;
         private String apiUrl;
@@ -40,14 +42,16 @@ public class ScrapingConfig {
     /**
      * Obtiene la configuración de una tienda específica.
      */
-    public StoreConfig getStoreConfig(String storeName) {
+    public StoreConfig getStoreConfig(String storeName)
+    {
         return stores.get(storeName);
     }
 
     /**
      * Verifica si una tienda está habilitada.
      */
-    public boolean isStoreEnabled(String storeName) {
+    public boolean isStoreEnabled(String storeName)
+    {
         StoreConfig config = stores.get(storeName);
         return config != null && config.isEnabled();
     }

@@ -16,7 +16,8 @@ import java.util.List;
  * y métodos de utilidad para parseo de datos.
  */
 @Slf4j
-public abstract class BaseScraper {
+public abstract class BaseScraper
+{
 
     @Autowired
     protected RateLimiter rateLimiter;
@@ -53,7 +54,8 @@ public abstract class BaseScraper {
     /**
      * Verifica si este scraper está habilitado en la configuración
      */
-    public boolean isEnabled() {
+    public boolean isEnabled()
+    {
         return scrapingConfig.isEnabled() && scrapingConfig.isStoreEnabled(getStoreName());
     }
 
@@ -61,8 +63,10 @@ public abstract class BaseScraper {
      * Limpia y normaliza el precio extraido
      * "8,99 €" -> 8.99
      */
-    protected BigDecimal parsePrice(String priceText) {
-        if (priceText == null || priceText.isBlank()) {
+    protected BigDecimal parsePrice(String priceText)
+    {
+        if (priceText == null || priceText.isBlank())
+        {
             return null;
         }
 
@@ -73,9 +77,12 @@ public abstract class BaseScraper {
                 .replace(",", ".")
                 .trim();
 
-        try {
+        try
+        {
             return new BigDecimal(cleaned);
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e)
+        {
             log.warn("[{}] No se pudo parsear precio: {}", getStoreName(), priceText);
             return null;
         }
@@ -84,7 +91,8 @@ public abstract class BaseScraper {
     /**
      * Normaliza nombre de producto para comparacion
      */
-    protected String normalizeName(String name) {
+    protected String normalizeName(String name)
+    {
         if (name == null) return "";
 
         return name.toLowerCase()
@@ -103,8 +111,10 @@ public abstract class BaseScraper {
      * Extrae el precio por unidad de un texto
      * Ejemplo: "2,50 €/kg" -> "2.50€/kg"
      */
-    protected String extractPricePerUnit(String text) {
-        if (text == null || text.isBlank()) {
+    protected String extractPricePerUnit(String text)
+    {
+        if (text == null || text.isBlank())
+        {
             return null;
         }
         return text.replaceAll("\\s+", "").trim();
@@ -113,7 +123,8 @@ public abstract class BaseScraper {
     /**
      * Inicializa la configuración del scraper desde las propiedades
      */
-    protected void initFromConfig() {
+    protected void initFromConfig()
+    {
         this.timeoutMs = scrapingConfig.getTimeoutSeconds() * 1000;
         this.maxRetries = scrapingConfig.getMaxRetries();
     }

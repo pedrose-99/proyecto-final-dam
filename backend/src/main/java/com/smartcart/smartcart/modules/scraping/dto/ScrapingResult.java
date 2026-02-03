@@ -12,7 +12,8 @@ import java.util.Map;
  * Resultado de una ejecución de scraping.
  */
 @Data
-public class ScrapingResult {
+public class ScrapingResult
+{
 
     private String storeName;
     private Long storeId;
@@ -23,22 +24,27 @@ public class ScrapingResult {
     private List<ScrapedProduct> products = new ArrayList<>();
     private Map<String, String> errors = new HashMap<>();
 
-    public void addError(String url, String message) {
+    public void addError(String url, String message)
+    {
         errors.put(url, message);
     }
 
-    public void addProduct(ScrapedProduct product) {
+    public void addProduct(ScrapedProduct product)
+    {
         products.add(product);
     }
 
-    public long getDurationSeconds() {
-        if (startTime == null || endTime == null) {
+    public long getDurationSeconds()
+    {
+        if (startTime == null || endTime == null)
+        {
             return 0;
         }
         return java.time.Duration.between(startTime, endTime).getSeconds();
     }
 
-    public boolean isSuccessful() {
+    public boolean isSuccessful()
+    {
         return totalErrors == 0 || (totalProducts > 0 && totalErrors < totalProducts);
     }
 }

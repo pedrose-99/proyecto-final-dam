@@ -15,15 +15,18 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MercadonaScrapingService {
+public class MercadonaScrapingService
+{
 
     private final MercadonaScraper mercadonaScraper;
 
     /**
      * Scraping completo de todas las categorias.
      */
-    public ScrapingResult scrapeAll() {
-        if (!mercadonaScraper.isEnabled()) {
+    public ScrapingResult scrapeAll()
+    {
+        if (!mercadonaScraper.isEnabled())
+        {
             log.warn("[mercadona] Scraping deshabilitado");
             ScrapingResult result = new ScrapingResult();
             result.setStoreName("mercadona");
@@ -37,14 +40,16 @@ public class MercadonaScrapingService {
      * Obtiene productos de UNA categoria especifica (rapido).
      * Va directo a la API de esa categoria.
      */
-    public List<ScrapedProduct> getProductsByCategory(String categoryId) {
+    public List<ScrapedProduct> getProductsByCategory(String categoryId)
+    {
         return mercadonaScraper.scrapeCategory(categoryId);
     }
 
     /**
      * Busca productos por nombre en UNA categoria.
      */
-    public List<ScrapedProduct> searchInCategory(String categoryId, String query) {
+    public List<ScrapedProduct> searchInCategory(String categoryId, String query)
+    {
         List<ScrapedProduct> products = mercadonaScraper.scrapeCategory(categoryId);
         String queryLower = query.toLowerCase();
 
@@ -56,7 +61,8 @@ public class MercadonaScrapingService {
     /**
      * Obtiene lista de todas las categorias disponibles.
      */
-    public List<MercadonaScraper.PublicCategoryInfo> getCategories() {
+    public List<MercadonaScraper.PublicCategoryInfo> getCategories()
+    {
         return mercadonaScraper.fetchAllCategories();
     }
 
@@ -65,7 +71,8 @@ public class MercadonaScrapingService {
      * @param query texto a buscar en el nombre
      * @param categoryName filtro opcional por categoryName (ej: "Aceite de oliva")
      */
-    public List<ScrapedProduct> searchAllProducts(String query, String categoryName) {
+    public List<ScrapedProduct> searchAllProducts(String query, String categoryName)
+    {
         ScrapingResult result = scrapeAll();
         String queryLower = query.toLowerCase().trim();
 
@@ -79,7 +86,8 @@ public class MercadonaScrapingService {
     /**
      * Verifica si el scraper esta habilitado.
      */
-    public boolean isEnabled() {
+    public boolean isEnabled()
+    {
         return mercadonaScraper.isEnabled();
     }
 }

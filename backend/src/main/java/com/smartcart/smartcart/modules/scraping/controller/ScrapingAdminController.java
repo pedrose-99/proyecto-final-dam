@@ -19,7 +19,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/scraping/mercadona")
 @RequiredArgsConstructor
-public class ScrapingAdminController {
+public class ScrapingAdminController
+{
 
     private final MercadonaScrapingService mercadonaService;
 
@@ -27,7 +28,8 @@ public class ScrapingAdminController {
      * GET /status - Estado del scraper
      */
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getStatus() {
+    public ResponseEntity<Map<String, Object>> getStatus()
+    {
         return ResponseEntity.ok(Map.of(
             "store", "mercadona",
             "enabled", mercadonaService.isEnabled()
@@ -39,7 +41,8 @@ public class ScrapingAdminController {
      * Respuesta rapida, solo obtiene la lista de categorias.
      */
     @GetMapping("/categories")
-    public ResponseEntity<List<MercadonaScraper.PublicCategoryInfo>> getCategories() {
+    public ResponseEntity<List<MercadonaScraper.PublicCategoryInfo>> getCategories()
+    {
         log.info("Obteniendo lista de categorias");
         return ResponseEntity.ok(mercadonaService.getCategories());
     }
@@ -50,7 +53,8 @@ public class ScrapingAdminController {
      */
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<ScrapedProduct>> getProductsByCategory(
-            @PathVariable String categoryId) {
+            @PathVariable String categoryId)
+    {
         log.info("Obteniendo productos de categoria {}", categoryId);
         return ResponseEntity.ok(mercadonaService.getProductsByCategory(categoryId));
     }
@@ -62,7 +66,8 @@ public class ScrapingAdminController {
     @GetMapping("/category/{categoryId}/search")
     public ResponseEntity<List<ScrapedProduct>> searchInCategory(
             @PathVariable String categoryId,
-            @RequestParam("q") String query) {
+            @RequestParam("q") String query)
+    {
         log.info("Buscando '{}' en categoria {}", query, categoryId);
         return ResponseEntity.ok(mercadonaService.searchInCategory(categoryId, query));
     }
@@ -75,7 +80,8 @@ public class ScrapingAdminController {
     @GetMapping("/search")
     public ResponseEntity<List<ScrapedProduct>> searchAllProducts(
             @RequestParam("q") String query,
-            @RequestParam(value = "categoryName", required = false) String categoryName) {
+            @RequestParam(value = "categoryName", required = false) String categoryName)
+    {
         log.info("Buscando '{}' (categoryName={})", query, categoryName);
         return ResponseEntity.ok(mercadonaService.searchAllProducts(query, categoryName));
     }
@@ -85,7 +91,8 @@ public class ScrapingAdminController {
      * Usar solo si necesitas todos los productos.
      */
     @PostMapping("/run")
-    public ResponseEntity<ScrapingResult> runFullScraping() {
+    public ResponseEntity<ScrapingResult> runFullScraping()
+    {
         log.info("Iniciando scraping completo");
         return ResponseEntity.ok(mercadonaService.scrapeAll());
     }

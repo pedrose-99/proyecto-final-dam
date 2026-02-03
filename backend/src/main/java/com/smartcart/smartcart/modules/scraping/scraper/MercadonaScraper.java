@@ -26,7 +26,8 @@ import java.util.List;
  */
 @Slf4j
 @Component
-public class MercadonaScraper extends BaseScraper {
+public class MercadonaScraper extends BaseScraper
+{
 
     private static final String STORE_NAME = "mercadona";
     private static final Long STORE_ID = 1L;
@@ -37,46 +38,55 @@ public class MercadonaScraper extends BaseScraper {
     private String apiBaseUrl;
     private String postalCode;
 
-    public MercadonaScraper() {
+    public MercadonaScraper()
+    {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
 
     @PostConstruct
-    public void init() {
+    public void init()
+    {
         initFromConfig();
         ScrapingConfig.StoreConfig mercadonaConfig = scrapingConfig.getStoreConfig(STORE_NAME);
-        if (mercadonaConfig != null) {
+        if (mercadonaConfig != null)
+        {
             this.apiBaseUrl = mercadonaConfig.getApiUrl();
             this.postalCode = mercadonaConfig.getPostalCode();
         }
-        if (this.apiBaseUrl == null) {
+        if (this.apiBaseUrl == null)
+        {
             this.apiBaseUrl = "https://tienda.mercadona.es/api";
         }
-        if (this.postalCode == null) {
+        if (this.postalCode == null)
+        {
             this.postalCode = "28001"; // Madrid por defecto
         }
         log.info("[{}] Inicializado con API: {} y CP: {}", STORE_NAME, apiBaseUrl, postalCode);
     }
 
     @Override
-    public String getStoreName() {
+    public String getStoreName()
+    {
         return STORE_NAME;
     }
 
     @Override
-    public Long getStoreId() {
+    public Long getStoreId()
+    {
         return STORE_ID;
     }
 
     @Override
-    protected List<String> getCategoryUrls() {
+    protected List<String> getCategoryUrls()
+    {
         // Para Mercadona obtenemos los IDs dinámicamente de la API
         return new ArrayList<>();
     }
 
     @Override
-    public ScrapingResult scrape() {
+    public ScrapingResult scrape()
+    {
         log.info("[{}] Iniciando scraping via API...", STORE_NAME);
 
         ScrapingResult result = new ScrapingResult();
@@ -87,13 +97,16 @@ public class MercadonaScraper extends BaseScraper {
         List<ScrapedProduct> allProducts = new ArrayList<>();
         int errors = 0;
 
-        try {
+        try
+        {
             // Primero obtener lista de categorias
             List<CategoryInfo> categories = fetchCategories();
             log.info("[{}] Encontradas {} categorías principales", STORE_NAME, categories.size());
 
-            for (CategoryInfo category : categories) {
-                try {
+            for (CategoryInfo category : categories)
+            {
+                try
+                {
                     rateLimiter.waitIfNeeded();
                     List<ScrapedProduct> products = fetchCategoryProducts(category.id, category.name);
                     allProducts.addAll(products);
@@ -101,7 +114,9 @@ public class MercadonaScraper extends BaseScraper {
                     log.info("[{}] Categoría '{}' procesada: {} productos",
                              STORE_NAME, category.name, products.size());
 
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
                     errors++;
                     log.error("[{}] Error en categoría {}: {}",
                               STORE_NAME, category.name, e.getMessage());
@@ -109,7 +124,9 @@ public class MercadonaScraper extends BaseScraper {
                 }
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             log.error("[{}] Error obteniendo categorías: {}", STORE_NAME, e.getMessage());
             errors++;
             result.addError("categories", e.getMessage());
@@ -131,13 +148,15 @@ public class MercadonaScraper extends BaseScraper {
      * La API de Mercadona tiene estructura:
      * Categoría principal -> Subcategorías -> Sub-subcategorías con productos
      */
-    private List<CategoryInfo> fetchCategories() {
+    private List<CategoryInfo> fetchCategories()
+    {
         String url = apiBaseUrl + "/categories/";
 
         HttpHeaders headers = createHeaders();
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        try {
+        try
+        {
             ResponseEntity<String> response = restTemplate.exchange(
                 url, HttpMethod.GET, entity, String.class);
 
@@ -146,14 +165,19 @@ public class MercadonaScraper extends BaseScraper {
 
             JsonNode results = root.has("results") ? root.get("results") : root;
 
-            if (results.isArray()) {
-                for (JsonNode mainCategory : results) {
+            if (results.isArray())
+            {
+                for (JsonNode mainCategory : results)
+                {
                     // Extraer subcategorías de cada categoría principal
-                    if (mainCategory.has("categories") && mainCategory.get("categories").isArray()) {
-                        for (JsonNode subCategory : mainCategory.get("categories")) {
+                    if (mainCategory.has("categories") && mainCategory.get("categories").isArray())
+                    {
+                        for (JsonNode subCategory : mainCategory.get("categories"))
+                        {
                             String id = subCategory.has("id") ? subCategory.get("id").asText() : null;
                             String name = subCategory.has("name") ? subCategory.get("name").asText() : "Unknown";
-                            if (id != null) {
+                            if (id != null)
+                            {
                                 subcategories.add(new CategoryInfo(id, name));
                             }
                         }
@@ -164,7 +188,9 @@ public class MercadonaScraper extends BaseScraper {
             log.info("[{}] Encontradas {} subcategorías", STORE_NAME, subcategories.size());
             return subcategories;
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             log.error("[{}] Error fetching categories: {}", STORE_NAME, e.getMessage());
             return getKnownCategories();
         }
@@ -173,7 +199,8 @@ public class MercadonaScraper extends BaseScraper {
     /**
      * Subcategorías conocidas como fallback.
      */
-    private List<CategoryInfo> getKnownCategories() {
+    private List<CategoryInfo> getKnownCategories()
+    {
         return List.of(
             new CategoryInfo("112", "Aceite, vinagre y sal"),
             new CategoryInfo("115", "Especias"),
@@ -188,7 +215,8 @@ public class MercadonaScraper extends BaseScraper {
      * Obtiene todos los productos de una subcategoría.
      * Las subcategorías contienen sub-subcategorías con productos.
      */
-    private List<ScrapedProduct> fetchCategoryProducts(String categoryId, String categoryName) {
+    private List<ScrapedProduct> fetchCategoryProducts(String categoryId, String categoryName)
+    {
         String url = apiBaseUrl + "/categories/" + categoryId + "/";
 
         HttpHeaders headers = createHeaders();
@@ -196,22 +224,28 @@ public class MercadonaScraper extends BaseScraper {
 
         List<ScrapedProduct> products = new ArrayList<>();
 
-        try {
+        try
+        {
             ResponseEntity<String> response = restTemplate.exchange(
                 url, HttpMethod.GET, entity, String.class);
 
             JsonNode root = objectMapper.readTree(response.getBody());
 
             // Las subcategorías tienen sub-subcategorías con productos
-            if (root.has("categories") && root.get("categories").isArray()) {
-                for (JsonNode subSubCategory : root.get("categories")) {
+            if (root.has("categories") && root.get("categories").isArray())
+            {
+                for (JsonNode subSubCategory : root.get("categories"))
+                {
                     String subCatName = subSubCategory.has("name") ?
                         subSubCategory.get("name").asText() : categoryName;
 
-                    if (subSubCategory.has("products") && subSubCategory.get("products").isArray()) {
-                        for (JsonNode productNode : subSubCategory.get("products")) {
+                    if (subSubCategory.has("products") && subSubCategory.get("products").isArray())
+                    {
+                        for (JsonNode productNode : subSubCategory.get("products"))
+                        {
                             ScrapedProduct product = parseProductFromJson(productNode, subCatName, categoryId);
-                            if (product != null) {
+                            if (product != null)
+                            {
                                 products.add(product);
                             }
                         }
@@ -220,16 +254,21 @@ public class MercadonaScraper extends BaseScraper {
             }
 
             // También puede haber productos directos
-            if (root.has("products") && root.get("products").isArray()) {
-                for (JsonNode productNode : root.get("products")) {
+            if (root.has("products") && root.get("products").isArray())
+            {
+                for (JsonNode productNode : root.get("products"))
+                {
                     ScrapedProduct product = parseProductFromJson(productNode, categoryName, categoryId);
-                    if (product != null) {
+                    if (product != null)
+                    {
                         products.add(product);
                     }
                 }
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             log.error("[{}] Error fetching products for category {}: {}", STORE_NAME, categoryId, e.getMessage());
         }
 
@@ -256,12 +295,15 @@ public class MercadonaScraper extends BaseScraper {
      *   }
      * }
      */
-    private ScrapedProduct parseProductFromJson(JsonNode node, String categoryName, String categoryId) {
-        try {
+    private ScrapedProduct parseProductFromJson(JsonNode node, String categoryName, String categoryId)
+    {
+        try
+        {
             String id = getTextValue(node, "id");
             String name = getTextValue(node, "display_name");
 
-            if (id == null || name == null) {
+            if (id == null || name == null)
+            {
                 return null;
             }
 
@@ -272,30 +314,35 @@ public class MercadonaScraper extends BaseScraper {
             String unit = null;
             boolean onSale = false;
 
-            if (node.has("price_instructions")) {
+            if (node.has("price_instructions"))
+            {
                 JsonNode priceNode = node.get("price_instructions");
 
                 // Precio unitario (el que paga el cliente)
                 price = getBigDecimalValue(priceNode, "unit_price");
-                if (price == null) {
+                if (price == null)
+                {
                     price = getBigDecimalValue(priceNode, "bulk_price");
                 }
 
                 // Precio anterior si hay descuento
                 originalPrice = getBigDecimalValue(priceNode, "previous_unit_price");
-                if (originalPrice != null && price != null && originalPrice.compareTo(price) > 0) {
+                if (originalPrice != null && price != null && originalPrice.compareTo(price) > 0)
+                {
                     onSale = true;
                 }
 
                 // Verificar también price_decreased flag
-                if (priceNode.has("price_decreased") && priceNode.get("price_decreased").asBoolean()) {
+                if (priceNode.has("price_decreased") && priceNode.get("price_decreased").asBoolean())
+                {
                     onSale = true;
                 }
 
                 // Precio por unidad de referencia (ej: 3.95€/L)
                 BigDecimal refPrice = getBigDecimalValue(priceNode, "reference_price");
                 String refFormat = getTextValue(priceNode, "reference_format");
-                if (refPrice != null && refFormat != null) {
+                if (refPrice != null && refFormat != null)
+                {
                     pricePerUnit = refPrice.toPlainString() + "€/" + refFormat;
                 }
 
@@ -303,7 +350,8 @@ public class MercadonaScraper extends BaseScraper {
                 Double unitSize = priceNode.has("unit_size") && !priceNode.get("unit_size").isNull() ?
                     priceNode.get("unit_size").asDouble() : null;
                 String sizeFormat = getTextValue(priceNode, "size_format");
-                if (unitSize != null && sizeFormat != null) {
+                if (unitSize != null && sizeFormat != null)
+                {
                     unit = unitSize + " " + sizeFormat;
                 }
             }
@@ -313,7 +361,8 @@ public class MercadonaScraper extends BaseScraper {
 
             // URL del producto
             String productUrl = getTextValue(node, "share_url");
-            if (productUrl == null) {
+            if (productUrl == null)
+            {
                 productUrl = "https://tienda.mercadona.es/product/" + id;
             }
 
@@ -340,7 +389,9 @@ public class MercadonaScraper extends BaseScraper {
                 .categoryId(categoryId)
                 .build();
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             log.warn("[{}] Error parsing product JSON: {}", STORE_NAME, e.getMessage());
             return null;
         }
@@ -350,13 +401,16 @@ public class MercadonaScraper extends BaseScraper {
      * Intenta extraer la marca del nombre del producto.
      * Ejemplo: "Aceite de oliva 0,4º Hacendado" -> "Hacendado"
      */
-    private String extractBrandFromName(String name) {
+    private String extractBrandFromName(String name)
+    {
         if (name == null) return null;
 
         // Marcas conocidas de Mercadona
         String[] knownBrands = {"Hacendado", "Deliplus", "Bosque Verde", "Compy", "Cecotec"};
-        for (String brand : knownBrands) {
-            if (name.toLowerCase().contains(brand.toLowerCase())) {
+        for (String brand : knownBrands)
+        {
+            if (name.toLowerCase().contains(brand.toLowerCase()))
+            {
                 return brand;
             }
         }
@@ -366,7 +420,8 @@ public class MercadonaScraper extends BaseScraper {
     /**
      * Crea los headers HTTP necesarios para la API de Mercadona.
      */
-    private HttpHeaders createHeaders() {
+    private HttpHeaders createHeaders()
+    {
         HttpHeaders headers = new HttpHeaders();
         headers.set("User-Agent", userAgentRotator.getNext());
         headers.set("Accept", "application/json");
@@ -381,8 +436,10 @@ public class MercadonaScraper extends BaseScraper {
     /**
      * Extrae un valor de texto de un nodo JSON.
      */
-    private String getTextValue(JsonNode node, String field) {
-        if (node.has(field) && !node.get(field).isNull()) {
+    private String getTextValue(JsonNode node, String field)
+    {
+        if (node.has(field) && !node.get(field).isNull())
+        {
             return node.get(field).asText();
         }
         return null;
@@ -391,11 +448,16 @@ public class MercadonaScraper extends BaseScraper {
     /**
      * Extrae un valor BigDecimal de un nodo JSON.
      */
-    private BigDecimal getBigDecimalValue(JsonNode node, String field) {
-        if (node.has(field) && !node.get(field).isNull()) {
-            try {
+    private BigDecimal getBigDecimalValue(JsonNode node, String field)
+    {
+        if (node.has(field) && !node.get(field).isNull())
+        {
+            try
+            {
                 return new BigDecimal(node.get(field).asText());
-            } catch (NumberFormatException e) {
+            }
+            catch (NumberFormatException e)
+            {
                 return null;
             }
         }
@@ -408,7 +470,8 @@ public class MercadonaScraper extends BaseScraper {
      * Obtiene productos de UNA categoria especifica (rapido).
      * Llama directamente a /api/categories/{id}/
      */
-    public List<ScrapedProduct> scrapeCategory(String categoryId) {
+    public List<ScrapedProduct> scrapeCategory(String categoryId)
+    {
         log.info("[{}] Obteniendo productos de categoria {}", STORE_NAME, categoryId);
         return fetchCategoryProducts(categoryId, "Categoria " + categoryId);
     }
@@ -416,7 +479,8 @@ public class MercadonaScraper extends BaseScraper {
     /**
      * Obtiene lista de todas las categorias con sus IDs.
      */
-    public List<PublicCategoryInfo> fetchAllCategories() {
+    public List<PublicCategoryInfo> fetchAllCategories()
+    {
         String url = apiBaseUrl + "/categories/";
 
         HttpHeaders headers = createHeaders();
@@ -424,25 +488,31 @@ public class MercadonaScraper extends BaseScraper {
 
         List<PublicCategoryInfo> allCategories = new ArrayList<>();
 
-        try {
+        try
+        {
             ResponseEntity<String> response = restTemplate.exchange(
                 url, HttpMethod.GET, entity, String.class);
 
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode results = root.has("results") ? root.get("results") : root;
 
-            if (results.isArray()) {
-                for (JsonNode mainCategory : results) {
+            if (results.isArray())
+            {
+                for (JsonNode mainCategory : results)
+                {
                     // Categoria principal
                     String mainId = mainCategory.has("id") ? mainCategory.get("id").asText() : null;
                     String mainName = mainCategory.has("name") ? mainCategory.get("name").asText() : "Unknown";
 
                     // Subcategorias
-                    if (mainCategory.has("categories") && mainCategory.get("categories").isArray()) {
-                        for (JsonNode subCategory : mainCategory.get("categories")) {
+                    if (mainCategory.has("categories") && mainCategory.get("categories").isArray())
+                    {
+                        for (JsonNode subCategory : mainCategory.get("categories"))
+                        {
                             String subId = subCategory.has("id") ? subCategory.get("id").asText() : null;
                             String subName = subCategory.has("name") ? subCategory.get("name").asText() : "Unknown";
-                            if (subId != null) {
+                            if (subId != null)
+                            {
                                 allCategories.add(new PublicCategoryInfo(subId, subName, mainName));
                             }
                         }
@@ -450,7 +520,9 @@ public class MercadonaScraper extends BaseScraper {
                 }
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             log.error("[{}] Error fetching categories: {}", STORE_NAME, e.getMessage());
         }
 

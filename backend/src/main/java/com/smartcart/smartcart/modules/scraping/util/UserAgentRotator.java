@@ -10,7 +10,8 @@ import java.util.Random;
  * Rota User-Agents para evitar detección de bots.
  */
 @Component
-public class UserAgentRotator {
+public class UserAgentRotator
+{
 
     @Value("${smartcart.scraping.user-agents:}")
     private List<String> userAgents;
@@ -23,8 +24,10 @@ public class UserAgentRotator {
     /**
      * Obtiene un User-Agent aleatorio de la lista configurada.
      */
-    public String getNext() {
-        if (userAgents == null || userAgents.isEmpty()) {
+    public String getNext()
+    {
+        if (userAgents == null || userAgents.isEmpty())
+        {
             return DEFAULT_USER_AGENT;
         }
         return userAgents.get(random.nextInt(userAgents.size()));
@@ -33,7 +36,8 @@ public class UserAgentRotator {
     /**
      * Obtiene el User-Agent por defecto.
      */
-    public String getDefault() {
+    public String getDefault()
+    {
         return DEFAULT_USER_AGENT;
     }
 }
