@@ -35,7 +35,7 @@ public class PriceHistoryService {
 
    @Transactional 
     public PriceHistoryDTO register(PriceUpdateDTO input) {
-        ProductStore ps = productStoreRepository.findByProductId(input.getProductId(), input.getStoreId())
+        ProductStore ps = productStoreRepository.findByProductId_ProductIdAndStoreId_StoreId(input.getProductId(), input.getStoreId())
             .orElseThrow(() -> new RuntimeException("Relación no encontrada"));
 
         boolean priceChanged = ps.getCurrentPrice() == null || !ps.getCurrentPrice().equals(input.getPrice());
@@ -56,14 +56,10 @@ public class PriceHistoryService {
 
     //Consulta por producto
    public List<PriceHistoryDTO> findByProductId(Integer productId) {
-        return priceHistoryRepository.findByProductStoreIdList(productId).stream()
+        return priceHistoryRepository.findByProductStoreId_StoreProductId(productId).stream()
                 .map(PriceHistoryMapper::toDTO)
                 .toList();
     }
 
-    public List<PriceHistoryDTO> priceHistoryByProductAndStore(Integer productId, Integer storeId) {
-        return priceHistoryRepository.findByProductStoreId(productId, storeId).stream()
-                .map(PriceHistoryMapper::toDTO)
-                .toList();
-    }
+    
 }

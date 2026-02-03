@@ -53,13 +53,13 @@ public class ProductStoreService {
 
     public Optional<ProductStore> findProductById(Integer productId, Integer storeId) {
     
-    return productStoreRepository.findByProductId(productId, storeId);
+    return productStoreRepository.findByProductId_ProductIdAndStoreId_StoreId(productId, storeId);
 }
 
     
     // Cambiamos el retorno de List<ProductStore> a List<ProductStoreDTO>
     public List<ProductStoreDTO> findStoresByProductId(Integer productId) {
-    List<ProductStore> stores = productStoreRepository.findByProductIdList(productId);
+    List<ProductStore> stores = productStoreRepository.findByProductId_ProductId(productId);
     
     
     return stores.stream()
@@ -69,6 +69,6 @@ public class ProductStoreService {
 
     
     public Optional<ProductStore> findUniqueStoreProduct(Integer productId, Integer storeId) {
-        return productStoreRepository.findByProductId(productId, storeId);
+        return productStoreRepository.findByProductId_ProductIdAndStoreId_StoreId(productId, storeId);
     }
 }

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 
 import com.smartcart.smartcart.modules.product.dto.PriceHistoryDTO;
 import com.smartcart.smartcart.modules.product.dto.PriceUpdateDTO;
-import com.smartcart.smartcart.modules.product.entity.PriceHistory;
 import com.smartcart.smartcart.modules.product.service.PriceHistoryService;
 
 @Controller
@@ -25,10 +24,7 @@ public class PriceHistoryController {
         return priceHistoryService.findByProductId(productId);
     }
 
-    @QueryMapping
-    public List<PriceHistoryDTO> priceHistoryByProductAndStore(@Argument Integer productId, @Argument Integer storeId) {
-        return priceHistoryService.priceHistoryByProductAndStore(productId, storeId);
-    }
+    
 
     @MutationMapping
     public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) { // Usamos el DTO como entrada
