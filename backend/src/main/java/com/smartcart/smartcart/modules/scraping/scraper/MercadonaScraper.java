@@ -375,6 +375,7 @@ public class MercadonaScraper extends BaseScraper
 
             return ScrapedProduct.builder()
                 .externalId(id)
+                .ean(null)  // EAN no viene en listado de categorias, usar fetchProductDetail
                 .name(name)
                 .brand(brand)
                 .description(description)
@@ -387,6 +388,7 @@ public class MercadonaScraper extends BaseScraper
                 .productUrl(productUrl)
                 .categoryName(categoryName)
                 .categoryId(categoryId)
+                .origin(null)  // Origin no viene en listado, usar fetchProductDetail
                 .build();
 
         }
@@ -529,6 +531,97 @@ public class MercadonaScraper extends BaseScraper
         return allCategories;
     }
 
+    // ========== METODOS PARA OBTENER DETALLE DE PRODUCTO (EAN) ==========
+
+    /**
+     * Obtiene el detalle completo de un producto individual.
+     * Este endpoint incluye EAN, origen, proveedores, etc.
+     * Endpoint: /api/products/{id}/
+     *
+     * @param productId ID del producto en Mercadona
+     * @return ProductDetail con EAN y otros datos, o null si hay error
+     */
+    public ProductDetail fetchProductDetail(String productId)
+    {
+        String url = apiBaseUrl + "/products/" + productId + "/";
+
+        HttpHeaders headers = createHeaders();
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try
+        {
+            ResponseEntity<String> response = restTemplate.exchange(
+                url, HttpMethod.GET, entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+
+            String ean = getTextValue(root, "ean");
+            String origin = null;
+            String packaging = getTextValue(root, "packaging");
+
+            // Origin esta dentro de details
+            if (root.has("details") && !root.get("details").isNull())
+            {
+                origin = getTextValue(root.get("details"), "origin");
+            }
+
+            // Si no esta en details, puede estar en el root
+            if (origin == null)
+            {
+                origin = getTextValue(root, "origin");
+            }
+
+            log.debug("[{}] Detalle producto {}: EAN={}, origin={}",
+                      STORE_NAME, productId, ean, origin);
+
+            return new ProductDetail(productId, ean, origin, packaging);
+        }
+        catch (Exception e)
+        {
+            log.warn("[{}] Error obteniendo detalle de producto {}: {}",
+                     STORE_NAME, productId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene EAN para multiples productos.
+     * Aplica rate limiting entre peticiones.
+     *
+     * @param productIds Lista de IDs de productos
+     * @return Mapa de productId -> ProductDetail
+     */
+    public java.util.Map<String, ProductDetail> fetchProductDetails(List<String> productIds)
+    {
+        java.util.Map<String, ProductDetail> details = new java.util.HashMap<>();
+
+        log.info("[{}] Obteniendo detalles de {} productos...", STORE_NAME, productIds.size());
+
+        int processed = 0;
+        for (String productId : productIds)
+        {
+            rateLimiter.waitIfNeeded();
+            ProductDetail detail = fetchProductDetail(productId);
+            if (detail != null)
+            {
+                details.put(productId, detail);
+            }
+            processed++;
+
+            // Log progreso cada 100 productos
+            if (processed % 100 == 0)
+            {
+                log.info("[{}] Progreso: {}/{} productos procesados",
+                         STORE_NAME, processed, productIds.size());
+            }
+        }
+
+        log.info("[{}] Detalles obtenidos: {}/{} productos",
+                 STORE_NAME, details.size(), productIds.size());
+
+        return details;
+    }
+
     /**
      * Clase interna para almacenar información de categoría.
      */
@@ -538,4 +631,9 @@ public class MercadonaScraper extends BaseScraper
      * Record publico para devolver informacion de categorias.
      */
     public record PublicCategoryInfo(String id, String name, String parentCategory) {}
+
+    /**
+     * Record con detalle de producto (EAN, origen, etc.)
+     */
+    public record ProductDetail(String id, String ean, String origin, String packaging) {}
 }

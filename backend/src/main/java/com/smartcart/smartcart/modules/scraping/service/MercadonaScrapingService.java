@@ -90,4 +90,85 @@ public class MercadonaScrapingService
     {
         return mercadonaScraper.isEnabled();
     }
+
+    // ========== METODOS PARA EAN ==========
+
+    /**
+     * Obtiene el detalle de un producto (incluye EAN, origen, etc.)
+     * Usa el endpoint /api/products/{id}/
+     *
+     * @param productId ID del producto en Mercadona
+     * @return Detalle del producto o null si hay error
+     */
+    public MercadonaScraper.ProductDetail getProductDetail(String productId)
+    {
+        return mercadonaScraper.fetchProductDetail(productId);
+    }
+
+    /**
+     * Obtiene EAN y detalles para multiples productos.
+     * Util para enriquecer productos que no tienen EAN en la BD.
+     *
+     * @param productIds Lista de IDs de productos sin EAN
+     * @return Mapa de productId -> ProductDetail
+     */
+    public java.util.Map<String, MercadonaScraper.ProductDetail> getProductDetails(List<String> productIds)
+    {
+        return mercadonaScraper.fetchProductDetails(productIds);
+    }
+
+    /**
+     * Enriquece una lista de ScrapedProducts con EAN y origen.
+     * Solo hace peticiones para productos que no tienen EAN.
+     *
+     * @param products Lista de productos a enriquecer
+     * @return Lista de productos con EAN (los que se pudieron obtener)
+     */
+    public List<ScrapedProduct> enrichWithEan(List<ScrapedProduct> products)
+    {
+        // Filtrar productos sin EAN
+        List<String> idsWithoutEan = products.stream()
+            .filter(p -> p.ean() == null)
+            .map(ScrapedProduct::externalId)
+            .toList();
+
+        if (idsWithoutEan.isEmpty())
+        {
+            log.info("[mercadona] Todos los productos ya tienen EAN");
+            return products;
+        }
+
+        log.info("[mercadona] Obteniendo EAN para {} productos", idsWithoutEan.size());
+
+        // Obtener detalles
+        var details = mercadonaScraper.fetchProductDetails(idsWithoutEan);
+
+        // Crear nueva lista con EAN
+        return products.stream()
+            .map(p -> {
+                var detail = details.get(p.externalId());
+                if (detail != null && detail.ean() != null)
+                {
+                    return ScrapedProduct.builder()
+                        .externalId(p.externalId())
+                        .ean(detail.ean())
+                        .name(p.name())
+                        .brand(p.brand())
+                        .description(p.description())
+                        .price(p.price())
+                        .originalPrice(p.originalPrice())
+                        .onSale(p.onSale())
+                        .pricePerUnit(p.pricePerUnit())
+                        .unit(p.unit())
+                        .imageUrl(p.imageUrl())
+                        .productUrl(p.productUrl())
+                        .categoryName(p.categoryName())
+                        .categoryId(p.categoryId())
+                        .origin(detail.origin())
+                        .build();
+                }
+                return p;
+            })
+            .toList();
+    }
 }
