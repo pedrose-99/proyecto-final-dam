@@ -10,4 +10,5 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     Optional<Product> findByEan(String ean);
 
+    Optional<Product> findByNameIgnoreCase(String name);
 }

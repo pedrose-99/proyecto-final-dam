@@ -13,6 +13,6 @@ public class ProductStoreDTO {
     private String url;
     private Boolean available;
     private Integer stock;     
-    private Integer externaId; 
+    private String externaId; 
     private String unit;      
 }
