@@ -30,7 +30,6 @@ public class StoreService {
         s.setWebsite(website);
         s.setLogo(logo);
         s.setActive(true);
-        //nombre en minúsculas y sin espacios
         s.setSlug(name.toLowerCase().trim().replace(" ", "-"));
         return storeRepository.save(s);
     }

@@ -30,26 +30,22 @@ public class JwtTokenProvider
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Generar access token desde la autenticación
     public String generateAccessToken(Authentication authentication)
     {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         return buildToken(new HashMap<>(), userDetails.getUsername(), jwtExpiration);
     }
 
-    // Generar access token desde email
     public String generateAccessTokenFromEmail(String email)
     {
         return buildToken(new HashMap<>(), email, jwtExpiration);
     }
 
-    // Generar refresh token desde email
     public String generateRefreshToken(String email)
     {
         return buildToken(new HashMap<>(), email, refreshExpiration);
     }
 
-    // Método privado para construir tokens
     private String buildToken(Map<String, Object> extraClaims, String subject, long expiration)
     {
         Date now = new Date();
@@ -64,7 +60,6 @@ public class JwtTokenProvider
                 .compact();
     }
 
-    // Obtener email del token
     public String getEmailFromToken(String token)
     {
         Claims claims = Jwts.parser()
@@ -76,7 +71,6 @@ public class JwtTokenProvider
         return claims.getSubject();
     }
 
-    // Validar token
     public boolean validateToken(String token)
     {
         try {

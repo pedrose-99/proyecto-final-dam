@@ -42,7 +42,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter
 
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token))
         {
-            // Verificar que el token no esté revocado ni expirado en la BD
             boolean isTokenValid = tokenRepository.findByToken(token)
                     .map(t -> !t.isExpired() && !t.isRevoked())
                     .orElse(false);
