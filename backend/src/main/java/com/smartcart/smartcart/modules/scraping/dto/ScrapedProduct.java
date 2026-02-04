@@ -4,25 +4,21 @@ import lombok.Builder;
 
 import java.math.BigDecimal;
 
-/**
- * DTO que representa un producto extraído del scraping.
- * Inmutable para seguridad en concurrencia.
- */
 @Builder
 public record ScrapedProduct(
-    String externalId,        // ID en la tienda original
-    String ean,               // Codigo de barras (EAN-13)
-    String name,              // Nombre del producto
-    String brand,             // Marca (puede ser null)
-    String description,       // Descripcion
-    BigDecimal price,         // Precio actual
-    BigDecimal originalPrice, // Precio sin descuento (si aplica)
-    boolean onSale,           // Esta en oferta
-    String pricePerUnit,      // "2.50€/kg"
-    String unit,              // "kg", "L", "unidad"
-    String imageUrl,          // URL de imagen
-    String productUrl,        // URL del producto en la tienda
-    String categoryName,      // Categoria en la tienda
-    String categoryId,        // ID de categoria en la tienda
-    String origin             // Pais de origen
+    String externalId,
+    String ean,
+    String name,
+    String brand,
+    String description,
+    BigDecimal price,
+    BigDecimal originalPrice,
+    boolean onSale,
+    String pricePerUnit,
+    String unit,
+    String imageUrl,
+    String productUrl,
+    String categoryName,
+    String categoryId,
+    String origin
 ) {}
