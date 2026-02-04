@@ -3,9 +3,6 @@ package com.smartcart.smartcart.modules.scraping.util;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Controla la velocidad de las peticiones HTTP para evitar saturar los servidores.
- */
 @Component
 public class RateLimiter
 {
@@ -15,9 +12,6 @@ public class RateLimiter
 
     private long lastRequestTime = 0;
 
-    /**
-     * Espera si es necesario para respetar el delay entre peticiones.
-     */
     public synchronized void waitIfNeeded()
     {
         long now = System.currentTimeMillis();
@@ -38,9 +32,6 @@ public class RateLimiter
         lastRequestTime = System.currentTimeMillis();
     }
 
-    /**
-     * Permite ajustar el delay dinámicamente.
-     */
     public void setDelay(long ms)
     {
         this.delayMs = ms;

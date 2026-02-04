@@ -2,9 +2,6 @@ package com.smartcart.smartcart.modules.scraping.exception;
 
 import lombok.Getter;
 
-/**
- * Excepción base para errores de scraping.
- */
 @Getter
 public class ScrapingException extends RuntimeException
 {

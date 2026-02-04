@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controlador para scraping de Mercadona.
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/admin/scraping/mercadona")
@@ -24,9 +21,6 @@ public class ScrapingAdminController
 
     private final MercadonaScrapingService mercadonaService;
 
-    /**
-     * GET /status - Estado del scraper
-     */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus()
     {
@@ -36,10 +30,6 @@ public class ScrapingAdminController
         ));
     }
 
-    /**
-     * GET /categories - Lista todas las categorias con sus IDs
-     * Respuesta rapida, solo obtiene la lista de categorias.
-     */
     @GetMapping("/categories")
     public ResponseEntity<List<MercadonaScraper.PublicCategoryInfo>> getCategories()
     {
@@ -47,10 +37,6 @@ public class ScrapingAdminController
         return ResponseEntity.ok(mercadonaService.getCategories());
     }
 
-    /**
-     * GET /category/{id} - Productos de UNA categoria (RAPIDO)
-     * Ejemplo: /category/112 -> productos de "Aceite, vinagre y sal"
-     */
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<ScrapedProduct>> getProductsByCategory(
             @PathVariable String categoryId)
@@ -59,10 +45,6 @@ public class ScrapingAdminController
         return ResponseEntity.ok(mercadonaService.getProductsByCategory(categoryId));
     }
 
-    /**
-     * GET /category/{id}/search?q=aceite - Buscar en UNA categoria
-     * Ejemplo: /category/112/search?q=virgen -> aceites virgen
-     */
     @GetMapping("/category/{categoryId}/search")
     public ResponseEntity<List<ScrapedProduct>> searchInCategory(
             @PathVariable String categoryId,
@@ -72,11 +54,6 @@ public class ScrapingAdminController
         return ResponseEntity.ok(mercadonaService.searchInCategory(categoryId, query));
     }
 
-    /**
-     * GET /search?q=aceite - Buscar por nombre en TODAS las categorias
-     * GET /search?q=aceite&categoryName=Aceite de oliva - Filtrar tambien por tipo
-     * MAS LENTO porque recorre todas las categorias.
-     */
     @GetMapping("/search")
     public ResponseEntity<List<ScrapedProduct>> searchAllProducts(
             @RequestParam("q") String query,
@@ -86,10 +63,6 @@ public class ScrapingAdminController
         return ResponseEntity.ok(mercadonaService.searchAllProducts(query, categoryName));
     }
 
-    /**
-     * POST /run - Scraping COMPLETO de todas las categorias (LENTO)
-     * Usar solo si necesitas todos los productos.
-     */
     @PostMapping("/run")
     public ResponseEntity<ScrapingResult> runFullScraping()
     {

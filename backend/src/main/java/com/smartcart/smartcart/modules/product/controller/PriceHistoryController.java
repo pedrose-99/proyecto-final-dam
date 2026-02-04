@@ -27,7 +27,7 @@ public class PriceHistoryController {
     
 
     @MutationMapping
-    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) { // Usamos el DTO como entrada
+    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) {
         return priceHistoryService.register(input);
     }
 }

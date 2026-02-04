@@ -1,8 +1,5 @@
 package com.smartcart.smartcart.modules.scraping.exception;
 
-/**
- * Excepción lanzada cuando se excede el límite de peticiones.
- */
 public class RateLimitExceededException extends ScrapingException
 {
 

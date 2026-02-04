@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Resultado de una ejecución de scraping.
- */
 @Data
 public class ScrapingResult
 {

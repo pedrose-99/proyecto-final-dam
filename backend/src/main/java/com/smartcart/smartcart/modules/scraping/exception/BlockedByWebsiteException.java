@@ -1,8 +1,5 @@
 package com.smartcart.smartcart.modules.scraping.exception;
 
-/**
- * Excepción lanzada cuando el scraper es detectado y bloqueado por el sitio web.
- */
 public class BlockedByWebsiteException extends ScrapingException
 {
 

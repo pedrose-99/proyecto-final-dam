@@ -9,9 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Configuración del módulo de scraping.
- */
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "smartcart.scraping")
@@ -39,17 +36,11 @@ public class ScrapingConfig
         private Map<String, String> selectors = new HashMap<>();
     }
 
-    /**
-     * Obtiene la configuración de una tienda específica.
-     */
     public StoreConfig getStoreConfig(String storeName)
     {
         return stores.get(storeName);
     }
 
-    /**
-     * Verifica si una tienda está habilitada.
-     */
     public boolean isStoreEnabled(String storeName)
     {
         StoreConfig config = stores.get(storeName);

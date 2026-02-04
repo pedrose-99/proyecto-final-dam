@@ -16,14 +16,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Scraper para Mercadona usando su API interna JSON.
- *
- * La API de Mercadona requiere un código postal para mostrar precios.
- * Endpoints principales:
- * - GET /api/categories/ - Lista todas las categorías
- * - GET /api/categories/{id}/ - Detalle de categoría con productos
- */
 @Slf4j
 @Component
 public class MercadonaScraper extends BaseScraper
@@ -60,7 +52,7 @@ public class MercadonaScraper extends BaseScraper
         }
         if (this.postalCode == null)
         {
-            this.postalCode = "28001"; // Madrid por defecto
+            this.postalCode = "28001";
         }
         log.info("[{}] Inicializado con API: {} y CP: {}", STORE_NAME, apiBaseUrl, postalCode);
     }
@@ -80,7 +72,6 @@ public class MercadonaScraper extends BaseScraper
     @Override
     protected List<String> getCategoryUrls()
     {
-        // Para Mercadona obtenemos los IDs dinámicamente de la API
         return new ArrayList<>();
     }
 
@@ -99,7 +90,6 @@ public class MercadonaScraper extends BaseScraper
 
         try
         {
-            // Primero obtener lista de categorias
             List<CategoryInfo> categories = fetchCategories();
             log.info("[{}] Encontradas {} categorías principales", STORE_NAME, categories.size());
 
@@ -143,11 +133,6 @@ public class MercadonaScraper extends BaseScraper
         return result;
     }
 
-    /**
-     * Obtiene las subcategorías (segundo nivel) de todas las categorías principales.
-     * La API de Mercadona tiene estructura:
-     * Categoría principal -> Subcategorías -> Sub-subcategorías con productos
-     */
     private List<CategoryInfo> fetchCategories()
     {
         String url = apiBaseUrl + "/categories/";
@@ -169,7 +154,6 @@ public class MercadonaScraper extends BaseScraper
             {
                 for (JsonNode mainCategory : results)
                 {
-                    // Extraer subcategorías de cada categoría principal
                     if (mainCategory.has("categories") && mainCategory.get("categories").isArray())
                     {
                         for (JsonNode subCategory : mainCategory.get("categories"))
@@ -196,9 +180,6 @@ public class MercadonaScraper extends BaseScraper
         }
     }
 
-    /**
-     * Subcategorías conocidas como fallback.
-     */
     private List<CategoryInfo> getKnownCategories()
     {
         return List.of(
@@ -211,10 +192,6 @@ public class MercadonaScraper extends BaseScraper
         );
     }
 
-    /**
-     * Obtiene todos los productos de una subcategoría.
-     * Las subcategorías contienen sub-subcategorías con productos.
-     */
     private List<ScrapedProduct> fetchCategoryProducts(String categoryId, String categoryName)
     {
         String url = apiBaseUrl + "/categories/" + categoryId + "/";
@@ -231,7 +208,6 @@ public class MercadonaScraper extends BaseScraper
 
             JsonNode root = objectMapper.readTree(response.getBody());
 
-            // Las subcategorías tienen sub-subcategorías con productos
             if (root.has("categories") && root.get("categories").isArray())
             {
                 for (JsonNode subSubCategory : root.get("categories"))
@@ -253,7 +229,6 @@ public class MercadonaScraper extends BaseScraper
                 }
             }
 
-            // También puede haber productos directos
             if (root.has("products") && root.get("products").isArray())
             {
                 for (JsonNode productNode : root.get("products"))
@@ -275,26 +250,6 @@ public class MercadonaScraper extends BaseScraper
         return products;
     }
 
-    /**
-     * Parsea un producto desde el JSON de la API.
-     * Estructura real:
-     * {
-     *   "id": "4241",
-     *   "display_name": "Aceite de oliva 0,4º Hacendado",
-     *   "thumbnail": "https://...",
-     *   "share_url": "https://tienda.mercadona.es/product/4241/...",
-     *   "packaging": "Garrafa",
-     *   "price_instructions": {
-     *     "unit_price": "19.75",
-     *     "bulk_price": "3.95",
-     *     "unit_size": 5.0,
-     *     "size_format": "l",
-     *     "reference_price": "3.950",
-     *     "reference_format": "L",
-     *     "previous_unit_price": null
-     *   }
-     * }
-     */
     private ScrapedProduct parseProductFromJson(JsonNode node, String categoryName, String categoryId)
     {
         try
@@ -307,7 +262,6 @@ public class MercadonaScraper extends BaseScraper
                 return null;
             }
 
-            // Extraer información de precio
             BigDecimal price = null;
             BigDecimal originalPrice = null;
             String pricePerUnit = null;
@@ -318,27 +272,23 @@ public class MercadonaScraper extends BaseScraper
             {
                 JsonNode priceNode = node.get("price_instructions");
 
-                // Precio unitario (el que paga el cliente)
                 price = getBigDecimalValue(priceNode, "unit_price");
                 if (price == null)
                 {
                     price = getBigDecimalValue(priceNode, "bulk_price");
                 }
 
-                // Precio anterior si hay descuento
                 originalPrice = getBigDecimalValue(priceNode, "previous_unit_price");
                 if (originalPrice != null && price != null && originalPrice.compareTo(price) > 0)
                 {
                     onSale = true;
                 }
 
-                // Verificar también price_decreased flag
                 if (priceNode.has("price_decreased") && priceNode.get("price_decreased").asBoolean())
                 {
                     onSale = true;
                 }
 
-                // Precio por unidad de referencia (ej: 3.95€/L)
                 BigDecimal refPrice = getBigDecimalValue(priceNode, "reference_price");
                 String refFormat = getTextValue(priceNode, "reference_format");
                 if (refPrice != null && refFormat != null)
@@ -346,7 +296,6 @@ public class MercadonaScraper extends BaseScraper
                     pricePerUnit = refPrice.toPlainString() + "€/" + refFormat;
                 }
 
-                // Tamaño del producto (ej: "5.0 l")
                 Double unitSize = priceNode.has("unit_size") && !priceNode.get("unit_size").isNull() ?
                     priceNode.get("unit_size").asDouble() : null;
                 String sizeFormat = getTextValue(priceNode, "size_format");
@@ -356,26 +305,22 @@ public class MercadonaScraper extends BaseScraper
                 }
             }
 
-            // Imagen
             String imageUrl = getTextValue(node, "thumbnail");
 
-            // URL del producto
             String productUrl = getTextValue(node, "share_url");
             if (productUrl == null)
             {
                 productUrl = "https://tienda.mercadona.es/product/" + id;
             }
 
-            // Packaging como descripcion adicional
             String packaging = getTextValue(node, "packaging");
             String description = packaging;
 
-            // Extraer marca del nombre (normalmente es "Producto Marca")
             String brand = extractBrandFromName(name);
 
             return ScrapedProduct.builder()
                 .externalId(id)
-                .ean(null)  // EAN no viene en listado de categorias, usar fetchProductDetail
+                .ean(null)
                 .name(name)
                 .brand(brand)
                 .description(description)
@@ -388,7 +333,7 @@ public class MercadonaScraper extends BaseScraper
                 .productUrl(productUrl)
                 .categoryName(categoryName)
                 .categoryId(categoryId)
-                .origin(null)  // Origin no viene en listado, usar fetchProductDetail
+                .origin(null)
                 .build();
 
         }
@@ -399,15 +344,10 @@ public class MercadonaScraper extends BaseScraper
         }
     }
 
-    /**
-     * Intenta extraer la marca del nombre del producto.
-     * Ejemplo: "Aceite de oliva 0,4º Hacendado" -> "Hacendado"
-     */
     private String extractBrandFromName(String name)
     {
         if (name == null) return null;
 
-        // Marcas conocidas de Mercadona
         String[] knownBrands = {"Hacendado", "Deliplus", "Bosque Verde", "Compy", "Cecotec"};
         for (String brand : knownBrands)
         {
@@ -419,9 +359,6 @@ public class MercadonaScraper extends BaseScraper
         return null;
     }
 
-    /**
-     * Crea los headers HTTP necesarios para la API de Mercadona.
-     */
     private HttpHeaders createHeaders()
     {
         HttpHeaders headers = new HttpHeaders();
@@ -430,14 +367,10 @@ public class MercadonaScraper extends BaseScraper
         headers.set("Accept-Language", "es-ES,es;q=0.9");
         headers.set("Origin", "https://tienda.mercadona.es");
         headers.set("Referer", "https://tienda.mercadona.es/");
-        // Cookie con el código postal para obtener precios correctos
         headers.set("Cookie", "postal_code=" + postalCode);
         return headers;
     }
 
-    /**
-     * Extrae un valor de texto de un nodo JSON.
-     */
     private String getTextValue(JsonNode node, String field)
     {
         if (node.has(field) && !node.get(field).isNull())
@@ -447,9 +380,6 @@ public class MercadonaScraper extends BaseScraper
         return null;
     }
 
-    /**
-     * Extrae un valor BigDecimal de un nodo JSON.
-     */
     private BigDecimal getBigDecimalValue(JsonNode node, String field)
     {
         if (node.has(field) && !node.get(field).isNull())
@@ -466,21 +396,12 @@ public class MercadonaScraper extends BaseScraper
         return null;
     }
 
-    // ========== METODOS PUBLICOS PARA ACCESO DIRECTO ==========
-
-    /**
-     * Obtiene productos de UNA categoria especifica (rapido).
-     * Llama directamente a /api/categories/{id}/
-     */
     public List<ScrapedProduct> scrapeCategory(String categoryId)
     {
         log.info("[{}] Obteniendo productos de categoria {}", STORE_NAME, categoryId);
         return fetchCategoryProducts(categoryId, "Categoria " + categoryId);
     }
 
-    /**
-     * Obtiene lista de todas las categorias con sus IDs.
-     */
     public List<PublicCategoryInfo> fetchAllCategories()
     {
         String url = apiBaseUrl + "/categories/";
@@ -502,11 +423,9 @@ public class MercadonaScraper extends BaseScraper
             {
                 for (JsonNode mainCategory : results)
                 {
-                    // Categoria principal
                     String mainId = mainCategory.has("id") ? mainCategory.get("id").asText() : null;
                     String mainName = mainCategory.has("name") ? mainCategory.get("name").asText() : "Unknown";
 
-                    // Subcategorias
                     if (mainCategory.has("categories") && mainCategory.get("categories").isArray())
                     {
                         for (JsonNode subCategory : mainCategory.get("categories"))
@@ -531,16 +450,6 @@ public class MercadonaScraper extends BaseScraper
         return allCategories;
     }
 
-    // ========== METODOS PARA OBTENER DETALLE DE PRODUCTO (EAN) ==========
-
-    /**
-     * Obtiene el detalle completo de un producto individual.
-     * Este endpoint incluye EAN, origen, proveedores, etc.
-     * Endpoint: /api/products/{id}/
-     *
-     * @param productId ID del producto en Mercadona
-     * @return ProductDetail con EAN y otros datos, o null si hay error
-     */
     public ProductDetail fetchProductDetail(String productId)
     {
         String url = apiBaseUrl + "/products/" + productId + "/";
@@ -559,13 +468,11 @@ public class MercadonaScraper extends BaseScraper
             String origin = null;
             String packaging = getTextValue(root, "packaging");
 
-            // Origin esta dentro de details
             if (root.has("details") && !root.get("details").isNull())
             {
                 origin = getTextValue(root.get("details"), "origin");
             }
 
-            // Si no esta en details, puede estar en el root
             if (origin == null)
             {
                 origin = getTextValue(root, "origin");
@@ -584,13 +491,6 @@ public class MercadonaScraper extends BaseScraper
         }
     }
 
-    /**
-     * Obtiene EAN para multiples productos.
-     * Aplica rate limiting entre peticiones.
-     *
-     * @param productIds Lista de IDs de productos
-     * @return Mapa de productId -> ProductDetail
-     */
     public java.util.Map<String, ProductDetail> fetchProductDetails(List<String> productIds)
     {
         java.util.Map<String, ProductDetail> details = new java.util.HashMap<>();
@@ -608,7 +508,6 @@ public class MercadonaScraper extends BaseScraper
             }
             processed++;
 
-            // Log progreso cada 100 productos
             if (processed % 100 == 0)
             {
                 log.info("[{}] Progreso: {}/{} productos procesados",
@@ -622,18 +521,9 @@ public class MercadonaScraper extends BaseScraper
         return details;
     }
 
-    /**
-     * Clase interna para almacenar información de categoría.
-     */
     private record CategoryInfo(String id, String name) {}
 
-    /**
-     * Record publico para devolver informacion de categorias.
-     */
     public record PublicCategoryInfo(String id, String name, String parentCategory) {}
 
-    /**
-     * Record con detalle de producto (EAN, origen, etc.)
-     */
     public record ProductDetail(String id, String ean, String origin, String packaging) {}
 }

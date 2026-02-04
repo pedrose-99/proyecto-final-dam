@@ -9,9 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Servicio para gestionar el scraping de Mercadona.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,9 +17,6 @@ public class MercadonaScrapingService
 
     private final MercadonaScraper mercadonaScraper;
 
-    /**
-     * Scraping completo de todas las categorias.
-     */
     public ScrapingResult scrapeAll()
     {
         if (!mercadonaScraper.isEnabled())
@@ -36,18 +30,11 @@ public class MercadonaScrapingService
         return mercadonaScraper.scrape();
     }
 
-    /**
-     * Obtiene productos de UNA categoria especifica (rapido).
-     * Va directo a la API de esa categoria.
-     */
     public List<ScrapedProduct> getProductsByCategory(String categoryId)
     {
         return mercadonaScraper.scrapeCategory(categoryId);
     }
 
-    /**
-     * Busca productos por nombre en UNA categoria.
-     */
     public List<ScrapedProduct> searchInCategory(String categoryId, String query)
     {
         List<ScrapedProduct> products = mercadonaScraper.scrapeCategory(categoryId);
@@ -58,19 +45,11 @@ public class MercadonaScrapingService
             .toList();
     }
 
-    /**
-     * Obtiene lista de todas las categorias disponibles.
-     */
     public List<MercadonaScraper.PublicCategoryInfo> getCategories()
     {
         return mercadonaScraper.fetchAllCategories();
     }
 
-    /**
-     * Busca productos por nombre en TODAS las categorias.
-     * @param query texto a buscar en el nombre
-     * @param categoryName filtro opcional por categoryName (ej: "Aceite de oliva")
-     */
     public List<ScrapedProduct> searchAllProducts(String query, String categoryName)
     {
         ScrapingResult result = scrapeAll();
@@ -83,50 +62,23 @@ public class MercadonaScrapingService
             .toList();
     }
 
-    /**
-     * Verifica si el scraper esta habilitado.
-     */
     public boolean isEnabled()
     {
         return mercadonaScraper.isEnabled();
     }
 
-    // ========== METODOS PARA EAN ==========
-
-    /**
-     * Obtiene el detalle de un producto (incluye EAN, origen, etc.)
-     * Usa el endpoint /api/products/{id}/
-     *
-     * @param productId ID del producto en Mercadona
-     * @return Detalle del producto o null si hay error
-     */
     public MercadonaScraper.ProductDetail getProductDetail(String productId)
     {
         return mercadonaScraper.fetchProductDetail(productId);
     }
 
-    /**
-     * Obtiene EAN y detalles para multiples productos.
-     * Util para enriquecer productos que no tienen EAN en la BD.
-     *
-     * @param productIds Lista de IDs de productos sin EAN
-     * @return Mapa de productId -> ProductDetail
-     */
     public java.util.Map<String, MercadonaScraper.ProductDetail> getProductDetails(List<String> productIds)
     {
         return mercadonaScraper.fetchProductDetails(productIds);
     }
 
-    /**
-     * Enriquece una lista de ScrapedProducts con EAN y origen.
-     * Solo hace peticiones para productos que no tienen EAN.
-     *
-     * @param products Lista de productos a enriquecer
-     * @return Lista de productos con EAN (los que se pudieron obtener)
-     */
     public List<ScrapedProduct> enrichWithEan(List<ScrapedProduct> products)
     {
-        // Filtrar productos sin EAN
         List<String> idsWithoutEan = products.stream()
             .filter(p -> p.ean() == null)
             .map(ScrapedProduct::externalId)
@@ -140,10 +92,8 @@ public class MercadonaScrapingService
 
         log.info("[mercadona] Obteniendo EAN para {} productos", idsWithoutEan.size());
 
-        // Obtener detalles
         var details = mercadonaScraper.fetchProductDetails(idsWithoutEan);
 
-        // Crear nueva lista con EAN
         return products.stream()
             .map(p -> {
                 var detail = details.get(p.externalId());
