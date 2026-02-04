@@ -34,7 +34,7 @@ public class ProductStore {
     private Store storeId;
 
     @Column(name = "externa_id")
-    private Integer externaId;
+    private String externaId;
 
     @Column(name = "url")
     private String url;
@@ -56,7 +56,7 @@ public class ProductStore {
     public ProductStore() {
     }
 
-    public ProductStore(Boolean available, Double currentPrice, Integer externaId, LocalDateTime lastUpdate, Product productId, Integer stock, Store storeId, Integer storeProductId, String url) {
+    public ProductStore(Boolean available, Double currentPrice, String externaId, LocalDateTime lastUpdate, Product productId, Integer stock, Store storeId, Integer storeProductId, String url) {
         this.available = available;
         this.currentPrice = currentPrice;
         this.externaId = externaId;

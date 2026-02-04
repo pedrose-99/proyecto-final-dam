@@ -78,57 +78,64 @@ public class MercadonaScraper extends BaseScraper
     @Override
     public ScrapingResult scrape()
     {
-        log.info("[{}] Iniciando scraping via API...", STORE_NAME);
+        log.info("[{}] Iniciando scraping via API (paralelo)...", STORE_NAME);
 
         ScrapingResult result = new ScrapingResult();
         result.setStoreName(STORE_NAME);
         result.setStoreId(STORE_ID);
         result.setStartTime(LocalDateTime.now());
 
-        List<ScrapedProduct> allProducts = new ArrayList<>();
-        int errors = 0;
+        java.util.concurrent.CopyOnWriteArrayList<ScrapedProduct> allProducts = new java.util.concurrent.CopyOnWriteArrayList<>();
+        java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger processedCategories = new java.util.concurrent.atomic.AtomicInteger(0);
 
         try
         {
             List<CategoryInfo> categories = fetchCategories();
-            log.info("[{}] Encontradas {} categorías principales", STORE_NAME, categories.size());
+            log.info("[{}] Encontradas {} categorías principales, procesando en paralelo...", STORE_NAME, categories.size());
 
-            for (CategoryInfo category : categories)
-            {
-                try
-                {
-                    rateLimiter.waitIfNeeded();
-                    List<ScrapedProduct> products = fetchCategoryProducts(category.id, category.name);
-                    allProducts.addAll(products);
+            int parallelism = 10;
+            java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(parallelism);
 
-                    log.info("[{}] Categoría '{}' procesada: {} productos",
-                             STORE_NAME, category.name, products.size());
+            List<java.util.concurrent.CompletableFuture<Void>> futures = categories.stream()
+                .map(category -> java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try
+                    {
+                        Thread.sleep(200);
+                        List<ScrapedProduct> products = fetchCategoryProducts(category.id, category.name);
+                        allProducts.addAll(products);
 
-                }
-                catch (Exception e)
-                {
-                    errors++;
-                    log.error("[{}] Error en categoría {}: {}",
-                              STORE_NAME, category.name, e.getMessage());
-                    result.addError("category-" + category.id, e.getMessage());
-                }
-            }
+                        int count = processedCategories.incrementAndGet();
+                        log.info("[{}] Categoría '{}' procesada: {} productos ({}/{})",
+                                 STORE_NAME, category.name, products.size(), count, categories.size());
+                    }
+                    catch (Exception e)
+                    {
+                        errors.incrementAndGet();
+                        log.error("[{}] Error en categoría {}: {}",
+                                  STORE_NAME, category.name, e.getMessage());
+                        result.addError("category-" + category.id, e.getMessage());
+                    }
+                }, executor))
+                .toList();
 
+            java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
+            executor.shutdown();
         }
         catch (Exception e)
         {
             log.error("[{}] Error obteniendo categorías: {}", STORE_NAME, e.getMessage());
-            errors++;
+            errors.incrementAndGet();
             result.addError("categories", e.getMessage());
         }
 
-        result.setProducts(allProducts);
+        result.setProducts(new ArrayList<>(allProducts));
         result.setEndTime(LocalDateTime.now());
         result.setTotalProducts(allProducts.size());
-        result.setTotalErrors(errors);
+        result.setTotalErrors(errors.get());
 
         log.info("[{}] Scraping completado: {} productos, {} errores en {}s",
-                 STORE_NAME, allProducts.size(), errors, result.getDurationSeconds());
+                 STORE_NAME, allProducts.size(), errors.get(), result.getDurationSeconds());
 
         return result;
     }
@@ -493,30 +500,45 @@ public class MercadonaScraper extends BaseScraper
 
     public java.util.Map<String, ProductDetail> fetchProductDetails(List<String> productIds)
     {
-        java.util.Map<String, ProductDetail> details = new java.util.HashMap<>();
+        java.util.concurrent.ConcurrentHashMap<String, ProductDetail> details = new java.util.concurrent.ConcurrentHashMap<>();
 
-        log.info("[{}] Obteniendo detalles de {} productos...", STORE_NAME, productIds.size());
+        log.info("[{}] Obteniendo detalles de {} productos en paralelo...", STORE_NAME, productIds.size());
 
-        int processed = 0;
-        for (String productId : productIds)
-        {
-            rateLimiter.waitIfNeeded();
-            ProductDetail detail = fetchProductDetail(productId);
-            if (detail != null)
-            {
-                details.put(productId, detail);
-            }
-            processed++;
+        int parallelism = 10;
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(parallelism);
+        java.util.concurrent.atomic.AtomicInteger processed = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger(0);
 
-            if (processed % 100 == 0)
-            {
-                log.info("[{}] Progreso: {}/{} productos procesados",
-                         STORE_NAME, processed, productIds.size());
-            }
-        }
+        List<java.util.concurrent.CompletableFuture<Void>> futures = productIds.stream()
+            .map(productId -> java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try
+                {
+                    Thread.sleep(200);
+                    ProductDetail detail = fetchProductDetail(productId);
+                    if (detail != null)
+                    {
+                        details.put(productId, detail);
+                    }
+                    int count = processed.incrementAndGet();
+                    if (count % 50 == 0)
+                    {
+                        log.info("[{}] Progreso: {}/{} productos procesados",
+                                 STORE_NAME, count, productIds.size());
+                    }
+                }
+                catch (Exception e)
+                {
+                    errors.incrementAndGet();
+                    log.warn("[{}] Error obteniendo detalle de {}: {}", STORE_NAME, productId, e.getMessage());
+                }
+            }, executor))
+            .toList();
 
-        log.info("[{}] Detalles obtenidos: {}/{} productos",
-                 STORE_NAME, details.size(), productIds.size());
+        java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
+        executor.shutdown();
+
+        log.info("[{}] Detalles obtenidos: {}/{} productos ({} errores)",
+                 STORE_NAME, details.size(), productIds.size(), errors.get());
 
         return details;
     }
