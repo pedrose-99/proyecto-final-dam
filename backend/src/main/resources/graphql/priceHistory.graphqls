@@ -24,7 +24,7 @@ input PriceUpdateInput {
     originalPrice: Float
     isOnSale: Boolean
     stock: Int
-    externaId: Int
+    externaId: String
 }
 
 type PriceHistoryDTO {
