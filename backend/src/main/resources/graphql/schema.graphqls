@@ -1,5 +1,11 @@
-# SmartCart GraphQL Schema
-
+# Definición de los tipos raíz
 type Query {
     ping: String
+    _empty: String
 }
+
+type Mutation {
+    _empty: String
+}
+
+

@@ -32,5 +32,7 @@ build/
 ### VS Code ###
 .vscode/
 
+###Archivo .env###
+.env
 #Archivo .env 
 .env
