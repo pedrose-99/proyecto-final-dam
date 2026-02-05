@@ -1,1 +1,37 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+/* CSS Variables */
+:root {
+  --smartcart-primary: #1e3a5f;
+  --smartcart-primary-light: #2c5282;
+  --smartcart-accent: #3b82f6;
+  --smartcart-accent-light: #dbeafe;
+  --smartcart-success: #22c55e;
+  --smartcart-warning: #f59e0b;
+  --smartcart-danger: #ef4444;
+  --smartcart-white: #ffffff;
+  --smartcart-background: #f5f7fa;
+  --smartcart-text: #1e293b;
+  --smartcart-text-light: #64748b;
+  --smartcart-border: #e2e8f0;
+}
+
+/* Ensure Angular Material cards don't have overflow hidden */
+.mat-mdc-card {
+  overflow: visible !important;
+}
