@@ -110,6 +110,78 @@
   opacity: 1;
 }
 
+/* Filtro de tiendas */
+.store-filter {
+  display: flex;
+  align-items: center;
+}
+
+.store-input {
+  width: 220px;
+}
+
+::ng-deep .store-input .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+/* Opciones del autocomplete de tiendas */
+.store-option-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.store-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.store-name {
+  font-weight: 500;
+}
+
+.store-product-count {
+  font-size: 12px;
+  color: var(--smartcart-text-light);
+  margin-left: auto;
+}
+
+/* Logo en chips de tiendas */
+.chip-store-logo {
+  width: 20px !important;
+  height: 20px !important;
+  object-fit: contain;
+}
+
+/* Chips de tiendas seleccionadas */
+.selected-stores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+::ng-deep .selected-stores .mat-mdc-chip-row {
+  background-color: var(--smartcart-primary, #1e3a5f) !important;
+  color: var(--smartcart-white, #ffffff) !important;
+}
+
+::ng-deep .selected-stores .mat-mdc-chip-row .mat-icon {
+  color: var(--smartcart-white, #ffffff) !important;
+}
+
+::ng-deep .selected-stores .mat-mdc-chip-remove {
+  color: var(--smartcart-white, #ffffff) !important;
+  opacity: 0.7;
+}
+
+::ng-deep .selected-stores .mat-mdc-chip-remove:hover {
+  opacity: 1;
+}
+
 /* Filtros activos */
 .active-filters {
   display: flex;
@@ -226,7 +298,8 @@
   }
 
   .filter-select,
-  .category-input {
+  .category-input,
+  .store-input {
     width: 100%;
   }
 

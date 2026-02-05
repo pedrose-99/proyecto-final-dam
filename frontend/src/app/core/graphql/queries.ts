@@ -53,6 +53,26 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
   }
 `;
 
+export const GET_PRODUCTS_BY_STORE = gql`
+  query GetProductsByStore($storeId: ID!, $page: Int, $size: Int) {
+    productsByStore(storeId: $storeId, page: $page, size: $size) {
+      content {
+        id
+        name
+        brand
+        categoryName
+        imageUrl
+      }
+      totalElements
+      totalPages
+      number
+      size
+      first
+      last
+    }
+  }
+`;
+
 // Categorias
 export const GET_ALL_CATEGORIES = gql`
   query GetAllCategories {
@@ -84,6 +104,7 @@ export const GET_ALL_STORES = gql`
       logo
       website
       active
+      productCount
     }
   }
 `;

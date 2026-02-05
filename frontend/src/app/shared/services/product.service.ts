@@ -9,6 +9,7 @@ import {
   GET_ALL_CATEGORIES,
   GET_ALL_STORES,
   GET_PRODUCTS_BY_CATEGORY,
+  GET_PRODUCTS_BY_STORE,
   GET_STORES_BY_PRODUCT
 } from '../../core/graphql/queries';
 
@@ -20,6 +21,65 @@ export class ProductService {
   constructor(private apollo: Apollo) {}
 
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
+    // Si hay filtro por múltiples tiendas, hacer queries paralelas y combinar
+    if (filters.storeIds && filters.storeIds.length > 0) {
+      const queries = filters.storeIds.map(storeId =>
+        this.apollo.query<any>({
+          query: GET_PRODUCTS_BY_STORE,
+          variables: {
+            storeId: storeId.toString(),
+            page: 0,
+            size: 500 // Cargar suficientes de cada tienda
+          },
+          fetchPolicy: 'network-only'
+        })
+      );
+
+      return forkJoin(queries).pipe(
+        map(results => {
+          // Combinar productos de todas las tiendas
+          let allProducts: Product[] = [];
+          const seenIds = new Set<number>();
+
+          results.forEach(result => {
+            const products = (result.data?.productsByStore?.content || [])
+              .map((p: any) => this.mapToProduct(p));
+
+            products.forEach((p: Product) => {
+              if (!seenIds.has(p.id)) {
+                seenIds.add(p.id);
+                allProducts.push(p);
+              }
+            });
+          });
+
+          // Aplicar filtro de categorías si existe
+          if (filters.categoryIds && filters.categoryIds.length > 0) {
+            // TODO: Filtrar por categoría en cliente si es necesario
+          }
+
+          // Aplicar ordenamiento
+          allProducts = this.applySorting(allProducts, filters.sortBy);
+
+          // Aplicar paginación manual
+          const totalElements = allProducts.length;
+          const start = page * size;
+          const end = start + size;
+          const paginatedContent = allProducts.slice(start, end);
+
+          return {
+            content: paginatedContent,
+            totalElements: totalElements,
+            totalPages: Math.ceil(totalElements / size),
+            size: size,
+            number: page,
+            first: page === 0,
+            last: end >= totalElements
+          };
+        })
+      );
+    }
+
     // Si hay filtro por múltiples categorías, hacer queries paralelas y combinar
     if (filters.categoryIds && filters.categoryIds.length > 0) {
       const queries = filters.categoryIds.map(catId =>
@@ -223,11 +283,12 @@ export class ProductService {
   }
 
   getStores(): Observable<Store[]> {
-    return this.apollo.watchQuery<any>({
-      query: GET_ALL_STORES
-    }).valueChanges.pipe(
+    return this.apollo.query<any>({
+      query: GET_ALL_STORES,
+      fetchPolicy: 'network-only'
+    }).pipe(
       map(result => {
-        const stores = result.data.allStores || [];
+        const stores = result.data?.allStores || [];
         return stores.map((s: any) => ({
           id: parseInt(s.storeId) || 0,
           name: s.name || '',

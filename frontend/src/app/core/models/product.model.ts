@@ -30,5 +30,6 @@ export interface ProductFilters {
   categoryId?: number;
   categoryIds?: number[];
   categoryNames?: string[];
+  storeIds?: number[];
   sortBy?: 'relevance' | 'name_asc' | 'name_desc';
 }

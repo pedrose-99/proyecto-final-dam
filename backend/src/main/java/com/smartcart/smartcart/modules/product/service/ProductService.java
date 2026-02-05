@@ -84,6 +84,25 @@ public class ProductService {
                 productPage.isLast()
         );
     }
+
+    public ProductPageDTO findByStoreIdPaginated(Integer storeId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.findByStoreId(storeId, pageable);
+
+        List<ProductDTO> content = productPage.getContent().stream()
+                .map(ProductMapper::toDTO)
+                .toList();
+
+        return new ProductPageDTO(
+                content,
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
+    }
     
     public Product create(String name, String ean, String brand, Integer categoryId) {
         Category cat = categoryRepository.findById(categoryId)

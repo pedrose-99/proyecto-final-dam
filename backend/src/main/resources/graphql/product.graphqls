@@ -2,6 +2,7 @@ extend type Query {
     allProducts(page: Int = 0, size: Int = 24): ProductPage
     productByEan(ean: String!): ProductDTO
     productsByCategory(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
+    productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
 }
 
 type ProductPage {

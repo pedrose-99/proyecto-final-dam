@@ -17,6 +17,7 @@ import { ProductService } from '../../shared/services/product.service';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 import { Product, ProductFilters, ProductPage } from '../../core/models/product.model';
 import { Category } from '../../core/models/category.model';
+import { Store } from '../../core/models/store.model';
 
 @Component({
   selector: 'app-home',
@@ -44,6 +45,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Data
   products: Product[] = [];
   categories: Category[] = [];
+  stores: Store[] = [];
   productsInList: Set<number> = new Set();
 
   // Pagination
@@ -68,6 +70,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   categorySearchControl = new FormControl<string>('');
   filteredCategories: Category[] = [];
   selectedCategories: Category[] = [];
+
+  // Tiendas
+  storeSearchControl = new FormControl<string>('');
+  filteredStores: Store[] = [];
+  selectedStores: Store[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -101,6 +108,18 @@ export class HomeComponent implements OnInit, OnDestroy {
         console.error('Error al cargar categorías:', err);
       }
     });
+
+    this.productService.getStores().subscribe({
+      next: (stores) => {
+        // Solo mostrar tiendas activas (con productos)
+        this.stores = stores.filter(s => s.productCount && s.productCount > 0);
+        this.filteredStores = this.stores;
+        this.setupStoreSearch();
+      },
+      error: (err) => {
+        console.error('Error al cargar tiendas:', err);
+      }
+    });
   }
 
   private setupCategorySearch(): void {
@@ -123,6 +142,29 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.filteredCategories = this.categories.filter(c =>
         c.name.toLowerCase().includes(term) &&
         !this.selectedCategories.some(sc => sc.id === c.id)
+      );
+    }
+  }
+
+  private setupStoreSearch(): void {
+    this.storeSearchControl.valueChanges.pipe(
+      debounceTime(200),
+      takeUntil(this.destroy$)
+    ).subscribe(searchTerm => {
+      this.filterStores(searchTerm || '');
+    });
+  }
+
+  private filterStores(searchTerm: string): void {
+    if (!searchTerm) {
+      this.filteredStores = this.stores.filter(
+        s => !this.selectedStores.some(ss => ss.id === s.id)
+      );
+    } else {
+      const term = searchTerm.toLowerCase();
+      this.filteredStores = this.stores.filter(s =>
+        s.name.toLowerCase().includes(term) &&
+        !this.selectedStores.some(ss => ss.id === s.id)
       );
     }
   }
@@ -163,8 +205,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page: ProductPage) => {
-          console.log('HOME received page:', page);
-          console.log('HOME products count:', page.content?.length);
           this.products = page.content;
           this.totalProducts = page.totalElements;
           this.isLoading = false;
@@ -194,6 +234,13 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.filters.categoryIds = undefined;
       this.filters.categoryId = undefined;
       this.filters.categoryNames = undefined;
+    }
+
+    // Usar múltiples tiendas por ID
+    if (this.selectedStores.length > 0) {
+      this.filters.storeIds = this.selectedStores.map(s => s.id);
+    } else {
+      this.filters.storeIds = undefined;
     }
   }
 
@@ -238,6 +285,31 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadProducts();
   }
 
+  onStoreInputFocus(): void {
+    this.filterStores(this.storeSearchControl.value || '');
+  }
+
+  onStoreSelected(event: MatAutocompleteSelectedEvent): void {
+    const store = event.option.value as Store;
+
+    if (!this.selectedStores.some(s => s.id === store.id)) {
+      this.selectedStores.push(store);
+    }
+
+    this.storeSearchControl.setValue('');
+    this.filterStores('');
+
+    this.pageIndex = 0;
+    this.loadProducts();
+  }
+
+  removeStore(store: Store): void {
+    this.selectedStores = this.selectedStores.filter(s => s.id !== store.id);
+    this.filterStores(this.storeSearchControl.value || '');
+    this.pageIndex = 0;
+    this.loadProducts();
+  }
+
   removeFilter(filterKey: string): void {
     if (filterKey === 'search') {
       this.filters.search = undefined;
@@ -249,8 +321,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   clearAllFilters(): void {
     this.filters = {};
     this.selectedCategories = [];
+    this.selectedStores = [];
     this.categorySearchControl.setValue('');
+    this.storeSearchControl.setValue('');
     this.filterCategories('');
+    this.filterStores('');
     this.filterForm.reset({
       sortBy: 'relevance'
     });

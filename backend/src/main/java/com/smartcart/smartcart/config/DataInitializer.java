@@ -75,5 +75,17 @@ public class DataInitializer implements CommandLineRunner {
             storeRepository.save(dia);
             log.info("Tienda Dia creada");
         }
+
+        if (storeRepository.findBySlug("alcampo").isEmpty()) {
+            Store alcampo = new Store();
+            alcampo.setName("Alcampo");
+            alcampo.setSlug("alcampo");
+            alcampo.setWebsite("https://www.alcampo.es");
+            alcampo.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Logo_Alcampo.svg/512px-Logo_Alcampo.svg.png");
+            alcampo.setActive(true);
+            alcampo.setScrapingUrl("https://www.compraonline.alcampo.es");
+            storeRepository.save(alcampo);
+            log.info("Tienda Alcampo creada");
+        }
     }
 }

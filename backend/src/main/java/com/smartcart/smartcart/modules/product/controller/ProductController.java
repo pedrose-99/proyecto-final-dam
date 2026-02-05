@@ -33,6 +33,11 @@ public class ProductController {
         return productService.findByCategoryIdPaginated(categoryId, page != null ? page : 0, size != null ? size : 24);
     }
 
+    @QueryMapping
+    public ProductPageDTO productsByStore(@Argument Integer storeId, @Argument Integer page, @Argument Integer size) {
+        return productService.findByStoreIdPaginated(storeId, page != null ? page : 0, size != null ? size : 24);
+    }
+
     @MutationMapping
     public Product createProduct(@Argument String name, @Argument String ean, 
                                  @Argument String brand, @Argument Integer categoryId) {

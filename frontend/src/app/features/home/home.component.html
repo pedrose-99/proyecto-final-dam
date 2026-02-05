@@ -50,6 +50,53 @@
           </div>
         }
 
+        <!-- Tiendas con búsqueda -->
+        <div class="store-filter">
+          <mat-form-field appearance="outline" class="store-input">
+            <mat-label>Filtrar por tienda</mat-label>
+            <mat-icon matPrefix>store</mat-icon>
+            <input matInput
+                   #storeInput
+                   [formControl]="storeSearchControl"
+                   [matAutocomplete]="storeAuto"
+                   placeholder="Selecciona tiendas..."
+                   (focus)="onStoreInputFocus()">
+            <mat-icon matSuffix class="dropdown-icon">arrow_drop_down</mat-icon>
+            <mat-autocomplete #storeAuto="matAutocomplete"
+                              (optionSelected)="onStoreSelected($event)"
+                              class="store-autocomplete"
+                              autoActiveFirstOption>
+              @for (store of filteredStores; track store.id) {
+                <mat-option [value]="store" class="store-option">
+                  <span class="store-option-content">
+                    <img [src]="store.logoUrl" [alt]="store.name" class="store-logo" onerror="this.style.display='none'">
+                    <span class="store-name">{{ store.name }}</span>
+                    <span class="store-product-count">({{ store.productCount }} productos)</span>
+                  </span>
+                </mat-option>
+              }
+              @if (filteredStores.length === 0) {
+                <mat-option disabled>No se encontraron tiendas</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+
+        <!-- Chips de tiendas seleccionadas -->
+        @if (selectedStores.length > 0) {
+          <div class="selected-stores">
+            @for (store of selectedStores; track store.id) {
+              <mat-chip-row (removed)="removeStore(store)" class="store-chip">
+                <img matChipAvatar [src]="store.logoUrl" [alt]="store.name" class="chip-store-logo" onerror="this.style.display='none'">
+                {{ store.name }}
+                <button matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip-row>
+            }
+          </div>
+        }
+
         <!-- Ordenar -->
         <mat-form-field appearance="outline" class="filter-select">
           <mat-label>Ordenar por</mat-label>
@@ -61,7 +108,7 @@
         </mat-form-field>
 
         <!-- Limpiar -->
-        @if (activeFilters.length > 0 || selectedCategories.length > 0) {
+        @if (activeFilters.length > 0 || selectedCategories.length > 0 || selectedStores.length > 0) {
           <button mat-button color="warn" (click)="clearAllFilters()">
             <mat-icon>delete_outline</mat-icon>
             Limpiar

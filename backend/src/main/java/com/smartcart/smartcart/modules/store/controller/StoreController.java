@@ -1,16 +1,13 @@
 package com.smartcart.smartcart.modules.store.controller;
 
-
-
 import java.util.List;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
+import com.smartcart.smartcart.modules.store.dto.StoreDTO;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.service.StoreService;
-
-
 
 @Controller
 public class StoreController {
@@ -21,8 +18,8 @@ public class StoreController {
     }
 
     @QueryMapping
-    public List<Store> allStores() {
-        return storeService.findAll();
+    public List<StoreDTO> allStores() {
+        return storeService.findAllWithProductCount();
     }
 
     @QueryMapping
