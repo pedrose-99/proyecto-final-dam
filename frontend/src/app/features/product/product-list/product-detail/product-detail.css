@@ -1,0 +1,103 @@
+.product-page { padding: 40px 20px; }
+
+.product-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.product-image img {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+}
+
+.title-row { display: flex; justify-content: space-between; align-items: start; }
+.title-row h1 { color: #1a237e; margin: 0; }
+
+.price-main {
+  font-size: 28px;
+  font-weight: 600;
+  color: #2e7d32;
+  margin-right: 15px;
+}
+
+.btn-history-trigger {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  border: 1px solid #bbdefb;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 20px 0;
+  font-weight: 600;
+}
+
+.stores-section { margin-top: 50px; }
+.section-title { color: #1a237e; border-left: 5px solid #0d47a1; padding-left: 15px; margin-bottom: 25px; }
+
+.table-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.prices-table { width: 100%; border-collapse: collapse; text-align: left; }
+.prices-table th { background: #1a237e; color: white; padding: 15px; }
+.prices-table td { padding: 15px; border-bottom: 1px solid #eee; }
+
+.best-price { background: #f1f8e9; }
+.price-cell { font-weight: 600; color: #2e7d32; }
+.out-of-stock { color: #d32f2f; }
+
+.btn-go {
+  background: #1a237e;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.product-card {
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.price-tag {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+/* La tabla de comparación */
+.comparison-table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.comparison-table td {
+  padding: 1rem;
+  background-color: rgba(0,0,0,0.02);
+}
+
+.comparison-table tr:first-child td {
+  border-radius: 10px 0 0 10px;
+}
+.comparison-table tr:last-child td {
+  border-radius: 0 10px 10px 0;
+}

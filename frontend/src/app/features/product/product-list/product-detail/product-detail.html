@@ -1,0 +1,56 @@
+<main class="container product-page">
+  <section class="product-top">
+    <div class="product-image">
+      <img [src]="product.imageUrl" [alt]="product.name">
+    </div>
+    <div class="product-info">
+      <div class="title-row">
+        <h1>{{ product.name }}</h1>
+        <button class="btn-fav" (click)="toggleFavorite()">❤️</button>
+      </div>
+      <p class="ean-code">EAN: {{ product.ean }}</p>
+      <div class="rating">
+        <span class="price-main">{{ stores[0].price }}€</span>
+        <span class="stars">⭐ {{ product.rating }} ({{ product.reviews }} Opiniones)</span>
+      </div>
+      <button class="btn-history-trigger">📉 Ver historial de precios</button>
+      
+      <div class="quick-description">
+        <h3>Descripción del producto</h3>
+        <p>{{ product.description }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="stores-section">
+    <h2 class="section-title">Comparador de precios</h2>
+    <div class="table-container">
+      <table class="prices-table">
+        <thead>
+          <tr>
+            <th>Tienda</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Sitio Web</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let store of stores" [class.best-price]="store.isBest">
+            <td><strong>{{ store.name }}</strong></td>
+            <td class="price-cell">{{ store.price }}€</td>
+            <td [class.out-of-stock]="store.stock === 'Sin Stock'">
+               {{ store.stock === 'Disponible' ? '✅' : '❌' }} {{ store.stock }}
+            </td>
+            <td>{{ store.url }}</td>
+            <td>
+              <button class="btn-go" [disabled]="store.stock === 'Sin Stock'">
+                {{ store.stock === 'Disponible' ? 'Ir a tienda' : 'Agotado' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>

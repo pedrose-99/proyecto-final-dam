@@ -13,21 +13,41 @@ import com.smartcart.smartcart.modules.product.service.PriceHistoryService;
 
 @Controller
 public class PriceHistoryController {
+
     private final PriceHistoryService priceHistoryService;
 
     public PriceHistoryController(PriceHistoryService priceHistoryService) {
         this.priceHistoryService = priceHistoryService;
     }
 
+    // ─── HISTORIAL: Evolución de precios ───────────────────
+
     @QueryMapping
     public List<PriceHistoryDTO> priceHistoryByProduct(@Argument Integer productId) {
         return priceHistoryService.findByProductId(productId);
     }
 
-    
+    @QueryMapping
+    public List<PriceHistoryDTO> priceHistoryByProductAndStore(
+            @Argument Integer productId, @Argument Integer storeId) {
+        return priceHistoryService.findByProductAndStore(productId, storeId);
+    }
+
+    // ─── SINCRONIZACIÓN: El Scraper llama a esto ───────────
 
     @MutationMapping
-    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) { // Usamos el DTO como entrada
+    public PriceHistoryDTO registerNewPrice(
+            @Argument Integer productId,
+            @Argument Integer storeId,
+            @Argument Double price,
+            @Argument Double originalPrice,
+            @Argument Boolean isOnSale) {
+        PriceUpdateDTO input = new PriceUpdateDTO();
+        input.setProductId(productId);
+        input.setStoreId(storeId);
+        input.setPrice(price);
+        input.setOriginalPrice(originalPrice);
+        input.setIsOnSale(isOnSale);
         return priceHistoryService.register(input);
     }
 }

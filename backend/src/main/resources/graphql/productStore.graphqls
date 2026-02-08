@@ -6,16 +6,16 @@ extend type Query {
 extend type Mutation {
     # Vincula un producto existente con una tienda existente
     linkProductToStore(
-        productId: ID!, 
-        storeId: ID!, 
-        url: String!, 
+        productId: ID!,
+        storeId: ID!,
+        url: String!,
         stock: Int
     ): ProductStoreDTO
 
-    # Permite actualizar si hay stock o cambiar la URL de una oferta
+    # Permite actualizar si hay stock o cambiar la disponibilidad
     updateProductStore(
-        productId: ID!, 
-        storeId: ID!, 
+        productId: ID!,
+        storeId: ID!,
         available: Boolean
     ): ProductStoreDTO
 }

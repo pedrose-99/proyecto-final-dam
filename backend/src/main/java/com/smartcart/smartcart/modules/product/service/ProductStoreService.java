@@ -22,52 +22,47 @@ public class ProductStoreService {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
 
-    public ProductStoreService(ProductStoreRepository productStoreRepository, 
-                               ProductRepository productRepository, 
+    public ProductStoreService(ProductStoreRepository productStoreRepository,
+                               ProductRepository productRepository,
                                StoreRepository storeRepository) {
         this.productStoreRepository = productStoreRepository;
         this.productRepository = productRepository;
         this.storeRepository = storeRepository;
     }
 
-    public ProductStore link(Integer productId, Integer storeId, String url, Integer stock) {
+    public ProductStoreDTO link(Integer productId, Integer storeId, String url, Integer stock) {
         Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         Store store = storeRepository.findById(storeId)
-            .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
 
         ProductStore ps = new ProductStore();
-        ps.setProductId(product); 
+        ps.setProductId(product);
         ps.setStoreId(store);
         ps.setUrl(url);
         ps.setStock(stock);
-        ps.setAvailable(stock > 0);
+        ps.setAvailable(stock != null && stock > 0);
 
-        return productStoreRepository.save(ps);
+        return ProductStoreMapper.toDTO(productStoreRepository.save(ps));
     }
 
-    public Optional<ProductStore> findByProductId(Integer productId) {
-        
-        return productStoreRepository.findById(productId);
+    public ProductStoreDTO updateProductStore(Integer productId, Integer storeId, Boolean available) {
+        ProductStore ps = productStoreRepository
+                .findByProductId_ProductIdAndStoreId_StoreId(productId, storeId)
+                .orElseThrow(() -> new RuntimeException("Relación producto-tienda no encontrada"));
+
+        if (available != null) ps.setAvailable(available);
+
+        return ProductStoreMapper.toDTO(productStoreRepository.save(ps));
     }
 
-    public Optional<ProductStore> findProductById(Integer productId, Integer storeId) {
-    
-    return productStoreRepository.findByProductId_ProductIdAndStoreId_StoreId(productId, storeId);
-}
-
-    
-    // Cambiamos el retorno de List<ProductStore> a List<ProductStoreDTO>
     public List<ProductStoreDTO> findStoresByProductId(Integer productId) {
-    List<ProductStore> stores = productStoreRepository.findByProductId_ProductId(productId);
-    
-    
-    return stores.stream()
-                 .map(ProductStoreMapper::toDTO)
-                 .collect(Collectors.toList());
+        List<ProductStore> stores = productStoreRepository.findByProductId_ProductId(productId);
+        return stores.stream()
+                .map(ProductStoreMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    
     public Optional<ProductStore> findUniqueStoreProduct(Integer productId, Integer storeId) {
         return productStoreRepository.findByProductId_ProductIdAndStoreId_StoreId(productId, storeId);
     }

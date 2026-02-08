@@ -7,17 +7,21 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import com.smartcart.smartcart.modules.product.dto.BasketOptimizationDTO;
+import com.smartcart.smartcart.modules.product.dto.ProductComparisonDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductDTO;
-import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.product.service.ProductService;
 
 @Controller
 public class ProductController {
+
     private final ProductService productService;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
+
+    // ─── CRUD Queries ─────────────────────────────────────
 
     @QueryMapping
     public List<ProductDTO> allProducts() {
@@ -29,15 +33,38 @@ public class ProductController {
         return productService.findByEan(ean);
     }
 
+    // ─── NAVEGACIÓN: Filtrar por categoría ─────────────────
+
+    @QueryMapping
+    public List<ProductDTO> productsByCategory(@Argument Integer categoryId) {
+        return productService.findByCategory(categoryId);
+    }
+
+    // ─── COMPARADOR: Producto con todos sus precios ────────
+
+    @QueryMapping
+    public ProductComparisonDTO compareProduct(@Argument Integer productId) {
+        return productService.compareProduct(productId);
+    }
+
+    // ─── OPTIMIZACIÓN DE CESTA ─────────────────────────────
+
+    @QueryMapping
+    public BasketOptimizationDTO optimizeBasket(@Argument List<Integer> productIds) {
+        return productService.optimizeBasket(productIds);
+    }
+
+    // ─── CRUD Mutations ───────────────────────────────────
+
     @MutationMapping
-    public Product createProduct(@Argument String name, @Argument String ean, 
-                                 @Argument String brand, @Argument Integer categoryId) {
+    public ProductDTO createProduct(@Argument String name, @Argument String ean,
+                                    @Argument String brand, @Argument Integer categoryId) {
         return productService.create(name, ean, brand, categoryId);
     }
 
     @MutationMapping
-    public Product updateProduct(@Argument Integer id, @Argument String name, 
-                                 @Argument String brand, @Argument String image_url) {
+    public ProductDTO updateProduct(@Argument Integer id, @Argument String name,
+                                    @Argument String brand, @Argument String image_url) {
         return productService.update(id, name, brand, image_url);
     }
 
