@@ -43,9 +43,6 @@ public class PriceHistory {
     @Column(name = "recorded_at")
     private LocalDateTime recordedAt;
 
-
-    // Constructors
-
     public PriceHistory() {
     }
 

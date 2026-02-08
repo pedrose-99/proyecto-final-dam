@@ -1,14 +1,11 @@
 package com.smartcart.smartcart.modules.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
-@Data
-public class LoginRequest 
-{
+public record LoginRequest(
     @NotBlank(message = "El email es obligatorio")
-    private String email;
+    String email,
 
     @NotBlank(message = "La contraseña es obligatoria")
-    private String password;
-}
+    String password
+) {}

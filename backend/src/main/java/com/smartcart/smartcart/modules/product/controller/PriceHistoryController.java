@@ -36,18 +36,7 @@ public class PriceHistoryController {
     // ─── SINCRONIZACIÓN: El Scraper llama a esto ───────────
 
     @MutationMapping
-    public PriceHistoryDTO registerNewPrice(
-            @Argument Integer productId,
-            @Argument Integer storeId,
-            @Argument Double price,
-            @Argument Double originalPrice,
-            @Argument Boolean isOnSale) {
-        PriceUpdateDTO input = new PriceUpdateDTO();
-        input.setProductId(productId);
-        input.setStoreId(storeId);
-        input.setPrice(price);
-        input.setOriginalPrice(originalPrice);
-        input.setIsOnSale(isOnSale);
+    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) { // Usamos el DTO como entrada
         return priceHistoryService.register(input);
     }
 }

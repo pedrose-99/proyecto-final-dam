@@ -16,6 +16,17 @@ extend type Mutation {
     ): PriceHistoryDTO
 }
 
+# El paquete que envía el Scraper
+input PriceUpdateInput {
+    productId: Int!
+    storeId: Int!
+    price: Float!
+    originalPrice: Float
+    isOnSale: Boolean
+    stock: Int
+    externaId: Int
+}
+
 type PriceHistoryDTO {
     priceHistoryId: ID
     price: Float

@@ -30,6 +30,6 @@ type ProductStoreDTO {
     url: String
     available: Boolean
     stock: Int
-    externaId: Int
+    externaId: String
     unit: String
 }

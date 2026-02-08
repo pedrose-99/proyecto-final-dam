@@ -11,5 +11,5 @@ public class PriceUpdateDTO {
     private Double originalPrice;
     private Boolean isOnSale;
     private Integer stock;      
-    private Integer externaId;
+    private String externaId;
 }

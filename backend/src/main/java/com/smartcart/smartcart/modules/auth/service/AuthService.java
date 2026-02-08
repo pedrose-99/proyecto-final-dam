@@ -32,12 +32,12 @@ public class AuthService
 
     public AuthResponse register(RegisterRequest request)
     {
-        if (userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.existsByEmail(request.email()))
         {
             throw new RuntimeException("El email ya está registrado");
         }
 
-        if (userRepository.existsByUsername(request.getUsername()))
+        if (userRepository.existsByUsername(request.username()))
         {
             throw new RuntimeException("El username ya está en uso");
         }
@@ -46,9 +46,9 @@ public class AuthService
                 .orElseThrow(() -> new RuntimeException("Rol USER no encontrado"));
 
         User user = new User();
-        user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.email());
+        user.setUsername(request.username());
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(userRole);
 
         User savedUser = userRepository.save(user);
@@ -72,15 +72,14 @@ public class AuthService
     {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
+                        request.email(),
+                        request.password()
                 )
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Revocar todos los tokens anteriores del usuario
         revokeAllUserTokens(user);
 
         String accessToken = jwtTokenProvider.generateAccessToken(authentication);
@@ -100,14 +99,13 @@ public class AuthService
 
     public AuthResponse refreshToken(RefreshTokenRequest request)
     {
-        String refreshToken = request.getRefreshToken();
+        String refreshToken = request.refreshToken();
 
         if (!jwtTokenProvider.validateToken(refreshToken))
         {
             throw new RuntimeException("Refresh token inválido o expirado");
         }
 
-        // Verificar que el token existe en BD y no está revocado
         Token storedToken = tokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new RuntimeException("Refresh token no encontrado"));
 
@@ -125,10 +123,8 @@ public class AuthService
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Revocar todos los tokens anteriores
         revokeAllUserTokens(user);
 
-        // Generar nuevos tokens
         String newAccessToken = jwtTokenProvider.generateAccessTokenFromEmail(email);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(email);
 
