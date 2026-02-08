@@ -2,8 +2,8 @@ package com.smartcart.smartcart.modules.scraping.controller;
 
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.scraping.dto.ScrapingResult;
-import com.smartcart.smartcart.modules.scraping.scraper.AlcampoScraper;
-import com.smartcart.smartcart.modules.scraping.service.AlcampoScrapingService;
+import com.smartcart.smartcart.modules.scraping.scraper.CarrefourScraper;
+import com.smartcart.smartcart.modules.scraping.service.CarrefourScrapingService;
 import com.smartcart.smartcart.modules.scraping.service.ProductSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,31 +17,31 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/admin/scraping/alcampo")
+@RequestMapping("/api/admin/scraping/carrefour")
 @RequiredArgsConstructor
-public class AlcampoScrapingController
+public class CarrefourScrapingController
 {
 
-    private final AlcampoScrapingService alcampoService;
+    private final CarrefourScrapingService carrefourService;
     private final ProductSyncService productSyncService;
 
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus()
     {
         return ResponseEntity.ok(Map.of(
-            "store", "alcampo",
-            "enabled", alcampoService.isEnabled()
+            "store", "carrefour",
+            "enabled", carrefourService.isEnabled()
         ));
     }
 
     @PostMapping("/sync/all")
     public ResponseEntity<Map<String, Object>> syncAll()
     {
-        log.info("Sincronizando todos los productos de Alcampo");
+        log.info("Sincronizando todos los productos de Carrefour");
 
-        ScrapingResult scrapingResult = alcampoService.scrapeAll();
+        ScrapingResult scrapingResult = carrefourService.scrapeAll();
         ProductSyncService.SyncResult syncResult = productSyncService.syncProducts(
-            scrapingResult.getProducts(), "alcampo");
+            scrapingResult.getProducts(), "carrefour");
 
         return ResponseEntity.ok(Map.of(
             "scraped", scrapingResult.getTotalProducts(),
@@ -58,14 +58,14 @@ public class AlcampoScrapingController
     public ResponseEntity<Map<String, Object>> enrichEan(
             @RequestParam(value = "limit", defaultValue = "100") int limit)
     {
-        log.info("Iniciando enriquecimiento de EAN para productos de Alcampo (limite: {})", limit);
+        log.info("Iniciando enriquecimiento de EAN para productos de Carrefour (limite: {})", limit);
 
-        List<ProductStore> productsWithoutEan = productSyncService.findProductsWithoutEan(4);
+        List<ProductStore> productsWithoutEan = productSyncService.findProductsWithoutEan(3);
 
         if (productsWithoutEan.isEmpty())
         {
             return ResponseEntity.ok(Map.of(
-                "store", "alcampo",
+                "store", "carrefour",
                 "message", "No hay productos sin EAN para enriquecer",
                 "totalWithoutEan", 0
             ));
@@ -75,8 +75,8 @@ public class AlcampoScrapingController
             .limit(limit)
             .toList();
 
-        Map<String, AlcampoScraper.ProductDetail> details =
-            alcampoService.getProductDetails(productsToEnrich);
+        Map<String, CarrefourScraper.ProductDetail> details =
+            carrefourService.getProductDetails(productsToEnrich);
 
         Map<String, String> eanMap = details.entrySet().stream()
             .filter(e -> e.getValue().ean() != null)
@@ -86,7 +86,7 @@ public class AlcampoScrapingController
             productSyncService.enrichProductsWithEanMap(productsToEnrich, eanMap);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("store", "alcampo");
+        response.put("store", "carrefour");
         response.put("totalWithoutEan", productsWithoutEan.size());
         response.put("processed", productsToEnrich.size());
         response.put("enriched", result.enriched);

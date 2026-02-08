@@ -2,7 +2,7 @@ package com.smartcart.smartcart.modules.scraping.service;
 
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.scraping.dto.ScrapingResult;
-import com.smartcart.smartcart.modules.scraping.scraper.AlcampoScraper;
+import com.smartcart.smartcart.modules.scraping.scraper.CarrefourScraper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,31 +13,31 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AlcampoScrapingService
+public class CarrefourScrapingService
 {
 
-    private final AlcampoScraper alcampoScraper;
+    private final CarrefourScraper carrefourScraper;
 
     public ScrapingResult scrapeAll()
     {
-        if (!alcampoScraper.isEnabled())
+        if (!carrefourScraper.isEnabled())
         {
-            log.warn("[alcampo] Scraping deshabilitado");
+            log.warn("[carrefour] Scraping deshabilitado");
             ScrapingResult result = new ScrapingResult();
-            result.setStoreName("alcampo");
+            result.setStoreName("carrefour");
             result.addError("config", "Scraping deshabilitado");
             return result;
         }
-        return alcampoScraper.scrape();
+        return carrefourScraper.scrape();
     }
 
-    public Map<String, AlcampoScraper.ProductDetail> getProductDetails(List<ProductStore> productStores)
+    public Map<String, CarrefourScraper.ProductDetail> getProductDetails(List<ProductStore> productStores)
     {
-        return alcampoScraper.fetchProductDetails(productStores);
+        return carrefourScraper.fetchProductDetails(productStores);
     }
 
     public boolean isEnabled()
     {
-        return alcampoScraper.isEnabled();
+        return carrefourScraper.isEnabled();
     }
 }

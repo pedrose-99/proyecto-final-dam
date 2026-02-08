@@ -1,5 +1,8 @@
 package com.smartcart.smartcart.modules.scraping.scraper;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.scraping.config.ScrapingConfig;
 import com.smartcart.smartcart.modules.scraping.dto.ScrapedProduct;
 import com.smartcart.smartcart.modules.scraping.dto.ScrapingResult;
@@ -18,8 +21,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,10 +43,12 @@ public class AlcampoScraper extends BaseScraper
 
     private String baseUrl;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     public AlcampoScraper()
     {
         this.restTemplate = new RestTemplate();
+        this.objectMapper = new ObjectMapper();
     }
 
     @PostConstruct
@@ -601,6 +608,371 @@ public class AlcampoScraper extends BaseScraper
         }
 
         return categories;
+    }
+
+    // ==================== Enriquecimiento EAN desde paginas de detalle ====================
+
+    public record ProductDetail(String externalId, String ean) {}
+
+    /**
+     * Obtiene el EAN de un producto de Alcampo accediendo a su pagina de detalle.
+     * Busca en JSON-LD, __NEXT_DATA__, JSON embebido y HTML.
+     */
+    public ProductDetail fetchProductDetail(String externalId, String productUrl)
+    {
+        if (productUrl == null || productUrl.isBlank())
+        {
+            return null;
+        }
+
+        try
+        {
+            rateLimiter.waitIfNeeded();
+            Document doc = fetchPage(productUrl);
+            String html = doc.html();
+
+            // Estrategia 1: JSON-LD (schema.org)
+            String ean = extractEanFromJsonLd(doc);
+
+            // Estrategia 2: __NEXT_DATA__ (Next.js)
+            if (ean == null)
+            {
+                ean = extractEanFromNextData(html);
+            }
+
+            // Estrategia 3: JSON embebido con patrones regex
+            if (ean == null)
+            {
+                ean = extractEanFromEmbeddedJson(html);
+            }
+
+            // Estrategia 4: HTML directo
+            if (ean == null)
+            {
+                ean = extractEanFromHtml(html);
+            }
+
+            if (ean != null)
+            {
+                log.debug("[{}] EAN encontrado para {}: {}", STORE_NAME, externalId, ean);
+            }
+            else
+            {
+                log.debug("[{}] No se encontro EAN para {}", STORE_NAME, externalId);
+            }
+
+            return new ProductDetail(externalId, ean);
+        }
+        catch (Exception e)
+        {
+            log.warn("[{}] Error obteniendo detalle de {}: {}", STORE_NAME, productUrl, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene detalles de multiples productos en paralelo.
+     */
+    public Map<String, ProductDetail> fetchProductDetails(List<ProductStore> productStores)
+    {
+        ConcurrentHashMap<String, ProductDetail> details = new ConcurrentHashMap<>();
+
+        List<ProductStore> withUrl = productStores.stream()
+            .filter(ps -> ps.getUrl() != null && !ps.getUrl().isBlank())
+            .filter(ps -> ps.getExternaId() != null)
+            .toList();
+
+        log.info("[{}] Obteniendo detalles de {} productos en paralelo ({} con URL)...",
+                 STORE_NAME, productStores.size(), withUrl.size());
+
+        if (withUrl.isEmpty())
+        {
+            return details;
+        }
+
+        int parallelism = 5;
+        ExecutorService executor = Executors.newFixedThreadPool(parallelism);
+        AtomicInteger processed = new AtomicInteger(0);
+        AtomicInteger errors = new AtomicInteger(0);
+
+        List<CompletableFuture<Void>> futures = withUrl.stream()
+            .map(ps -> CompletableFuture.runAsync(() -> {
+                try
+                {
+                    ProductDetail detail = fetchProductDetail(ps.getExternaId(), ps.getUrl());
+                    if (detail != null && detail.ean() != null)
+                    {
+                        details.put(ps.getExternaId(), detail);
+                    }
+                    int count = processed.incrementAndGet();
+                    if (count % 50 == 0)
+                    {
+                        log.info("[{}] Progreso enriquecimiento: {}/{} productos procesados",
+                                 STORE_NAME, count, withUrl.size());
+                    }
+                }
+                catch (Exception e)
+                {
+                    errors.incrementAndGet();
+                    log.warn("[{}] Error obteniendo detalle de {}: {}",
+                             STORE_NAME, ps.getExternaId(), e.getMessage());
+                }
+            }, executor))
+            .toList();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executor.shutdown();
+
+        log.info("[{}] Detalles obtenidos: {}/{} productos con EAN ({} errores)",
+                 STORE_NAME, details.size(), withUrl.size(), errors.get());
+
+        return details;
+    }
+
+    private String extractEanFromJsonLd(Document doc)
+    {
+        Elements jsonLdScripts = doc.select("script[type=application/ld+json]");
+        for (Element script : jsonLdScripts)
+        {
+            try
+            {
+                String json = script.html();
+                JsonNode root = objectMapper.readTree(json);
+
+                if (root.has("@type") && "Product".equals(root.get("@type").asText()))
+                {
+                    String ean = extractEanFromProductNode(root);
+                    if (ean != null)
+                    {
+                        return ean;
+                    }
+                }
+
+                if (root.isArray())
+                {
+                    for (JsonNode node : root)
+                    {
+                        if (node.has("@type") && "Product".equals(node.get("@type").asText()))
+                        {
+                            String ean = extractEanFromProductNode(node);
+                            if (ean != null)
+                            {
+                                return ean;
+                            }
+                        }
+                    }
+                }
+
+                if (root.has("@graph"))
+                {
+                    for (JsonNode node : root.get("@graph"))
+                    {
+                        if (node.has("@type") && "Product".equals(node.get("@type").asText()))
+                        {
+                            String ean = extractEanFromProductNode(node);
+                            if (ean != null)
+                            {
+                                return ean;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                log.debug("[{}] Error parseando JSON-LD para EAN: {}", STORE_NAME, e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private String extractEanFromProductNode(JsonNode node)
+    {
+        String[] eanFields = {"gtin13", "gtin", "gtin14", "gtin8", "ean"};
+        for (String field : eanFields)
+        {
+            if (node.has(field) && !node.get(field).isNull())
+            {
+                String value = node.get(field).asText().trim();
+                if (isValidEan(value))
+                {
+                    return value;
+                }
+            }
+        }
+
+        String sku = node.has("sku") ? node.get("sku").asText().trim() : null;
+        if (sku != null && isValidEan(sku))
+        {
+            return sku;
+        }
+
+        if (node.has("offers"))
+        {
+            JsonNode offers = node.get("offers");
+            if (offers.isArray() && offers.size() > 0)
+            {
+                offers = offers.get(0);
+            }
+            for (String field : eanFields)
+            {
+                if (offers.has(field) && !offers.get(field).isNull())
+                {
+                    String value = offers.get(field).asText().trim();
+                    if (isValidEan(value))
+                    {
+                        return value;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String extractEanFromNextData(String html)
+    {
+        Pattern nextDataPattern = Pattern.compile(
+            "<script\\s+id=\"__NEXT_DATA__\"[^>]*>([\\s\\S]*?)</script>"
+        );
+        Matcher nextMatcher = nextDataPattern.matcher(html);
+        if (!nextMatcher.find())
+        {
+            return null;
+        }
+
+        try
+        {
+            JsonNode root = objectMapper.readTree(nextMatcher.group(1));
+            JsonNode props = root.path("props").path("pageProps");
+
+            // Buscar EAN en el producto dentro de pageProps
+            return findEanInJsonNode(props);
+        }
+        catch (Exception e)
+        {
+            log.debug("[{}] Error parseando __NEXT_DATA__ para EAN: {}", STORE_NAME, e.getMessage());
+        }
+        return null;
+    }
+
+    private String findEanInJsonNode(JsonNode node)
+    {
+        if (node == null || node.isMissingNode())
+        {
+            return null;
+        }
+
+        // Buscar campos directos de EAN
+        String[] eanFields = {"ean", "gtin13", "gtin", "barcode"};
+        for (String field : eanFields)
+        {
+            if (node.has(field) && !node.get(field).isNull())
+            {
+                String value = node.get(field).asText().trim();
+                if (isValidEan(value))
+                {
+                    return value;
+                }
+            }
+        }
+
+        // Buscar en campos de producto
+        String[] productFields = {"product", "productDetail", "productData", "item"};
+        for (String field : productFields)
+        {
+            if (node.has(field) && node.get(field).isObject())
+            {
+                String ean = findEanInJsonNode(node.get(field));
+                if (ean != null)
+                {
+                    return ean;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String extractEanFromEmbeddedJson(String html)
+    {
+        Pattern eanPattern = Pattern.compile("\"ean\"\\s*:\\s*\"(\\d{8,14})\"");
+        Matcher matcher = eanPattern.matcher(html);
+        if (matcher.find())
+        {
+            String ean = matcher.group(1);
+            if (isValidEan(ean))
+            {
+                return ean;
+            }
+        }
+
+        Pattern gtinPattern = Pattern.compile("\"gtin13\"\\s*:\\s*\"(\\d{13})\"");
+        matcher = gtinPattern.matcher(html);
+        if (matcher.find())
+        {
+            return matcher.group(1);
+        }
+
+        Pattern gtinGenPattern = Pattern.compile("\"gtin\"\\s*:\\s*\"(\\d{8,14})\"");
+        matcher = gtinGenPattern.matcher(html);
+        if (matcher.find())
+        {
+            String ean = matcher.group(1);
+            if (isValidEan(ean))
+            {
+                return ean;
+            }
+        }
+
+        Pattern barcodePattern = Pattern.compile("\"barcode\"\\s*:\\s*\"(\\d{8,14})\"");
+        matcher = barcodePattern.matcher(html);
+        if (matcher.find())
+        {
+            String ean = matcher.group(1);
+            if (isValidEan(ean))
+            {
+                return ean;
+            }
+        }
+
+        return null;
+    }
+
+    private String extractEanFromHtml(String html)
+    {
+        Pattern dataEanPattern = Pattern.compile("data-ean=\"(\\d{8,14})\"");
+        Matcher matcher = dataEanPattern.matcher(html);
+        if (matcher.find())
+        {
+            String ean = matcher.group(1);
+            if (isValidEan(ean))
+            {
+                return ean;
+            }
+        }
+
+        Pattern labelPattern = Pattern.compile("(?:EAN|C.digo de barras|GTIN|Barcode)[:\\s]+(\\d{8,14})");
+        matcher = labelPattern.matcher(html);
+        if (matcher.find())
+        {
+            String ean = matcher.group(1);
+            if (isValidEan(ean))
+            {
+                return ean;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isValidEan(String ean)
+    {
+        if (ean == null || !ean.matches("\\d+"))
+        {
+            return false;
+        }
+        return ean.length() == 8 || ean.length() == 13 || ean.length() == 14;
     }
 
     private record CategoryInfo(String url, String name, String id) {}
