@@ -1,0 +1,128 @@
+<mat-toolbar class="header">
+  <!-- Logo -->
+  <a class="logo" (click)="goHome()">
+    <mat-icon class="logo-icon">shopping_cart</mat-icon>
+    <span class="logo-text">SmartCart</span>
+  </a>
+
+  <!-- Buscador -->
+  <div class="search-container">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        [formControl]="searchControl"
+        [matAutocomplete]="auto"
+        placeholder="Buscar productos..."
+        (keyup.enter)="onSearchSubmit()"
+      >
+      <mat-autocomplete
+        #auto="matAutocomplete"
+        class="search-autocomplete"
+        (optionSelected)="onProductSelected($event.option.value)"
+      >
+        <!-- Resultados de busqueda -->
+        @for (product of searchResults; track product.id) {
+          <mat-option [value]="product" class="search-result-option">
+            <div class="search-result-item">
+              <img
+                [src]="product.imageUrl || 'assets/images/placeholder.svg'"
+                [alt]="product.name"
+                class="search-result-image"
+              >
+              <div class="search-result-info">
+                <span class="search-result-name">{{ product.name }}</span>
+                @if (product.brand) {
+                  <span class="search-result-brand">{{ product.brand }}</span>
+                }
+                <span class="search-result-category">{{ product.categoryName }}</span>
+              </div>
+            </div>
+          </mat-option>
+        }
+
+        <!-- Ver todos los resultados -->
+        @if (searchResults.length > 0) {
+          <mat-option class="view-all-option" (click)="viewAllResults()">
+            <div class="view-all">
+              <span>Ver todos los resultados</span>
+              <mat-icon>arrow_forward</mat-icon>
+            </div>
+          </mat-option>
+        }
+
+        <!-- Sin resultados -->
+        @if (searchControl.value && searchControl.value.length >= 2 && searchResults.length === 0 && !isSearching) {
+          <mat-option disabled class="no-results">
+            <span>No se encontraron productos</span>
+          </mat-option>
+        }
+
+        <!-- Cargando -->
+        @if (isSearching) {
+          <mat-option disabled class="loading-option">
+            <span>Buscando...</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+  </div>
+
+  <span class="spacer"></span>
+
+  <!-- Acciones -->
+  <div class="header-actions">
+    <!-- Favoritos -->
+    <button mat-icon-button (click)="goToFavorites()" aria-label="Favoritos">
+      <mat-icon [matBadge]="favoritesCount > 0 ? favoritesCount : null" matBadgeColor="accent">
+        favorite_border
+      </mat-icon>
+    </button>
+
+    <!-- Carrito / Lista -->
+    <button mat-icon-button (click)="goToCart()" aria-label="Lista de compra">
+      <mat-icon [matBadge]="cartCount > 0 ? cartCount : null" matBadgeColor="accent">
+        shopping_basket
+      </mat-icon>
+    </button>
+
+    <!-- Menu Usuario -->
+    <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menu de usuario">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu" class="user-menu">
+      <div class="menu-header">
+        <mat-icon>account_circle</mat-icon>
+        <div class="menu-header-info">
+          <span class="menu-header-name">{{ currentUser?.username }}</span>
+          <span class="menu-header-email">{{ currentUser?.email }}</span>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <button mat-menu-item (click)="goToLists()">
+        <mat-icon>list_alt</mat-icon>
+        <span>Mis listas</span>
+      </button>
+
+      <button mat-menu-item (click)="goToHistory()">
+        <mat-icon>history</mat-icon>
+        <span>Historial</span>
+      </button>
+
+      <button mat-menu-item (click)="goToSettings()">
+        <mat-icon>settings</mat-icon>
+        <span>Configuracion</span>
+      </button>
+
+      <mat-divider></mat-divider>
+
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Cerrar sesion</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>

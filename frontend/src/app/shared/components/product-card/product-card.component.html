@@ -1,0 +1,56 @@
+<mat-card class="product-card" (click)="onViewProduct()">
+  <!-- Header con favorito -->
+  <div class="card-header">
+    <button
+      mat-icon-button
+      class="favorite-btn"
+      [class.is-favorite]="product.isFavorite"
+      (click)="onToggleFavorite($event)"
+      matTooltip="Anadir a favoritos"
+    >
+      <mat-icon>{{ product.isFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- Imagen -->
+  <div class="card-image">
+    <img
+      [src]="product.imageUrl || 'assets/images/placeholder.svg'"
+      [alt]="product.name"
+      (error)="onImageError($event)"
+    >
+  </div>
+
+  <!-- Contenido -->
+  <mat-card-content class="card-content">
+    <h3 class="product-name">{{ product.name }}</h3>
+    <span class="product-brand">{{ product.brand || '&nbsp;' }}</span>
+    <span class="product-category">{{ product.categoryName }}</span>
+  </mat-card-content>
+
+  <!-- Acciones -->
+  <mat-card-actions class="card-actions">
+    <button
+      mat-flat-button
+      class="view-prices-btn"
+      (click)="onViewProduct(); $event.stopPropagation()"
+    >
+      <mat-icon>compare_arrows</mat-icon>
+      <span>Ver precios</span>
+    </button>
+
+    <button
+      mat-icon-button
+      class="add-btn"
+      [class.in-list]="isInList"
+      (click)="onAddToList(); $event.stopPropagation()"
+      matTooltip="Anadir a lista"
+    >
+      @if (isInList) {
+        <mat-icon>check_circle</mat-icon>
+      } @else {
+        <mat-icon>add_circle_outline</mat-icon>
+      }
+    </button>
+  </mat-card-actions>
+</mat-card>

@@ -1,1 +1,80 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+:root {
+  --primary: #14b8a6;
+  --navy: #0f172a;
+  --background-light: #f1f5f9;
+  --card-light: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --white: #ffffff;
+  
+  /* Variables para el modo oscuro (se activan con la clase .dark) */
+  --bg-color: var(--background-light);
+  --card-bg: var(--card-light);
+  --text-color: var(--text-main);
+}
+
+.dark {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-color: #f1f5f9;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+/* CSS Variables */
+:root {
+  --smartcart-primary: #1e3a5f;
+  --smartcart-primary-light: #2c5282;
+  --smartcart-accent: #3b82f6;
+  --smartcart-accent-light: #dbeafe;
+  --smartcart-success: #22c55e;
+  --smartcart-warning: #f59e0b;
+  --smartcart-danger: #ef4444;
+  --smartcart-white: #ffffff;
+  --smartcart-background: #f5f7fa;
+  --smartcart-text: #1e293b;
+  --smartcart-text-light: #64748b;
+  --smartcart-border: #e2e8f0;
+}
+
+/* Ensure Angular Material cards don't have overflow hidden */
+.mat-mdc-card {
+  overflow: visible !important;
+}

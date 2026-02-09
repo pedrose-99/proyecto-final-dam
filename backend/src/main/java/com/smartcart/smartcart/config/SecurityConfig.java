@@ -46,8 +46,12 @@ public class SecurityConfig
                         "/swagger-resources/**",
                         "/webjars/**"
                     ).permitAll()
+                    // GraphQL
+                    .requestMatchers("/graphql", "/graphiql").permitAll()
                     // Rutas públicas
                     .requestMatchers("/api/auth/**").permitAll()
+                    // Scraping endpoints (temporal para testing)
+                    .requestMatchers("/api/admin/scraping/**").permitAll()
                     // Rutas de admin
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     // Todo lo demás requiere autenticación

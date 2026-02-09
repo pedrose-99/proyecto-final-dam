@@ -1,38 +1,179 @@
 <div class="home-container">
-  <!-- Toolbar / Header -->
-  <mat-toolbar class="toolbar">
-    <span class="logo">SmartCart</span>
+  <!-- Filtros y contador -->
+  <section class="filters-section">
+    <div class="filters-header">
+      <span class="products-count">
+        <mat-icon>inventory_2</mat-icon>
+        {{ totalProducts | number }} productos encontrados
+      </span>
 
-    <span class="spacer"></span>
+      <div class="filters-controls">
+        <!-- Categorías con búsqueda -->
+        <div class="category-filter">
+          <mat-form-field appearance="outline" class="category-input">
+            <mat-label>Buscar categoría</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput
+                   #categoryInput
+                   [formControl]="categorySearchControl"
+                   [matAutocomplete]="categoryAuto"
+                   placeholder="Escribe para buscar..."
+                   (focus)="onCategoryInputFocus()">
+            <mat-icon matSuffix class="dropdown-icon">arrow_drop_down</mat-icon>
+            <mat-autocomplete #categoryAuto="matAutocomplete"
+                              (optionSelected)="onCategorySelected($event)"
+                              class="category-autocomplete"
+                              autoActiveFirstOption>
+              @for (category of filteredCategories; track category.id) {
+                <mat-option [value]="category">
+                  {{ category.name }}
+                </mat-option>
+              }
+              @if (filteredCategories.length === 0) {
+                <mat-option disabled>No se encontraron categorías</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
 
-    <!-- Menú hamburguesa -->
-    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Menú">
-      <mat-icon>menu</mat-icon>
-    </button>
+        <!-- Chips de categorías seleccionadas -->
+        @if (selectedCategories.length > 0) {
+          <div class="selected-categories">
+            @for (category of selectedCategories; track category.id) {
+              <mat-chip-row (removed)="removeCategory(category)">
+                {{ category.name }}
+                <button matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip-row>
+            }
+          </div>
+        }
 
-    <mat-menu #menu="matMenu">
-      <div class="menu-header">
-        <mat-icon>account_circle</mat-icon>
-        <span>{{ currentUser?.username }}</span>
+        <!-- Tiendas con búsqueda -->
+        <div class="store-filter">
+          <mat-form-field appearance="outline" class="store-input">
+            <mat-label>Filtrar por tienda</mat-label>
+            <mat-icon matPrefix>store</mat-icon>
+            <input matInput
+                   #storeInput
+                   [formControl]="storeSearchControl"
+                   [matAutocomplete]="storeAuto"
+                   placeholder="Selecciona tiendas..."
+                   (focus)="onStoreInputFocus()">
+            <mat-icon matSuffix class="dropdown-icon">arrow_drop_down</mat-icon>
+            <mat-autocomplete #storeAuto="matAutocomplete"
+                              (optionSelected)="onStoreSelected($event)"
+                              class="store-autocomplete"
+                              autoActiveFirstOption>
+              @for (store of filteredStores; track store.id) {
+                <mat-option [value]="store" class="store-option">
+                  <span class="store-option-content">
+                    <img [src]="store.logoUrl" [alt]="store.name" class="store-logo" onerror="this.style.display='none'">
+                    <span class="store-name">{{ store.name }}</span>
+                    <span class="store-product-count">({{ store.productCount }} productos)</span>
+                  </span>
+                </mat-option>
+              }
+              @if (filteredStores.length === 0) {
+                <mat-option disabled>No se encontraron tiendas</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+
+        <!-- Chips de tiendas seleccionadas -->
+        @if (selectedStores.length > 0) {
+          <div class="selected-stores">
+            @for (store of selectedStores; track store.id) {
+              <mat-chip-row (removed)="removeStore(store)" class="store-chip">
+                <img matChipAvatar [src]="store.logoUrl" [alt]="store.name" class="chip-store-logo" onerror="this.style.display='none'">
+                {{ store.name }}
+                <button matChipRemove>
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip-row>
+            }
+          </div>
+        }
+
+        <!-- Ordenar -->
+        <mat-form-field appearance="outline" class="filter-select">
+          <mat-label>Ordenar por</mat-label>
+          <mat-select [formControl]="filterForm.controls.sortBy">
+            <mat-option value="relevance">Relevancia</mat-option>
+            <mat-option value="name_asc">Nombre: A-Z</mat-option>
+            <mat-option value="name_desc">Nombre: Z-A</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Limpiar -->
+        @if (activeFilters.length > 0 || selectedCategories.length > 0 || selectedStores.length > 0) {
+          <button mat-button color="warn" (click)="clearAllFilters()">
+            <mat-icon>delete_outline</mat-icon>
+            Limpiar
+          </button>
+        }
       </div>
+    </div>
 
-      <mat-divider></mat-divider>
+    <!-- Filtros activos -->
+    @if (activeFilters.length > 0) {
+      <div class="active-filters">
+        <span class="active-filters-label">Filtros activos:</span>
+        @for (filter of activeFilters; track filter.key) {
+          <span class="filter-tag">
+            {{ filter.label }}
+            <mat-icon (click)="removeFilter(filter.key)">close</mat-icon>
+          </span>
+        }
+      </div>
+    }
+  </section>
 
-      <button mat-menu-item (click)="goToProfile()">
-        <mat-icon>person</mat-icon>
-        <span>Mi Perfil</span>
-      </button>
+  <!-- Grid de productos -->
+  <section class="products-section">
+    @if (isLoading) {
+      <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>Cargando productos...</p>
+      </div>
+    } @else if (products.length === 0) {
+      <div class="empty-state">
+        <mat-icon>search_off</mat-icon>
+        <h3>No encontramos productos</h3>
+        <p>Prueba con otros terminos de busqueda o ajusta los filtros.</p>
+        <button mat-flat-button color="primary" (click)="clearAllFilters()">
+          Limpiar filtros
+        </button>
+      </div>
+    } @else {
+      <div class="products-grid">
+        @for (product of products; track product.id) {
+          <app-product-card
+            [product]="product"
+            [isInList]="isProductInList(product.id)"
+            (addToList)="onAddToList($event)"
+            (toggleFavorite)="onToggleFavorite($event)"
+            (viewProduct)="onViewProduct($event)"
+          />
+        }
+      </div>
+    }
+  </section>
 
-      <button mat-menu-item (click)="logout()">
-        <mat-icon>logout</mat-icon>
-        <span>Cerrar Sesión</span>
-      </button>
-    </mat-menu>
-  </mat-toolbar>
-
-  <!-- Contenido principal -->
-  <main class="main-content">
-    <h1>Bienvenido, {{ currentUser?.username }}!</h1>
-    <p>Esta es la página principal de SmartCart.</p>
-  </main>
+  <!-- Paginacion -->
+  @if (products.length > 0) {
+    <section class="pagination-section">
+      <mat-paginator
+        [length]="totalProducts"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+        aria-label="Seleccionar pagina"
+      />
+    </section>
+  }
 </div>
