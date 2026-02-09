@@ -1,1 +1,13 @@
-<router-outlet></router-outlet>
+<div class="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-200">
+  
+
+  <router-outlet></router-outlet>
+
+  
+
+  <button 
+    (click)="toggleDarkMode()"
+    class="fixed bottom-6 right-6 bg-primary text-white p-3 rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center">
+    <span class="material-icons-outlined">{{ isDark ? 'light_mode' : 'dark_mode' }}</span>
+  </button>
+</div>

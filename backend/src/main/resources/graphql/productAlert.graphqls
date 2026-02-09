@@ -1,0 +1,25 @@
+extend type Query {
+    # Todas las alertas activas
+    activeAlerts: [ProductAlertDTO]
+    # Alertas de un producto específico
+    alertsByProduct(productId: ID!): [ProductAlertDTO]
+}
+
+extend type Mutation {
+    # Guardar un producto como favorito con un precio objetivo
+    createAlert(productId: ID!, targetPrice: Float!): ProductAlertDTO
+    # Desactivar una alerta
+    deactivateAlert(alertId: ID!): ProductAlertDTO
+}
+
+type ProductAlertDTO {
+    alertId: ID
+    productId: Int
+    productName: String
+    productEan: String
+    targetPrice: Float
+    currentBestPrice: Float
+    active: Boolean
+    triggered: Boolean
+    createdAt: String
+}

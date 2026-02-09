@@ -9,9 +9,14 @@ import com.smartcart.smartcart.modules.product.entity.PriceHistory;
 
 @Repository
 public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Integer> {
-    
-    // Corregido: Navegamos a la propiedad 'storeProductId' dentro del objeto 'productStoreId'
-    // El nombre del método indica a Spring Data: "Busca en el campo productStoreId, su propiedad storeProductId"
+
+    // Historial por relación ProductStore
     List<PriceHistory> findByProductStoreId_StoreProductId(Integer storeProductId);
 
+    // Historial de un producto en TODAS las tiendas, ordenado por fecha descendente
+    List<PriceHistory> findByProductStoreId_ProductId_ProductIdOrderByRecordedAtDesc(Integer productId);
+
+    // Historial de un producto en UNA tienda concreta, ordenado por fecha descendente
+    List<PriceHistory> findByProductStoreId_ProductId_ProductIdAndProductStoreId_StoreId_StoreIdOrderByRecordedAtDesc(
+            Integer productId, Integer storeId);
 }

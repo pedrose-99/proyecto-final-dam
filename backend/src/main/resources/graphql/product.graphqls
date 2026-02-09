@@ -1,6 +1,8 @@
 extend type Query {
     allProducts(page: Int = 0, size: Int = 24): ProductPage
     productByEan(ean: String!): ProductDTO
+    compareProduct(productId: ID!): ProductComparisonDTO
+    optimizeBasket(productIds: [ID!]!): BasketOptimizationDTO
     productsByCategory(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
     productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
 }
@@ -25,6 +27,59 @@ type ProductDTO {
     id: ID
     name: String
     brand: String
-    categoryName: String # Nombre de la categoría ya procesado
+    ean: String
+    description: String
     imageUrl: String
+    quantity: Float
+    unit: String
+    categoryName: String
+    categoryId: Int
+}
+
+# ─── Comparador ─────────────────────────────────────────
+
+type ProductComparisonDTO {
+    productId: ID
+    name: String
+    brand: String
+    ean: String
+    imageUrl: String
+    categoryName: String
+    storePrices: [StorePriceDTO]
+    bestPrice: StorePriceDTO
+}
+
+type StorePriceDTO {
+    storeId: ID
+    storeName: String
+    storeLogo: String
+    currentPrice: Float
+    available: Boolean
+    stock: Int
+    url: String
+}
+
+# ─── Optimización de Cesta ──────────────────────────────
+
+type BasketOptimizationDTO {
+    storeOptions: [StoreBasketDTO]
+    cheapestStore: StoreBasketDTO
+    totalProducts: Int
+}
+
+type StoreBasketDTO {
+    storeId: ID
+    storeName: String
+    storeLogo: String
+    totalCost: Float
+    availableProducts: Int
+    totalProducts: Int
+    items: [BasketItemDTO]
+}
+
+type BasketItemDTO {
+    productId: ID
+    productName: String
+    price: Float
+    available: Boolean
 }
