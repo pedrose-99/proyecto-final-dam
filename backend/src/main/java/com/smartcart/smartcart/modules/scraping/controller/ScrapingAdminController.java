@@ -1,8 +1,6 @@
 package com.smartcart.smartcart.modules.scraping.controller;
 
-import com.smartcart.smartcart.modules.scraping.dto.ScrapedProduct;
 import com.smartcart.smartcart.modules.scraping.dto.ScrapingResult;
-import com.smartcart.smartcart.modules.scraping.scraper.MercadonaScraper;
 import com.smartcart.smartcart.modules.scraping.service.MercadonaScrapingService;
 import com.smartcart.smartcart.modules.scraping.service.ProductSyncService;
 import lombok.RequiredArgsConstructor;
@@ -32,68 +30,10 @@ public class ScrapingAdminController
         ));
     }
 
-    @GetMapping("/categories")
-    public ResponseEntity<List<MercadonaScraper.PublicCategoryInfo>> getCategories()
-    {
-        log.info("Obteniendo lista de categorias");
-        return ResponseEntity.ok(mercadonaService.getCategories());
-    }
-
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ScrapedProduct>> getProductsByCategory(
-            @PathVariable String categoryId)
-    {
-        log.info("Obteniendo productos de categoria {}", categoryId);
-        return ResponseEntity.ok(mercadonaService.getProductsByCategory(categoryId));
-    }
-
-    @GetMapping("/category/{categoryId}/search")
-    public ResponseEntity<List<ScrapedProduct>> searchInCategory(
-            @PathVariable String categoryId,
-            @RequestParam("q") String query)
-    {
-        log.info("Buscando '{}' en categoria {}", query, categoryId);
-        return ResponseEntity.ok(mercadonaService.searchInCategory(categoryId, query));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<ScrapedProduct>> searchAllProducts(
-            @RequestParam("q") String query,
-            @RequestParam(value = "categoryName", required = false) String categoryName)
-    {
-        log.info("Buscando '{}' (categoryName={})", query, categoryName);
-        return ResponseEntity.ok(mercadonaService.searchAllProducts(query, categoryName));
-    }
-
-    @PostMapping("/run")
-    public ResponseEntity<ScrapingResult> runFullScraping()
-    {
-        log.info("Iniciando scraping completo");
-        return ResponseEntity.ok(mercadonaService.scrapeAll());
-    }
-
-    @PostMapping("/sync/category/{categoryId}")
-    public ResponseEntity<Map<String, Object>> syncCategory(@PathVariable String categoryId)
-    {
-        log.info("Sincronizando categoria {}", categoryId);
-
-        List<ScrapedProduct> products = mercadonaService.getProductsByCategory(categoryId);
-        ProductSyncService.SyncResult result = productSyncService.syncProducts(products, "mercadona");
-
-        return ResponseEntity.ok(Map.of(
-            "categoryId", categoryId,
-            "scraped", products.size(),
-            "created", result.created,
-            "updated", result.updated,
-            "unchanged", result.unchanged,
-            "errors", result.errors
-        ));
-    }
-
     @PostMapping("/sync/all")
     public ResponseEntity<Map<String, Object>> syncAll()
     {
-        log.info("Sincronizando todos los productos");
+        log.info("Sincronizando todos los productos de Mercadona");
 
         ScrapingResult scrapingResult = mercadonaService.scrapeAll();
         ProductSyncService.SyncResult syncResult = productSyncService.syncProducts(
@@ -114,7 +54,7 @@ public class ScrapingAdminController
     public ResponseEntity<Map<String, Object>> enrichProductsWithEan(
             @RequestParam(value = "limit", defaultValue = "100") int limit)
     {
-        log.info("Enriqueciendo productos sin EAN (límite: {})", limit);
+        log.info("Enriqueciendo productos sin EAN (limite: {})", limit);
 
         var productsWithoutEan = productSyncService.findProductsWithoutEan(1);
 

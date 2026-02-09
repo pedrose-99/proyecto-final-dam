@@ -1,7 +1,18 @@
 extend type Query {
-    allProducts: [ProductDTO]
+    allProducts(page: Int = 0, size: Int = 24): ProductPage
     productByEan(ean: String!): ProductDTO
-    productsByCategory(categoryId: ID!): [ProductDTO]
+    productsByCategory(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
+    productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
+}
+
+type ProductPage {
+    content: [ProductDTO]
+    totalElements: Int
+    totalPages: Int
+    number: Int
+    size: Int
+    first: Boolean
+    last: Boolean
 }
 
 extend type Mutation {
@@ -11,6 +22,7 @@ extend type Mutation {
 }
 
 type ProductDTO {
+    id: ID
     name: String
     brand: String
     categoryName: String # Nombre de la categoría ya procesado

@@ -253,6 +253,45 @@ public class ProductSyncService {
         return result;
     }
 
+    @Transactional
+    public EnrichResult enrichProductsWithEanMap(List<ProductStore> productStores,
+                                                  java.util.Map<String, String> eanByExternalId) {
+        EnrichResult result = new EnrichResult();
+
+        for (ProductStore ps : productStores) {
+            try {
+                String externalId = ps.getExternaId();
+                if (externalId == null) {
+                    continue;
+                }
+
+                String ean = eanByExternalId.get(externalId);
+                if (ean == null) {
+                    result.notFound++;
+                    continue;
+                }
+
+                if (!ean.isBlank()) {
+                    Product product = ps.getProductId();
+                    product.setEan(ean);
+                    productRepository.save(product);
+                    result.enriched++;
+                    log.debug("EAN updated for product {}: {}", product.getName(), ean);
+                } else {
+                    result.noEan++;
+                }
+            } catch (Exception e) {
+                log.error("Error enriching product {}: {}", ps.getExternaId(), e.getMessage());
+                result.errors++;
+            }
+        }
+
+        log.info("Enrich (generic) completed: {} enriched, {} no EAN available, {} not found, {} errors",
+                result.enriched, result.noEan, result.notFound, result.errors);
+
+        return result;
+    }
+
     public List<ProductStore> findProductsWithoutEan(Integer storeId) {
         return productStoreRepository.findByStoreWithoutEan(storeId);
     }

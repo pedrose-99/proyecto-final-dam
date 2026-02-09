@@ -4,19 +4,42 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
+import com.smartcart.smartcart.modules.store.dto.StoreDTO;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
 
 @Service
 public class StoreService {
     private final StoreRepository storeRepository;
+    private final ProductStoreRepository productStoreRepository;
 
-    public StoreService(StoreRepository storeRepository) {
+    public StoreService(StoreRepository storeRepository, ProductStoreRepository productStoreRepository) {
         this.storeRepository = storeRepository;
+        this.productStoreRepository = productStoreRepository;
     }
 
-    public List<Store> findAll() { 
-        return storeRepository.findAll(); 
+    public List<Store> findAll() {
+        return storeRepository.findAll();
+    }
+
+    public List<StoreDTO> findAllWithProductCount() {
+        return storeRepository.findAll().stream()
+            .map(store -> {
+                Long count = productStoreRepository.countProductsByStoreId(store.getStoreId());
+                return new StoreDTO(
+                    store.getStoreId(),
+                    store.getName(),
+                    store.getSlug(),
+                    store.getLogo(),
+                    store.getWebsite(),
+                    store.getActive(),
+                    store.getScrapingUrl(),
+                    store.getScrapingConf(),
+                    count
+                );
+            })
+            .toList();
     }
 
     public Store findById(Integer id) {
