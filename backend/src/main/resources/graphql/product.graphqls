@@ -1,9 +1,20 @@
 extend type Query {
-    allProducts: [ProductDTO]
+    allProducts(page: Int = 0, size: Int = 24): ProductPage
     productByEan(ean: String!): ProductDTO
-    productsByCategory(categoryId: ID!): [ProductDTO]
     compareProduct(productId: ID!): ProductComparisonDTO
     optimizeBasket(productIds: [ID!]!): BasketOptimizationDTO
+    productsByCategory(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
+    productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
+}
+
+type ProductPage {
+    content: [ProductDTO]
+    totalElements: Int
+    totalPages: Int
+    number: Int
+    size: Int
+    first: Boolean
+    last: Boolean
 }
 
 extend type Mutation {
@@ -13,7 +24,7 @@ extend type Mutation {
 }
 
 type ProductDTO {
-    productId: ID
+    id: ID
     name: String
     brand: String
     ean: String

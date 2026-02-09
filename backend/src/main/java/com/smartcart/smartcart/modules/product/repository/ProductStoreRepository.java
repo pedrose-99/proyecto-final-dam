@@ -21,4 +21,7 @@ Optional<ProductStore> findByProductId_ProductIdAndStoreId_StoreId(Integer produ
 
     @Query("SELECT ps FROM ProductStore ps WHERE ps.storeId.storeId = :storeId AND ps.externaId IS NOT NULL AND (ps.productId.ean IS NULL OR ps.productId.ean = '')")
     List<ProductStore> findByStoreWithoutEan(@Param("storeId") Integer storeId);
+
+    @Query("SELECT COUNT(DISTINCT ps.productId) FROM ProductStore ps WHERE ps.storeId.storeId = :storeId")
+    Long countProductsByStoreId(@Param("storeId") Integer storeId);
 }

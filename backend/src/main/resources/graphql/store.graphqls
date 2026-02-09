@@ -18,4 +18,5 @@ type Store {
     active: Boolean
     scrapingUrl: String
     scrapingConf: String
+    productCount: Int
 }

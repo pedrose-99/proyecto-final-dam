@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.smartcart.smartcart.modules.category.entity.Category;
@@ -16,6 +20,7 @@ import com.smartcart.smartcart.modules.product.dto.ProductComparisonDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductDTO;
 import com.smartcart.smartcart.modules.product.dto.StoreBasketDTO;
 import com.smartcart.smartcart.modules.product.dto.StorePriceDTO;
+import com.smartcart.smartcart.modules.product.dto.ProductPageDTO;
 import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.product.mapper.ProductMapper;
@@ -45,6 +50,25 @@ public class ProductService {
                 .toList();
     }
 
+    public ProductPageDTO findAllPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.findAll(pageable);
+
+        List<ProductDTO> content = productPage.getContent().stream()
+                .map(ProductMapper::toDTO)
+                .toList();
+
+        return new ProductPageDTO(
+                content,
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
+    }
+
     public ProductDTO findByEan(String ean) {
         Product p = productRepository.findByEan(ean)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con EAN: " + ean));
@@ -52,6 +76,51 @@ public class ProductService {
     }
 
     public ProductDTO create(String name, String ean, String brand, Integer categoryId) {
+    public List<ProductDTO> findByCategoryId(Integer categoryId) {
+        return productRepository.findByCategoryId_CategoryId(categoryId).stream()
+                .map(ProductMapper::toDTO)
+                .toList();
+    }
+
+    public ProductPageDTO findByCategoryIdPaginated(Integer categoryId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.findByCategoryId_CategoryId(categoryId, pageable);
+
+        List<ProductDTO> content = productPage.getContent().stream()
+                .map(ProductMapper::toDTO)
+                .toList();
+
+        return new ProductPageDTO(
+                content,
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
+    }
+
+    public ProductPageDTO findByStoreIdPaginated(Integer storeId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.findByStoreId(storeId, pageable);
+
+        List<ProductDTO> content = productPage.getContent().stream()
+                .map(ProductMapper::toDTO)
+                .toList();
+
+        return new ProductPageDTO(
+                content,
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
+    }
+    
+    public Product create(String name, String ean, String brand, Integer categoryId) {
         Category cat = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
 

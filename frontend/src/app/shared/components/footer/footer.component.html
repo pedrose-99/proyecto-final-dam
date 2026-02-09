@@ -1,0 +1,59 @@
+<footer class="footer">
+  <div class="footer-content">
+    <!-- Logo y descripcion -->
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <mat-icon>shopping_cart</mat-icon>
+        <span>SmartCart</span>
+      </div>
+      <p class="footer-description">
+        Tu comparador de precios inteligente. Encuentra los mejores precios en todos los supermercados.
+      </p>
+    </div>
+
+    <!-- Navegacion -->
+    <div class="footer-section">
+      <h4>Navegacion</h4>
+      <ul>
+        <li><a routerLink="/home">Inicio</a></li>
+        <li><a routerLink="/home" [queryParams]="{onSale: true}">Ofertas</a></li>
+        <li><a routerLink="/lists">Mis listas</a></li>
+        <li><a routerLink="/favorites">Favoritos</a></li>
+      </ul>
+    </div>
+
+    <!-- Soporte -->
+    <div class="footer-section">
+      <h4>Soporte</h4>
+      <ul>
+        <li><a routerLink="/help">Ayuda</a></li>
+        <li><a routerLink="/contact">Contacto</a></li>
+        <li><a routerLink="/faq">FAQ</a></li>
+        <li><a routerLink="/terms">Terminos</a></li>
+        <li><a routerLink="/privacy">Privacidad</a></li>
+      </ul>
+    </div>
+
+    <!-- Redes sociales -->
+    <div class="footer-section">
+      <h4>Siguenos</h4>
+      <div class="social-links">
+        <a href="https://facebook.com" target="_blank" aria-label="Facebook">
+          <mat-icon>facebook</mat-icon>
+        </a>
+        <a href="https://twitter.com" target="_blank" aria-label="Twitter">
+          <mat-icon>flutter_dash</mat-icon>
+        </a>
+        <a href="https://instagram.com" target="_blank" aria-label="Instagram">
+          <mat-icon>photo_camera</mat-icon>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copyright -->
+  <div class="footer-bottom">
+    <p>{{ currentYear }} SmartCart. Todos los derechos reservados.</p>
+    <p class="footer-credits">Proyecto DAM</p>
+  </div>
+</footer>
