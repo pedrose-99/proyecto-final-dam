@@ -3,7 +3,7 @@ extend type Query {
     productByEan(ean: String!): ProductDTO
     compareProduct(productId: ID!): ProductComparisonDTO
     optimizeBasket(productIds: [ID!]!): BasketOptimizationDTO
-    productsByCategory(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
+    productsByCategoryPaginated(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
     productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
 }
 
@@ -24,7 +24,7 @@ extend type Mutation {
 }
 
 type ProductDTO {
-    id: ID
+    productId: ID
     name: String
     brand: String
     ean: String

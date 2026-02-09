@@ -75,7 +75,6 @@ public class ProductService {
         return ProductMapper.toDTO(p);
     }
 
-    public ProductDTO create(String name, String ean, String brand, Integer categoryId) {
     public List<ProductDTO> findByCategoryId(Integer categoryId) {
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
                 .map(ProductMapper::toDTO)
@@ -120,7 +119,7 @@ public class ProductService {
         );
     }
     
-    public Product create(String name, String ean, String brand, Integer categoryId) {
+    public ProductDTO create(String name, String ean, String brand, Integer categoryId) {
         Category cat = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
 

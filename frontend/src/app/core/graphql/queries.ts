@@ -5,7 +5,7 @@ export const GET_ALL_PRODUCTS = gql`
   query GetAllProducts($page: Int, $size: Int) {
     allProducts(page: $page, size: $size) {
       content {
-        id
+        productId
         name
         brand
         categoryName
@@ -24,7 +24,7 @@ export const GET_ALL_PRODUCTS = gql`
 export const GET_PRODUCT_BY_EAN = gql`
   query GetProductByEan($ean: String!) {
     productByEan(ean: $ean) {
-      id
+      productId
       name
       brand
       categoryName
@@ -35,9 +35,9 @@ export const GET_PRODUCT_BY_EAN = gql`
 
 export const GET_PRODUCTS_BY_CATEGORY = gql`
   query GetProductsByCategory($categoryId: ID!, $page: Int, $size: Int) {
-    productsByCategory(categoryId: $categoryId, page: $page, size: $size) {
+    productsByCategoryPaginated(categoryId: $categoryId, page: $page, size: $size) {
       content {
-        id
+        productId
         name
         brand
         categoryName
@@ -57,7 +57,7 @@ export const GET_PRODUCTS_BY_STORE = gql`
   query GetProductsByStore($storeId: ID!, $page: Int, $size: Int) {
     productsByStore(storeId: $storeId, page: $page, size: $size) {
       content {
-        id
+        productId
         name
         brand
         categoryName

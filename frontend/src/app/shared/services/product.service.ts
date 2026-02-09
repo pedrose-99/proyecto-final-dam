@@ -101,7 +101,7 @@ export class ProductService {
           const seenIds = new Set<number>();
 
           results.forEach(result => {
-            const products = (result.data?.productsByCategory?.content || [])
+            const products = (result.data?.productsByCategoryPaginated?.content || [])
               .map((p: any) => this.mapToProduct(p));
 
             products.forEach((p: Product) => {
@@ -146,7 +146,7 @@ export class ProductService {
         fetchPolicy: 'network-only'
       }).pipe(
         map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.productsByCategory, filters);
+          return this.mapGraphQLPageToProductPage(result.data?.productsByCategoryPaginated, filters);
         })
       );
     }
@@ -222,7 +222,7 @@ export class ProductService {
 
   private mapToProduct(data: any): Product {
     return {
-      id: data.id,
+      id: data.productId,
       name: data.name || '',
       brand: data.brand || null,
       imageUrl: data.imageUrl || null,
@@ -254,7 +254,7 @@ export class ProductService {
           )
           .slice(0, limit)
           .map((p: any) => ({
-            id: p.id,
+            id: p.productId,
             name: p.name || '',
             brand: p.brand || null,
             imageUrl: p.imageUrl || null,

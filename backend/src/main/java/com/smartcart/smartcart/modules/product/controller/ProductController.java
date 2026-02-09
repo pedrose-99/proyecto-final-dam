@@ -1,5 +1,7 @@
 package com.smartcart.smartcart.modules.product.controller;
 
+import java.util.List;
+
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -9,7 +11,6 @@ import com.smartcart.smartcart.modules.product.dto.BasketOptimizationDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductComparisonDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductPageDTO;
-import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.product.service.ProductService;
 
 @Controller
@@ -36,8 +37,8 @@ public class ProductController {
     // ─── NAVEGACIÓN: Filtrar por categoría ─────────────────
 
     @QueryMapping
-    public List<ProductDTO> productsByCategory(@Argument Integer categoryId) {
-        return productService.findByCategory(categoryId);
+    public ProductPageDTO productsByCategoryPaginated(@Argument Integer categoryId, @Argument Integer page, @Argument Integer size) {
+        return productService.findByCategoryIdPaginated(categoryId, page != null ? page : 0, size != null ? size : 24);
     }
 
     // ─── COMPARADOR: Producto con todos sus precios ────────
@@ -55,11 +56,6 @@ public class ProductController {
     }
 
     // ─── CRUD Mutations ───────────────────────────────────
-
-    @QueryMapping
-    public ProductPageDTO productsByCategory(@Argument Integer categoryId, @Argument Integer page, @Argument Integer size) {
-        return productService.findByCategoryIdPaginated(categoryId, page != null ? page : 0, size != null ? size : 24);
-    }
 
     @QueryMapping
     public ProductPageDTO productsByStore(@Argument Integer storeId, @Argument Integer page, @Argument Integer size) {

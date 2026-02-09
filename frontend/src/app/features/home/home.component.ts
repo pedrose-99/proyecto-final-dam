@@ -379,7 +379,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onViewProduct(product: Product): void {
-    this.router.navigate(['/products', product.id]);
+    this.router.navigate(['/producto', product.id]);
   }
 
   isProductInList(productId: number): boolean {

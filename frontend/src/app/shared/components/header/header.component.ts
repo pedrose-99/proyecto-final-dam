@@ -85,7 +85,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onProductSelected(product: ProductSearchResult): void {
-    this.router.navigate(['/products', product.id]);
+    this.router.navigate(['/producto', product.id]);
     this.searchControl.setValue('');
     this.searchResults = [];
   }
