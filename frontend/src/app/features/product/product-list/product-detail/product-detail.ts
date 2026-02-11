@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ProductService } from '../../../../core/services/product.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -9,32 +11,58 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./product-detail.css']
 })
 export class ProductDetailComponent implements OnInit {
+  loading = true;
+  stores: any[] = [];
+  bestPrice: number | null = null;
   
-  // 1. Definimos el objeto product que el HTML está buscando
-  product = {
-    name: 'Smartphone ProX 256GB Midnight Blue',
-    ean: '8410010002341',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+  product: any = {
+    name: 'Cargando...',
+    ean: '',
+    description: '',
+    imageUrl: '',
     rating: 4.5,
-    reviews: 185,
-    imageUrl: 'https://via.placeholder.com/400' // Puedes cambiar esto por una URL real
+    reviews: 185
   };
 
-  // 2. Definimos el array de tiendas (stores)
-  stores = [
-    { name: 'SMARBET', price: 999.99, stock: 'Disponible', url: 'smarbet.es', isBest: true },
-    { name: 'CARS', price: 1049.00, stock: 'Disponible', url: 'cars.es', isBest: false },
-    { name: 'ADX', price: 1099.99, stock: 'Sin Stock', url: 'adx.es', isBest: false }
-  ];
-
-  constructor() {}
+  constructor(
+    private route: ActivatedRoute,
+    private productService: ProductService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    console.log('Product Detail Initialized');
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.productService.getComparison(id).subscribe({
+        next: (data: any) => {
+          if (data) {
+            // Mapeamos los datos reales del DTO de Java
+            this.product = {
+              name: data.name,
+              ean: data.ean,
+              brand: data.brand,
+              description: data.description || 'Sin descripción disponible para este producto.',
+              imageUrl: data.imageUrl,
+              rating: 4.5, // Dato estático por ahora
+              reviews: 185  // Dato estático por ahora
+            };
+            this.stores = data.storePrices || [];
+            this.bestPrice = data.bestPrice?.currentPrice || null;
+          }
+          
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: any) => {
+          console.error('Error cargando producto:', err);
+          this.loading = false;
+          this.cdr.detectChanges()
+        }
+      });
+    }
   }
 
-  // 3. Definimos la función para el botón de favoritos
-  toggleFavorite() {
+  toggleFavorite(): void {
     alert('¡Añadido a favoritos!');
   }
 }

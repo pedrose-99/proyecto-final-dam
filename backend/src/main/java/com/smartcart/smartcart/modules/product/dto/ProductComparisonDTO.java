@@ -11,6 +11,7 @@ public class ProductComparisonDTO {
     private String brand;
     private String ean;
     private String imageUrl;
+    private String description;
     private String categoryName;
     private List<StorePriceDTO> storePrices;
     private StorePriceDTO bestPrice;
