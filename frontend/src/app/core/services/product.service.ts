@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { GET_STORES_BY_PRODUCT, GET_PRODUCT_COMPARISON } from '../graphql/queries';
+import { GET_STORES_BY_PRODUCT, GET_PRODUCT_COMPARISON, GET_PRICE_HISTORY } from '../graphql/queries';
 
 @Injectable({
   providedIn: 'root'
@@ -34,4 +34,11 @@ export class ProductService {
       map(result => result.data?.storesByProduct || [])
     );
   }
+  getPriceHistory(productId: string) {
+  return this.apollo.query({
+    query: GET_PRICE_HISTORY,
+    variables: { productId },
+    fetchPolicy: 'network-only'
+  }).pipe(map((result: any) => result.data.getPriceHistory));
+}
 }

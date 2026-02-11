@@ -1,5 +1,10 @@
+<button class="btn-backing" (click)="goBack()">
+      ← Volver
+    </button>
 <main class="container product-page" *ngIf="!loading; else loadingTpl">
+  
   <section class="product-top">
+    
     <div class="product-image">
       <img [src]="product.imageUrl ? product.imageUrl : 'https://placehold.co/400x400?text=Sin+Imagen'" 
            (error)="product.imageUrl = 'https://placehold.co/400x400?text=Error+de+Carga'"
@@ -19,7 +24,43 @@
         <span class="price-main" *ngIf="!bestPrice && stores.length === 0">Sin precio</span>
       </div>
       
-      <button class="btn-history-trigger">📉 Ver historial de precios</button>
+      <div class="history-wrapper">
+  <button class="btn-history-trigger" (click)="toggleHistory()">
+    {{ showHistory ? '📉 Ocultar historial' : '📈 Ver historial de precios' }}
+  </button>
+
+  <div class="history-content" *ngIf="showHistory">
+    <div class="chart-container" [hidden]="priceHistory.length < 2">
+      <canvas #priceChart></canvas>
+    </div>
+
+    <div class="history-table-container">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tienda</th>
+            <th>Precio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of priceHistory">
+            <td>{{ item.recordedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ item.storeName }}</td>
+            <td class="price-bold">{{ item.price }}€</td>
+          </tr>
+          
+          <tr *ngIf="priceHistory.length === 0">
+            <td colspan="3" class="no-data-cell">
+              No se han registrado cambios de precio todavía. <br>
+              <small>El sistema guardará automáticamente el historial cuando detecte variaciones.</small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
       
       
     </div>

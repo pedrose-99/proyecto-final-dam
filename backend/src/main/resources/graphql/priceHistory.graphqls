@@ -3,6 +3,7 @@ extend type Query {
     priceHistoryByProduct(productId: ID!): [PriceHistoryDTO]
     # Historial específico de un producto en una tienda concreta
     priceHistoryByProductAndStore(productId: ID!, storeId: ID!): [PriceHistoryDTO]
+    getPriceHistory(productId: ID!): [PriceHistoryDTO]
 }
 
 extend type Mutation {

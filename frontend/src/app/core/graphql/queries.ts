@@ -167,3 +167,13 @@ export const GET_STORES_BY_PRODUCT = gql`
     }
   }
 `;
+
+export const GET_PRICE_HISTORY = gql`
+  query GetPriceHistory($productId: ID!) {
+    getPriceHistory(productId: $productId) {
+      price
+      recordedAt
+      storeName
+    }
+  }
+`;
