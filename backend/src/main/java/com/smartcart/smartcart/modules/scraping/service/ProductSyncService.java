@@ -63,18 +63,21 @@ public class ProductSyncService {
         Product product = findOrCreateProduct(scraped, category);
         ProductStore productStore = findOrCreateProductStore(scraped, product, store);
 
+        boolean isNew = productStore.getStoreProductId() == null;
         boolean priceChanged = updateProductStorePrice(productStore, scraped);
 
-        if (priceChanged) {
+        productStoreRepository.save(productStore);
+
+        if (isNew) {
+            // Producto nuevo: crear registro inicial en price_history
+            createInitialPriceHistory(productStore, store, scraped);
+            result.created++;
+        } else if (priceChanged) {
             createPriceHistory(productStore, store, scraped);
             result.updated++;
-        } else if (productStore.getStoreProductId() == null) {
-            result.created++;
         } else {
             result.unchanged++;
         }
-
-        productStoreRepository.save(productStore);
     }
 
     private Category findOrCreateCategory(String categoryName) {
@@ -112,10 +115,16 @@ public class ProductSyncService {
         newProduct.setName(scraped.name());
         newProduct.setBrand(scraped.brand());
         newProduct.setEan(scraped.ean());
-        newProduct.setDescription(scraped.description());
         newProduct.setImageUrl(scraped.imageUrl());
         newProduct.setCategoryId(category);
         parseAndSetUnit(newProduct, scraped.unit());
+
+        // Descripcion: usar la del scraping o generar una automatica
+        String description = scraped.description();
+        if (description == null || description.isBlank()) {
+            description = generateDescription(scraped.name(), scraped.brand(), category.getName(), scraped.unit());
+        }
+        newProduct.setDescription(description);
 
         log.debug("Creating new product: {}", scraped.name());
         return productRepository.save(newProduct);
@@ -137,6 +146,10 @@ public class ProductSyncService {
         if (product.getUnit() == null && scraped.unit() != null) {
             parseAndSetUnit(product, scraped.unit());
         }
+        if (product.getDescription() == null || product.getDescription().isBlank()) {
+            String catName = product.getCategoryId() != null ? product.getCategoryId().getName() : category.getName();
+            product.setDescription(generateDescription(product.getName(), product.getBrand(), catName, product.getUnit()));
+        }
     }
 
     private void parseAndSetUnit(Product product, String unitString) {
@@ -155,6 +168,34 @@ public class ProductSyncService {
         } else {
             product.setUnit(unitString);
         }
+    }
+
+    /**
+     * Genera una descripcion automatica a partir de los datos disponibles.
+     * Ej: "Leche entera de la marca Hacendado. Categoria: Lacteos. Formato: 1L."
+     */
+    private String generateDescription(String name, String brand, String categoryName, String unit) {
+        StringBuilder sb = new StringBuilder();
+
+        if (name != null && !name.isBlank()) {
+            sb.append(name);
+        }
+
+        if (brand != null && !brand.isBlank()) {
+            sb.append(" de la marca ").append(brand);
+        }
+
+        sb.append(".");
+
+        if (categoryName != null && !categoryName.isBlank() && !"Sin categoria".equalsIgnoreCase(categoryName)) {
+            sb.append(" Categoria: ").append(categoryName).append(".");
+        }
+
+        if (unit != null && !unit.isBlank()) {
+            sb.append(" Formato: ").append(unit).append(".");
+        }
+
+        return sb.toString().trim();
     }
 
     private ProductStore findOrCreateProductStore(ScrapedProduct scraped, Product product, Store store) {
@@ -200,6 +241,18 @@ public class ProductSyncService {
         }
 
         return priceChanged && productStore.getStoreProductId() != null;
+    }
+
+    private void createInitialPriceHistory(ProductStore productStore, Store store, ScrapedProduct scraped) {
+        PriceHistory history = new PriceHistory();
+        history.setProductStoreId(productStore);
+        history.setStoreId(store);
+        history.setPrice(scraped.price() != null ? scraped.price().doubleValue() : null);
+        history.setOriginalPrice(null);
+        history.setIsOnSale(null);
+        history.setRecordedAt(LocalDateTime.now());
+
+        priceHistoryRepository.save(history);
     }
 
     private void createPriceHistory(ProductStore productStore, Store store, ScrapedProduct scraped) {

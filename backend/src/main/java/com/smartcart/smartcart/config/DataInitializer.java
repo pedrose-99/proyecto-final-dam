@@ -1,5 +1,8 @@
 package com.smartcart.smartcart.config;
 
+import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
+import com.smartcart.smartcart.modules.scraping.service.CsvImportService;
+import com.smartcart.smartcart.modules.scraping.service.ProductSyncService;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
 import com.smartcart.smartcart.modules.user.entity.Role;
@@ -16,11 +19,14 @@ public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final StoreRepository storeRepository;
+    private final ProductStoreRepository productStoreRepository;
+    private final CsvImportService csvImportService;
 
     @Override
     public void run(String... args) {
         initRoles();
         initStores();
+        initProducts();
     }
 
     private void initRoles() {
@@ -54,26 +60,27 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Tienda Mercadona creada");
         }
 
-        if (storeRepository.findBySlug("carrefour").isEmpty()) {
-            Store carrefour = new Store();
-            carrefour.setName("Carrefour");
-            carrefour.setSlug("carrefour");
-            carrefour.setWebsite("https://www.carrefour.es");
-            carrefour.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/512px-Carrefour_logo.svg.png");
-            carrefour.setActive(false);
-            storeRepository.save(carrefour);
-            log.info("Tienda Carrefour creada");
-        }
-
         if (storeRepository.findBySlug("dia").isEmpty()) {
             Store dia = new Store();
             dia.setName("Dia");
             dia.setSlug("dia");
             dia.setWebsite("https://www.dia.es");
             dia.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Grupo_DIA_logo.svg/512px-Grupo_DIA_logo.svg.png");
-            dia.setActive(false);
+            dia.setActive(true);
             storeRepository.save(dia);
             log.info("Tienda Dia creada");
+        }
+
+        if (storeRepository.findBySlug("carrefour").isEmpty()) {
+            Store carrefour = new Store();
+            carrefour.setName("Carrefour");
+            carrefour.setSlug("carrefour");
+            carrefour.setWebsite("https://www.carrefour.es");
+            carrefour.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Logo_Carrefour.svg/512px-Logo_Carrefour.svg.png");
+            carrefour.setActive(true);
+            carrefour.setScrapingUrl("https://www.carrefour.es/supermercado");
+            storeRepository.save(carrefour);
+            log.info("Tienda Carrefour creada");
         }
 
         if (storeRepository.findBySlug("alcampo").isEmpty()) {
@@ -87,5 +94,28 @@ public class DataInitializer implements CommandLineRunner {
             storeRepository.save(alcampo);
             log.info("Tienda Alcampo creada");
         }
+    }
+
+    private void initProducts() {
+        importCsvIfEmpty("carrefour", "data/products_carrefour.csv");
+        importCsvIfEmpty("dia", "data/products_dia.csv");
+    }
+
+    private void importCsvIfEmpty(String storeSlug, String classpathResource) {
+        storeRepository.findBySlug(storeSlug).ifPresent(store -> {
+            Long count = productStoreRepository.countProductsByStoreId(store.getStoreId());
+            if (count == 0) {
+                log.info("[{}] No tiene productos, importando desde {}...", storeSlug, classpathResource);
+                try {
+                    ProductSyncService.SyncResult result = csvImportService.importFromClasspath(classpathResource, storeSlug);
+                    log.info("[{}] Importacion completada: {} creados, {} errores",
+                            storeSlug, result.created, result.errors);
+                } catch (Exception e) {
+                    log.error("[{}] Error al importar CSV: {}", storeSlug, e.getMessage());
+                }
+            } else {
+                log.info("[{}] Ya tiene {} productos, saltando importacion", storeSlug, count);
+            }
+        });
     }
 }
