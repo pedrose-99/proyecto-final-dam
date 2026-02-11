@@ -78,3 +78,16 @@ body {
 .mat-mdc-card {
   overflow: visible !important;
 }
+
+/* Fix: mat-menu del perfil se renderiza en overlay fuera del componente */
+.mat-mdc-menu-panel {
+  background-color: var(--smartcart-white, #ffffff) !important;
+}
+
+.mat-mdc-menu-item {
+  color: var(--smartcart-text, #1e293b) !important;
+}
+
+.mat-mdc-menu-item .mat-icon {
+  color: var(--smartcart-text-light, #64748b) !important;
+}

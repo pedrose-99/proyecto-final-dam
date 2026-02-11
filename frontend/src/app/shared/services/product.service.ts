@@ -21,15 +21,32 @@ export class ProductService {
   constructor(private apollo: Apollo) {}
 
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
-    // Si hay filtro por múltiples tiendas, hacer queries paralelas y combinar
-    if (filters.storeIds && filters.storeIds.length > 0) {
+    // Si hay filtro por UNA sola tienda, usar paginacion del servidor directamente
+    if (filters.storeIds && filters.storeIds.length === 1) {
+      return this.apollo.query<any>({
+        query: GET_PRODUCTS_BY_STORE,
+        variables: {
+          storeId: filters.storeIds[0].toString(),
+          page: page,
+          size: size
+        },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => {
+          return this.mapGraphQLPageToProductPage(result.data?.productsByStore, filters);
+        })
+      );
+    }
+
+    // Si hay filtro por MULTIPLES tiendas, cargar todos de cada tienda y combinar
+    if (filters.storeIds && filters.storeIds.length > 1) {
       const queries = filters.storeIds.map(storeId =>
         this.apollo.query<any>({
           query: GET_PRODUCTS_BY_STORE,
           variables: {
             storeId: storeId.toString(),
             page: 0,
-            size: 500 // Cargar suficientes de cada tienda
+            size: 10000
           },
           fetchPolicy: 'network-only'
         })
@@ -52,11 +69,6 @@ export class ProductService {
               }
             });
           });
-
-          // Aplicar filtro de categorías si existe
-          if (filters.categoryIds && filters.categoryIds.length > 0) {
-            // TODO: Filtrar por categoría en cliente si es necesario
-          }
 
           // Aplicar ordenamiento
           allProducts = this.applySorting(allProducts, filters.sortBy);
