@@ -32,6 +32,33 @@ export const GET_PRODUCT_BY_EAN = gql`
     }
   }
 `;
+export const GET_PRODUCT_COMPARISON = gql`
+  query GetProductComparison($productId: ID!) {
+    compareProduct(productId: $productId) {
+      productId
+      name
+      brand
+      ean
+      description  # <--- HE AÑADIDO ESTA LÍNEA
+      imageUrl
+      categoryName
+      storePrices {
+        storeId
+        storeName
+        currentPrice
+        externaId
+        storeWebsite
+        available
+        stock
+        url
+      }
+      bestPrice {
+        storeId
+        currentPrice
+      }
+    }
+  }
+`;
 
 export const GET_PRODUCTS_BY_CATEGORY = gql`
   query GetProductsByCategory($categoryId: ID!, $page: Int, $size: Int) {
@@ -56,6 +83,27 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
 export const GET_PRODUCTS_BY_STORE = gql`
   query GetProductsByStore($storeId: ID!, $page: Int, $size: Int) {
     productsByStore(storeId: $storeId, page: $page, size: $size) {
+      content {
+        productId
+        name
+        brand
+        categoryName
+        imageUrl
+      }
+      totalElements
+      totalPages
+      number
+      size
+      first
+      last
+    }
+  }
+`;
+
+// Busqueda
+export const SEARCH_PRODUCTS = gql`
+  query SearchProducts($query: String!, $page: Int, $size: Int) {
+    searchProducts(query: $query, page: $page, size: $size) {
       content {
         productId
         name
@@ -137,6 +185,16 @@ export const GET_STORES_BY_PRODUCT = gql`
       stock
       externaId
       unit
+    }
+  }
+`;
+
+export const GET_PRICE_HISTORY = gql`
+  query GetPriceHistory($productId: ID!) {
+    getPriceHistory(productId: $productId) {
+      price
+      recordedAt
+      storeName
     }
   }
 `;

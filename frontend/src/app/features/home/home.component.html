@@ -69,7 +69,7 @@
               @for (store of filteredStores; track store.id) {
                 <mat-option [value]="store" class="store-option">
                   <span class="store-option-content">
-                    <img [src]="store.logoUrl" [alt]="store.name" class="store-logo" onerror="this.style.display='none'">
+                    <img [src]="store.logoUrl" [alt]="store.name" class="store-logo" onerror="this.src='assets/images/stores/'+this.alt.toLowerCase()+'.svg'">
                     <span class="store-name">{{ store.name }}</span>
                     <span class="store-product-count">({{ store.productCount }} productos)</span>
                   </span>
@@ -87,7 +87,7 @@
           <div class="selected-stores">
             @for (store of selectedStores; track store.id) {
               <mat-chip-row (removed)="removeStore(store)" class="store-chip">
-                <img matChipAvatar [src]="store.logoUrl" [alt]="store.name" class="chip-store-logo" onerror="this.style.display='none'">
+                <img matChipAvatar [src]="store.logoUrl" [alt]="store.name" class="chip-store-logo" onerror="this.src='assets/images/stores/'+this.alt.toLowerCase()+'.svg'">
                 {{ store.name }}
                 <button matChipRemove>
                   <mat-icon>cancel</mat-icon>

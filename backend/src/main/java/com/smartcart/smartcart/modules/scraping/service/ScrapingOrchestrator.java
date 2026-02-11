@@ -2,8 +2,6 @@ package com.smartcart.smartcart.modules.scraping.service;
 
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.scraping.dto.ScrapingResult;
-import com.smartcart.smartcart.modules.scraping.scraper.AlcampoScraper;
-import com.smartcart.smartcart.modules.scraping.scraper.CarrefourScraper;
 import com.smartcart.smartcart.modules.scraping.scraper.MercadonaScraper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,7 +21,6 @@ public class ScrapingOrchestrator
 
     private final MercadonaScrapingService mercadonaService;
     private final AlcampoScrapingService alcampoService;
-    private final CarrefourScrapingService carrefourService;
     private final ProductSyncService productSyncService;
 
     @Async
@@ -36,7 +32,6 @@ public class ScrapingOrchestrator
 
         scrapeAndEnrichMercadona();
         scrapeAndEnrichAlcampo();
-        scrapeAndEnrichCarrefour();
 
         long totalSeconds = (System.currentTimeMillis() - startTime) / 1000;
         log.info("========== SCRAPING AUTOMATICO COMPLETADO en {}s ==========", totalSeconds);
@@ -103,30 +98,6 @@ public class ScrapingOrchestrator
                      scrapingResult.getDurationSeconds());
             log.info("[alcampo] Sync: {} creados, {} actualizados, {} sin cambios, {} errores",
                      syncResult.created, syncResult.updated, syncResult.unchanged, syncResult.errors);
-
-            // Enriquecer EAN desde paginas de detalle de Alcampo
-            List<ProductStore> productsWithoutEan = productSyncService.findProductsWithoutEan(4);
-            if (!productsWithoutEan.isEmpty())
-            {
-                log.info("[alcampo] Enriqueciendo {} productos sin EAN...", productsWithoutEan.size());
-
-                Map<String, AlcampoScraper.ProductDetail> details =
-                    alcampoService.getProductDetails(productsWithoutEan);
-
-                Map<String, String> eanMap = details.entrySet().stream()
-                    .filter(e -> e.getValue().ean() != null)
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().ean()));
-
-                ProductSyncService.EnrichResult enrichResult =
-                    productSyncService.enrichProductsWithEanMap(productsWithoutEan, eanMap);
-
-                log.info("[alcampo] Enrich: {} enriquecidos, {} sin EAN, {} no encontrados, {} errores",
-                         enrichResult.enriched, enrichResult.noEan, enrichResult.notFound, enrichResult.errors);
-            }
-            else
-            {
-                log.info("[alcampo] Todos los productos ya tienen EAN");
-            }
         }
         catch (Exception e)
         {
@@ -135,49 +106,4 @@ public class ScrapingOrchestrator
         log.info("---------- ALCAMPO: Completado ----------");
     }
 
-    private void scrapeAndEnrichCarrefour()
-    {
-        log.info("---------- CARREFOUR: Iniciando scraping ----------");
-        try
-        {
-            ScrapingResult scrapingResult = carrefourService.scrapeAll();
-            ProductSyncService.SyncResult syncResult = productSyncService.syncProducts(
-                scrapingResult.getProducts(), "carrefour");
-
-            log.info("[carrefour] Scraping: {} productos, {} errores en {}s",
-                     scrapingResult.getTotalProducts(), scrapingResult.getTotalErrors(),
-                     scrapingResult.getDurationSeconds());
-            log.info("[carrefour] Sync: {} creados, {} actualizados, {} sin cambios, {} errores",
-                     syncResult.created, syncResult.updated, syncResult.unchanged, syncResult.errors);
-
-            // Enriquecer EAN desde paginas de detalle de Carrefour
-            List<ProductStore> productsWithoutEan = productSyncService.findProductsWithoutEan(3);
-            if (!productsWithoutEan.isEmpty())
-            {
-                log.info("[carrefour] Enriqueciendo {} productos sin EAN...", productsWithoutEan.size());
-
-                Map<String, CarrefourScraper.ProductDetail> details =
-                    carrefourService.getProductDetails(productsWithoutEan);
-
-                Map<String, String> eanMap = details.entrySet().stream()
-                    .filter(e -> e.getValue().ean() != null)
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().ean()));
-
-                ProductSyncService.EnrichResult enrichResult =
-                    productSyncService.enrichProductsWithEanMap(productsWithoutEan, eanMap);
-
-                log.info("[carrefour] Enrich: {} enriquecidos, {} sin EAN, {} no encontrados, {} errores",
-                         enrichResult.enriched, enrichResult.noEan, enrichResult.notFound, enrichResult.errors);
-            }
-            else
-            {
-                log.info("[carrefour] Todos los productos ya tienen EAN");
-            }
-        }
-        catch (Exception e)
-        {
-            log.error("[carrefour] Error en scraping: {}", e.getMessage(), e);
-        }
-        log.info("---------- CARREFOUR: Completado ----------");
-    }
 }

@@ -26,6 +26,7 @@ type ProductStoreDTO {
     productBrand: String
     ean: String
     storeName: String
+    storeWebsite: String
     currentPrice: Float
     url: String
     available: Boolean

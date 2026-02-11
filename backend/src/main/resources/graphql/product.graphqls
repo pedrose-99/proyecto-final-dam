@@ -5,6 +5,7 @@ extend type Query {
     optimizeBasket(productIds: [ID!]!): BasketOptimizationDTO
     productsByCategoryPaginated(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
     productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
+    searchProducts(query: String!, page: Int = 0, size: Int = 10): ProductPage
 }
 
 type ProductPage {
@@ -44,6 +45,7 @@ type ProductComparisonDTO {
     brand: String
     ean: String
     imageUrl: String
+    description: String
     categoryName: String
     storePrices: [StorePriceDTO]
     bestPrice: StorePriceDTO
@@ -54,9 +56,11 @@ type StorePriceDTO {
     storeName: String
     storeLogo: String
     currentPrice: Float
+    storeWebsite: String
     available: Boolean
     stock: Int
     url: String
+    externaId: String
 }
 
 # ─── Optimización de Cesta ──────────────────────────────

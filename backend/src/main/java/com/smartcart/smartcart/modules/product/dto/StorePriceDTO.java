@@ -7,8 +7,10 @@ public class StorePriceDTO {
     private Integer storeId;
     private String storeName;
     private String storeLogo;
+    private String storeWebsite;
     private Double currentPrice;
     private Boolean available;
     private Integer stock;
     private String url;
+    private String externaId;
 }
