@@ -118,6 +118,25 @@ public class ProductService {
         );
     }
     
+    public ProductPageDTO searchProducts(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.searchByText(query, pageable);
+
+        List<ProductDTO> content = productPage.getContent().stream()
+                .map(ProductMapper::toDTO)
+                .toList();
+
+        return new ProductPageDTO(
+                content,
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
+    }
+
     public ProductDTO create(String name, String ean, String brand, Integer categoryId) {
         Category cat = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));

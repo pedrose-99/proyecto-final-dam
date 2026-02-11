@@ -10,7 +10,8 @@ import {
   GET_ALL_STORES,
   GET_PRODUCTS_BY_CATEGORY,
   GET_PRODUCTS_BY_STORE,
-  GET_STORES_BY_PRODUCT
+  GET_STORES_BY_PRODUCT,
+  SEARCH_PRODUCTS
 } from '../../core/graphql/queries';
 
 @Injectable({
@@ -248,30 +249,20 @@ export class ProductService {
       return of([]);
     }
 
-    // Para búsqueda, cargamos una página más grande y filtramos en cliente
-    // TODO: Implementar búsqueda en backend con query de texto
     return this.apollo.query<any>({
-      query: GET_ALL_PRODUCTS,
-      variables: { page: 0, size: 100 },
+      query: SEARCH_PRODUCTS,
+      variables: { query: query, page: 0, size: limit },
       fetchPolicy: 'network-only'
     }).pipe(
       map(result => {
-        const products = result.data?.allProducts?.content || [];
-        const queryLower = query.toLowerCase();
-
-        return products
-          .filter((p: any) =>
-            p.name?.toLowerCase().includes(queryLower) ||
-            p.brand?.toLowerCase().includes(queryLower)
-          )
-          .slice(0, limit)
-          .map((p: any) => ({
-            id: p.productId,
-            name: p.name || '',
-            brand: p.brand || null,
-            imageUrl: p.imageUrl || null,
-            categoryName: p.categoryName || ''
-          }));
+        const products = result.data?.searchProducts?.content || [];
+        return products.map((p: any) => ({
+          id: p.productId,
+          name: p.name || '',
+          brand: p.brand || null,
+          imageUrl: p.imageUrl || null,
+          categoryName: p.categoryName || ''
+        }));
       })
     );
   }
