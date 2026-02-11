@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,9 +17,9 @@ import com.smartcart.smartcart.modules.product.dto.BasketItemDTO;
 import com.smartcart.smartcart.modules.product.dto.BasketOptimizationDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductComparisonDTO;
 import com.smartcart.smartcart.modules.product.dto.ProductDTO;
+import com.smartcart.smartcart.modules.product.dto.ProductPageDTO;
 import com.smartcart.smartcart.modules.product.dto.StoreBasketDTO;
 import com.smartcart.smartcart.modules.product.dto.StorePriceDTO;
-import com.smartcart.smartcart.modules.product.dto.ProductPageDTO;
 import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.product.mapper.ProductMapper;
@@ -167,8 +166,10 @@ public class ProductService {
                     sp.setStoreId(ps.getStoreId().getStoreId());
                     sp.setStoreName(ps.getStoreId().getName());
                     sp.setStoreLogo(ps.getStoreId().getLogo());
+                    sp.setStoreWebsite(ps.getStoreId().getWebsite());
                     sp.setCurrentPrice(ps.getCurrentPrice());
                     sp.setAvailable(ps.getAvailable());
+                    sp.setExternaId(ps.getExternaId());
                     sp.setStock(ps.getStock());
                     sp.setUrl(ps.getUrl());
                     return sp;
@@ -186,6 +187,7 @@ public class ProductService {
         comparison.setName(product.getName());
         comparison.setBrand(product.getBrand());
         comparison.setEan(product.getEan());
+        comparison.setDescription(product.getDescription());
         comparison.setImageUrl(product.getImageUrl());
         if (product.getCategoryId() != null) {
             comparison.setCategoryName(product.getCategoryId().getName());

@@ -32,6 +32,33 @@ export const GET_PRODUCT_BY_EAN = gql`
     }
   }
 `;
+export const GET_PRODUCT_COMPARISON = gql`
+  query GetProductComparison($productId: ID!) {
+    compareProduct(productId: $productId) {
+      productId
+      name
+      brand
+      ean
+      description  # <--- HE AÑADIDO ESTA LÍNEA
+      imageUrl
+      categoryName
+      storePrices {
+        storeId
+        storeName
+        currentPrice
+        externaId
+        storeWebsite
+        available
+        stock
+        url
+      }
+      bestPrice {
+        storeId
+        currentPrice
+      }
+    }
+  }
+`;
 
 export const GET_PRODUCTS_BY_CATEGORY = gql`
   query GetProductsByCategory($categoryId: ID!, $page: Int, $size: Int) {
@@ -137,6 +164,16 @@ export const GET_STORES_BY_PRODUCT = gql`
       stock
       externaId
       unit
+    }
+  }
+`;
+
+export const GET_PRICE_HISTORY = gql`
+  query GetPriceHistory($productId: ID!) {
+    getPriceHistory(productId: $productId) {
+      price
+      recordedAt
+      storeName
     }
   }
 `;

@@ -1,24 +1,68 @@
-<main class="container product-page">
+<button class="btn-backing" (click)="goBack()">
+      ← Volver
+    </button>
+<main class="container product-page" *ngIf="!loading; else loadingTpl">
+  
   <section class="product-top">
+    
     <div class="product-image">
-      <img [src]="product.imageUrl" [alt]="product.name">
+      <img [src]="product.imageUrl ? product.imageUrl : 'https://placehold.co/400x400?text=Sin+Imagen'" 
+           (error)="product.imageUrl = 'https://placehold.co/400x400?text=Error+de+Carga'"
+           [alt]="product.name">
     </div>
+    
     <div class="product-info">
       <div class="title-row">
-        <h1>{{ product.name }}</h1>
+        <h1 class="product-title">{{ product.name }}</h1>
         <button class="btn-fav" (click)="toggleFavorite()">❤️</button>
       </div>
-      <p class="ean-code">EAN: {{ product.ean }}</p>
-      <div class="rating">
-        <span class="price-main">{{ stores[0].price }}€</span>
-        <span class="stars">⭐ {{ product.rating }} ({{ product.reviews }} Opiniones)</span>
-      </div>
-      <button class="btn-history-trigger">📉 Ver historial de precios</button>
+      <br>
+      <br>
       
-      <div class="quick-description">
-        <h3>Descripción del producto</h3>
-        <p>{{ product.description }}</p>
+      <div class="rating">
+        <span class="price-main" *ngIf="bestPrice">{{ bestPrice }}€</span>
+        <span class="price-main" *ngIf="!bestPrice && stores.length === 0">Sin precio</span>
       </div>
+      
+      <div class="history-wrapper">
+  <button class="btn-history-trigger" (click)="toggleHistory()">
+    {{ showHistory ? '📉 Ocultar historial' : '📈 Ver historial de precios' }}
+  </button>
+
+  <div class="history-content" *ngIf="showHistory">
+    <div class="chart-container" [hidden]="priceHistory.length < 2">
+      <canvas #priceChart></canvas>
+    </div>
+
+    <div class="history-table-container">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tienda</th>
+            <th>Precio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of priceHistory">
+            <td>{{ item.recordedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ item.storeName }}</td>
+            <td class="price-bold">{{ item.price }}€</td>
+          </tr>
+          
+          <tr *ngIf="priceHistory.length === 0">
+            <td colspan="3" class="no-data-cell">
+              No se han registrado cambios de precio todavía. <br>
+              <small>El sistema guardará automáticamente el historial cuando detecte variaciones.</small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+      
+      
     </div>
   </section>
 
@@ -36,21 +80,53 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let store of stores" [class.best-price]="store.isBest">
-            <td><strong>{{ store.name }}</strong></td>
-            <td class="price-cell">{{ store.price }}€</td>
-            <td [class.out-of-stock]="store.stock === 'Sin Stock'">
-               {{ store.stock === 'Disponible' ? '✅' : '❌' }} {{ store.stock }}
-            </td>
-            <td>{{ store.url }}</td>
-            <td>
-              <button class="btn-go" [disabled]="store.stock === 'Sin Stock'">
-                {{ store.stock === 'Disponible' ? 'Ir a tienda' : 'Agotado' }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
+  <tr *ngFor="let store of stores">
+    <td><strong>{{ store.storeName }}</strong></td>
+    <td class="price-cell">{{ store.currentPrice }}€</td>
+    <td [class.out-of-stock]="!store.available">
+       {{ store.available ? '✅ En Stock' : '❌ Agotado' }}
+    </td>
+    <td>
+      <a [href]="store.storeWebsite" target="_blank" class="store-link">
+        {{ store.storeName }}
+      </a>
+    </td>
+
+    <td>
+      <ng-container *ngIf="store.available; else outOfStockTpl">
+        
+        <a *ngIf="store.storeName === 'Alcampo'" 
+           [href]="'https://www.compraonline.alcampo.es/products/info/' + store.externaId" 
+           target="_blank" class="btn-go-link">
+           Ir a tienda
+        </a>
+
+        <a *ngIf="store.storeName !== 'Alcampo' && store.url" 
+           [href]="store.url" 
+           target="_blank" class="btn-go-link">
+           Ir a tienda
+        </a>
+
+        <span class="btn-disabled" *ngIf="store.storeName !== 'Alcampo' && !store.url">No disponible</span>
+      </ng-container>
+
+      <ng-template #outOfStockTpl>
+        <span class="btn-disabled">Agotado</span>
+      </ng-template>
+    </td>
+  </tr>
+  
+  <tr *ngIf="stores.length === 0">
+    <td colspan="5" style="text-align: center; padding: 20px;">No se han encontrado tiendas para este producto.</td>
+  </tr>
+</tbody>
       </table>
     </div>
   </section>
 </main>
+
+<ng-template #loadingTpl>
+  <div class="loading-container">
+    <p>Cargando información del producto...</p>
+  </div>
+</ng-template>
