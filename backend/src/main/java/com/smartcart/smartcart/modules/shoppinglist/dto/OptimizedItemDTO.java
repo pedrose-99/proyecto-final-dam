@@ -3,13 +3,12 @@ package com.smartcart.smartcart.modules.shoppinglist.dto;
 import lombok.Data;
 
 @Data
-public class ListItemDTO 
+public class OptimizedItemDTO 
 {
-    private Integer listId;
     private Integer productId;
-    private String displayName;
+    private String productName;
     private String imageUrl;
+    private Double unitPrice;
     private Integer quantity;
-    private Boolean checked;
-    private Boolean isGeneric;
+    private Double lineTotal;
 }
