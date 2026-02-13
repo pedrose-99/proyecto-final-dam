@@ -100,6 +100,27 @@ export const GET_PRODUCTS_BY_STORE = gql`
   }
 `;
 
+// Busqueda
+export const SEARCH_PRODUCTS = gql`
+  query SearchProducts($query: String!, $page: Int, $size: Int) {
+    searchProducts(query: $query, page: $page, size: $size) {
+      content {
+        productId
+        name
+        brand
+        categoryName
+        imageUrl
+      }
+      totalElements
+      totalPages
+      number
+      size
+      first
+      last
+    }
+  }
+`;
+
 // Categorias
 export const GET_ALL_CATEGORIES = gql`
   query GetAllCategories {
