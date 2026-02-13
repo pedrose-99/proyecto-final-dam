@@ -21,6 +21,7 @@ public class ScrapingOrchestrator
 
     private final MercadonaScrapingService mercadonaService;
     private final AlcampoScrapingService alcampoService;
+    private final PythonScraperService pythonScraperService;
     private final ProductSyncService productSyncService;
 
     @Async
@@ -32,6 +33,8 @@ public class ScrapingOrchestrator
 
         scrapeAndEnrichMercadona();
         scrapeAndEnrichAlcampo();
+        scrapeAndSyncDia();
+        scrapeAndSyncCarrefour();
 
         long totalSeconds = (System.currentTimeMillis() - startTime) / 1000;
         log.info("========== SCRAPING AUTOMATICO COMPLETADO en {}s ==========", totalSeconds);
@@ -104,6 +107,62 @@ public class ScrapingOrchestrator
             log.error("[alcampo] Error en scraping: {}", e.getMessage(), e);
         }
         log.info("---------- ALCAMPO: Completado ----------");
+    }
+
+    private void scrapeAndSyncDia()
+    {
+        log.info("---------- DIA: Iniciando scraping ----------");
+        try
+        {
+            if (!pythonScraperService.isHealthy())
+            {
+                log.warn("[dia] Scraper Python no disponible, omitiendo Dia");
+                return;
+            }
+
+            ScrapingResult scrapingResult = pythonScraperService.scrapeDia();
+            ProductSyncService.SyncResult syncResult = productSyncService.syncProducts(
+                scrapingResult.getProducts(), "dia");
+
+            log.info("[dia] Scraping: {} productos, {} errores en {}s",
+                     scrapingResult.getTotalProducts(), scrapingResult.getTotalErrors(),
+                     scrapingResult.getDurationSeconds());
+            log.info("[dia] Sync: {} creados, {} actualizados, {} sin cambios, {} errores",
+                     syncResult.created, syncResult.updated, syncResult.unchanged, syncResult.errors);
+        }
+        catch (Exception e)
+        {
+            log.error("[dia] Error en scraping: {}", e.getMessage(), e);
+        }
+        log.info("---------- DIA: Completado ----------");
+    }
+
+    private void scrapeAndSyncCarrefour()
+    {
+        log.info("---------- CARREFOUR: Iniciando scraping ----------");
+        try
+        {
+            if (!pythonScraperService.isHealthy())
+            {
+                log.warn("[carrefour] Scraper Python no disponible, omitiendo Carrefour");
+                return;
+            }
+
+            ScrapingResult scrapingResult = pythonScraperService.scrapeCarrefour();
+            ProductSyncService.SyncResult syncResult = productSyncService.syncProducts(
+                scrapingResult.getProducts(), "carrefour");
+
+            log.info("[carrefour] Scraping: {} productos, {} errores en {}s",
+                     scrapingResult.getTotalProducts(), scrapingResult.getTotalErrors(),
+                     scrapingResult.getDurationSeconds());
+            log.info("[carrefour] Sync: {} creados, {} actualizados, {} sin cambios, {} errores",
+                     syncResult.created, syncResult.updated, syncResult.unchanged, syncResult.errors);
+        }
+        catch (Exception e)
+        {
+            log.error("[carrefour] Error en scraping: {}", e.getMessage(), e);
+        }
+        log.info("---------- CARREFOUR: Completado ----------");
     }
 
 }
