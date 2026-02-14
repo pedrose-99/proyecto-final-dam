@@ -1,15 +1,15 @@
 package com.smartcart.smartcart.modules.shoppinglist.dto;
 
-import lombok.Data;
+public record ListItemDTO
+(
+    Integer listId,
+    Integer productId,
+    String displayName,
+    String imageUrl,
+    Integer quantity,
+    Boolean checked,
+    Boolean isGeneric
+){}
 
-@Data
-public class ListItemDTO 
-{
-    private Integer listId;
-    private Integer productId;
-    private String displayName;
-    private String imageUrl;
-    private Integer quantity;
-    private Boolean checked;
-    private Boolean isGeneric;
-}
+    
+
