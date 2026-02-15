@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BudgetProducerService {
 
-    private final KafkaTemplate<String, BudgetAlertEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final SpendingLimitRepository limitRepository;
 
     private static final String TOPIC = "budget-alerts";

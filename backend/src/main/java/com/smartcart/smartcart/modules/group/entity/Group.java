@@ -1,12 +1,13 @@
-package com.smartcart.smartcart.modules.shoppinglist.entity;
+package com.smartcart.smartcart.modules.group.entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.smartcart.smartcart.modules.group.entity.Group;
+import com.smartcart.smartcart.modules.shoppinglist.entity.ShoppingList;
 import com.smartcart.smartcart.modules.user.entity.User;
 
 import jakarta.persistence.CascadeType;
@@ -27,34 +28,40 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
-@Table(name = "shopping_list")
+@Table(name = "\"groups\"")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"items"})
-@ToString(exclude = {"items"})
-public class ShoppingList {
+@EqualsAndHashCode(exclude = {"members", "shoppingLists"})
+@ToString(exclude = {"members", "shoppingLists"})
+public class Group {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "list_id")
-    private Integer listId;
+    @Column(name = "group_id")
+    private Integer groupId;
 
     @Column(nullable = false)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "group_code", unique = true, nullable = false, length = 8)
+    private String groupCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private Group group;
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ListItem> items = new ArrayList<>();
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GroupMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    private List<ShoppingList> shoppingLists = new ArrayList<>();
+
+    public static String generateGroupCode() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+    }
 }
