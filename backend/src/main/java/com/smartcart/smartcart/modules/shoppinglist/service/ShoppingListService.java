@@ -63,6 +63,18 @@ public class ShoppingListService
         }
     }
 
+    public ShoppingListDTO getListById(Integer listId)
+    {
+        Optional<User> user = getCurrentUser();
+        if(user.isEmpty())
+        {
+            return null;
+        }
+        return slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser())
+                .map(ShoppingListMapper::toDTO)
+                .orElse(null);
+    }
+
     @Transactional
     public ShoppingListDTO createList(String name)
     {
@@ -181,7 +193,7 @@ public class ShoppingListService
     }
 
     @Transactional
-    public ShoppingListDTO removeItem(Integer listId, Integer itemId, Integer quantity, Boolean checked)
+    public ShoppingListDTO removeItem(Integer listId, Integer itemId)
     {
         Optional<User> user = getCurrentUser();
         if (user.isEmpty())
