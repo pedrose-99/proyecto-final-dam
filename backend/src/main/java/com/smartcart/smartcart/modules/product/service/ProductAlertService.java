@@ -28,8 +28,6 @@ public class ProductAlertService {
         this.productStoreRepository = productStoreRepository;
     }
 
-    // ─── Crear alerta (guardar producto como favorito con precio objetivo) ─
-
     public ProductAlertDTO createAlert(Integer productId, Double targetPrice) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -40,8 +38,6 @@ public class ProductAlertService {
         return toDTO(alert);
     }
 
-    // ─── Desactivar alerta ─
-
     public ProductAlertDTO deactivateAlert(Integer alertId) {
         ProductAlert alert = productAlertRepository.findById(alertId)
                 .orElseThrow(() -> new RuntimeException("Alerta no encontrada"));
@@ -49,15 +45,11 @@ public class ProductAlertService {
         return toDTO(productAlertRepository.save(alert));
     }
 
-    // ─── Obtener alertas activas ─
-
     public List<ProductAlertDTO> getActiveAlerts() {
         return productAlertRepository.findByActiveTrue().stream()
                 .map(this::toDTO)
                 .toList();
     }
-
-    // ─── Obtener alertas de un producto ─
 
     public List<ProductAlertDTO> getAlertsByProduct(Integer productId) {
         return productAlertRepository.findByProduct_ProductId(productId).stream()
@@ -65,20 +57,7 @@ public class ProductAlertService {
                 .toList();
     }
 
-    // ─── Mapper interno ─
-
     private ProductAlertDTO toDTO(ProductAlert entity) {
-        ProductAlertDTO dto = new ProductAlertDTO();
-        dto.setAlertId(entity.getAlertId());
-        dto.setProductId(entity.getProduct().getProductId());
-        dto.setProductName(entity.getProduct().getName());
-        dto.setProductEan(entity.getProduct().getEan());
-        dto.setTargetPrice(entity.getTargetPrice());
-        dto.setActive(entity.getActive());
-        dto.setTriggered(entity.getTriggered());
-        dto.setCreatedAt(entity.getCreatedAt());
-
-        // Obtener el precio más barato actual del producto
         List<ProductStore> stores = productStoreRepository
                 .findByProductId_ProductId(entity.getProduct().getProductId());
         Double bestPrice = stores.stream()
@@ -86,8 +65,17 @@ public class ProductAlertService {
                 .map(ProductStore::getCurrentPrice)
                 .min(Comparator.naturalOrder())
                 .orElse(null);
-        dto.setCurrentBestPrice(bestPrice);
 
-        return dto;
+        return new ProductAlertDTO(
+            entity.getAlertId(),
+            entity.getProduct().getProductId(),
+            entity.getProduct().getName(),
+            entity.getProduct().getEan(),
+            entity.getTargetPrice(),
+            bestPrice,
+            entity.getActive(),
+            entity.getTriggered(),
+            entity.getCreatedAt()
+        );
     }
 }

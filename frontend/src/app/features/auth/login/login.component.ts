@@ -42,7 +42,7 @@ export class LoginComponent {
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required]]
     });
   }
 
@@ -56,7 +56,12 @@ export class LoginComponent {
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: () => {
-          this.router.navigate(['/home']);
+          const user = this.authService.getCurrentUser();
+          if (user?.role === 'ADMIN') {
+            this.router.navigate(['/admin/dashboard']);
+          } else {
+            this.router.navigate(['/home']);
+          }
         },
         error: (err) => {
           this.errorMessage = err.error?.message || 'Error al iniciar sesión';

@@ -1,0 +1,266 @@
+.groups-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.groups-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.groups-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--smartcart-text);
+}
+
+.groups-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Formularios inline */
+.inline-form-card {
+    margin-bottom: 24px;
+    background-color: var(--smartcart-card);
+    border-radius: 12px;
+}
+
+.inline-form {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.form-field-full {
+    flex: 1;
+    min-width: 250px;
+}
+
+.inline-form-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+/* Secciones */
+.section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--smartcart-text);
+    margin-bottom: 16px;
+}
+
+.section-title mat-icon {
+    color: var(--smartcart-accent);
+}
+
+/* Invitaciones */
+.invites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.invite-card {
+    background-color: var(--smartcart-card);
+    border-radius: 12px;
+    border-left: 4px solid var(--smartcart-accent);
+}
+
+.invite-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.invite-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.invite-icon {
+    color: var(--smartcart-accent);
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+}
+
+.invite-message {
+    display: block;
+    font-weight: 500;
+    color: var(--smartcart-text);
+}
+
+.invite-group {
+    display: block;
+    font-size: 13px;
+    color: var(--smartcart-text-light);
+    margin-top: 2px;
+}
+
+.invite-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Loading */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    padding: 48px;
+}
+
+/* Estado vacio */
+.empty-state {
+    text-align: center;
+    padding: 64px 24px;
+}
+
+.empty-icon {
+    font-size: 72px;
+    width: 72px;
+    height: 72px;
+    color: var(--smartcart-text-light);
+    opacity: 0.5;
+}
+
+.empty-state h2 {
+    font-size: 22px;
+    color: var(--smartcart-text);
+    margin: 16px 0 8px;
+}
+
+.empty-state p {
+    color: var(--smartcart-text-light);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Grid de grupos */
+.groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.group-card {
+    background-color: var(--smartcart-card);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.group-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.group-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+}
+
+.group-avatar {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--smartcart-accent);
+}
+
+.group-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--smartcart-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-owner {
+    font-size: 13px;
+    color: var(--smartcart-text-light);
+}
+
+.group-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+}
+
+.group-members {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--smartcart-text-light);
+}
+
+.group-members mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.arrow-icon {
+    color: var(--smartcart-text-light);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .groups-container {
+        padding: 16px;
+    }
+
+    .groups-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .groups-actions {
+        width: 100%;
+    }
+
+    .groups-actions button {
+        flex: 1;
+    }
+
+    .invite-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .invite-actions {
+        width: 100%;
+    }
+
+    .invite-actions button {
+        flex: 1;
+    }
+}

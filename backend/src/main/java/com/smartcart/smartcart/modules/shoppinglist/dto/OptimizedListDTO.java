@@ -1,5 +1,10 @@
 package com.smartcart.smartcart.modules.shoppinglist.dto;
 
-public class OptimizedListDTO {
+import java.util.List;
 
-}
+public record OptimizedListDTO
+(
+    Double totalCost,
+    List<OptimizedStoreDTO> storeGroups,
+    List<String> notFound
+){}

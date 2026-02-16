@@ -1,23 +1,33 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './features/auth/login/login.component';
-import { RegisterComponent } from './features/auth/register/register.component';
-import { MainLayoutComponent } from './shared/layout/main-layout/main-layout.component';
-import { HomeComponent } from './features/home/home.component';
-import { authGuard } from './core/guards/auth.guard';
 import { noAuthGuard } from './core/guards/no-auth.guard';
-import { ProductDetailComponent } from './features/product/product-list/product-detail/product-detail';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent, canActivate: [noAuthGuard] },
-  { path: 'register', component: RegisterComponent, canActivate: [noAuthGuard] },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent),
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
+  },
   {
     path: '',
-    component: MainLayoutComponent,
+    loadComponent: () => import('./shared/layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     canActivate: [authGuard],
     children: [
-      { path: 'home', component: HomeComponent },
-      { path: 'producto/:id', component: ProductDetailComponent }
+      { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
+      { path: 'producto/:id', loadComponent: () => import('./features/product/product-list/product-detail/product-detail').then(m => m.ProductDetailComponent) },
+      { path: 'lists', loadComponent: () => import('./features/shopping-list/shopping-list.component').then(m => m.ShoppingListComponent) },
+      { path: 'grupos', loadComponent: () => import('./features/groups/groups.component').then(m => m.GroupsComponent) },
+      { path: 'grupos/:id', loadComponent: () => import('./features/groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent) }
     ]
   },
   { path: '**', redirectTo: '/login' }

@@ -12,9 +12,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
 import { ProductService } from '../../shared/services/product.service';
+import { ShoppingListService } from '../../shared/services/shopping-list.service';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
+import { AddToListDialogComponent, AddToListDialogResult } from '../../shared/components/add-to-list-dialog/add-to-list-dialog.component';
 import { Product, ProductFilters, ProductPage } from '../../core/models/product.model';
 import { Category } from '../../core/models/category.model';
 import { Store } from '../../core/models/store.model';
@@ -35,6 +38,7 @@ import { Store } from '../../core/models/store.model';
     MatSnackBarModule,
     MatAutocompleteModule,
     MatChipsModule,
+    MatDialogModule,
     ProductCardComponent
   ],
   templateUrl: './home.component.html',
@@ -80,6 +84,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   constructor(
     private productService: ProductService,
+    private shoppingListService: ShoppingListService,
+    private dialog: MatDialog,
     private route: ActivatedRoute,
     private router: Router,
     private snackBar: MatSnackBar,
@@ -341,22 +347,25 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onAddToList(product: Product): void {
-    if (this.productsInList.has(product.id)) {
-      return;
-    }
+    const dialogRef = this.dialog.open(AddToListDialogComponent, {
+      width: '420px',
+      data: { productId: product.id, productName: product.name }
+    });
 
-    this.productService.addToList(product.id).subscribe({
-      next: () => {
-        this.productsInList.add(product.id);
-        this.snackBar.open('Producto añadido a tu lista', 'Cerrar', {
-          duration: 2000
-        });
-      },
-      error: () => {
-        this.snackBar.open('Error al añadir el producto', 'Cerrar', {
-          duration: 3000
-        });
-      }
+    dialogRef.afterClosed().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((result: AddToListDialogResult | undefined) => {
+      if (!result) return;
+
+      this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
+        next: () => {
+          this.productsInList.add(product.id);
+          this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
+        },
+        error: () => {
+          this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
+        }
+      });
     });
   }
 

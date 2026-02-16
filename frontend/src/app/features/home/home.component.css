@@ -48,11 +48,11 @@
 
 /* Panel de los desplegables */
 ::ng-deep .mat-mdc-select-panel {
-  background-color: var(--smartcart-white, #ffffff) !important;
+  background-color: var(--smartcart-surface, #ffffff) !important;
 }
 
 ::ng-deep .mat-mdc-option {
-  background-color: var(--smartcart-white, #ffffff) !important;
+  background-color: var(--smartcart-surface, #ffffff) !important;
 }
 
 ::ng-deep .mat-mdc-option:hover {
@@ -84,7 +84,7 @@
 
 /* Panel de autocompletado */
 ::ng-deep .mat-mdc-autocomplete-panel {
-  background-color: var(--smartcart-white, #ffffff) !important;
+  background-color: var(--smartcart-surface, #ffffff) !important;
   max-height: 300px !important;
 }
 
@@ -166,15 +166,15 @@
 
 ::ng-deep .selected-stores .mat-mdc-chip-row {
   background-color: var(--smartcart-primary, #1e3a5f) !important;
-  color: var(--smartcart-white, #ffffff) !important;
+  color: #ffffff !important;
 }
 
 ::ng-deep .selected-stores .mat-mdc-chip-row .mat-icon {
-  color: var(--smartcart-white, #ffffff) !important;
+  color: #ffffff !important;
 }
 
 ::ng-deep .selected-stores .mat-mdc-chip-remove {
-  color: var(--smartcart-white, #ffffff) !important;
+  color: #ffffff !important;
   opacity: 0.7;
 }
 
@@ -281,8 +281,8 @@
   display: flex;
   justify-content: center;
   padding: 24px;
-  background-color: var(--smartcart-white);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--smartcart-surface);
+  border-top: 1px solid var(--smartcart-border);
 }
 
 /* Responsive */

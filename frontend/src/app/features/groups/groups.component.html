@@ -1,0 +1,146 @@
+<div class="groups-container">
+    <div class="groups-header">
+        <h1>Mis Grupos</h1>
+        <div class="groups-actions">
+            <button mat-flat-button color="primary" (click)="toggleCreateForm()">
+                <mat-icon>add</mat-icon>
+                Crear grupo
+            </button>
+            <button mat-stroked-button (click)="toggleJoinForm()">
+                <mat-icon>vpn_key</mat-icon>
+                Unirse con codigo
+            </button>
+        </div>
+    </div>
+
+    <!-- Formulario crear grupo -->
+    @if (showCreateForm) {
+        <mat-card class="inline-form-card">
+            <mat-card-content>
+                <div class="inline-form">
+                    <mat-form-field appearance="outline" class="form-field-full">
+                        <mat-label>Nombre del grupo</mat-label>
+                        <input matInput [formControl]="createNameControl" placeholder="Ej: Familia, Compañeros de piso..."
+                               (keyup.enter)="createGroup()">
+                    </mat-form-field>
+                    <div class="inline-form-actions">
+                        <button mat-flat-button color="primary" (click)="createGroup()"
+                                [disabled]="!createNameControl.value?.trim() || isCreating">
+                            @if (isCreating) {
+                                <mat-spinner diameter="20"></mat-spinner>
+                            } @else {
+                                Crear
+                            }
+                        </button>
+                        <button mat-button (click)="toggleCreateForm()">Cancelar</button>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    }
+
+    <!-- Formulario unirse -->
+    @if (showJoinForm) {
+        <mat-card class="inline-form-card">
+            <mat-card-content>
+                <div class="inline-form">
+                    <mat-form-field appearance="outline" class="form-field-full">
+                        <mat-label>Codigo de invitacion</mat-label>
+                        <input matInput [formControl]="joinCodeControl" placeholder="Introduce el codigo del grupo"
+                               (keyup.enter)="joinGroup()">
+                    </mat-form-field>
+                    <div class="inline-form-actions">
+                        <button mat-flat-button color="primary" (click)="joinGroup()"
+                                [disabled]="!joinCodeControl.value?.trim() || isJoining">
+                            @if (isJoining) {
+                                <mat-spinner diameter="20"></mat-spinner>
+                            } @else {
+                                Unirse
+                            }
+                        </button>
+                        <button mat-button (click)="toggleJoinForm()">Cancelar</button>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    }
+
+    <!-- Invitaciones pendientes -->
+    @if (pendingInvites.length > 0) {
+        <div class="section">
+            <h2 class="section-title">
+                <mat-icon>mail</mat-icon>
+                Invitaciones pendientes
+            </h2>
+            <div class="invites-list">
+                @for (invite of pendingInvites; track invite.notificationId) {
+                    <mat-card class="invite-card">
+                        <mat-card-content class="invite-content">
+                            <div class="invite-info">
+                                <mat-icon class="invite-icon">group_add</mat-icon>
+                                <div>
+                                    <span class="invite-message">{{ invite.message }}</span>
+                                    @if (invite.relatedGroupName) {
+                                        <span class="invite-group">{{ invite.relatedGroupName }}</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="invite-actions">
+                                <button mat-flat-button color="primary" (click)="respondToInvite(invite, true)">
+                                    <mat-icon>check</mat-icon>
+                                    Aceptar
+                                </button>
+                                <button mat-stroked-button color="warn" (click)="respondToInvite(invite, false)">
+                                    <mat-icon>close</mat-icon>
+                                    Rechazar
+                                </button>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Loading -->
+    @if (isLoading) {
+        <div class="loading-container">
+            <mat-spinner diameter="48"></mat-spinner>
+        </div>
+    }
+
+    <!-- Grupos -->
+    @if (!isLoading) {
+        @if (groups.length === 0) {
+            <div class="empty-state">
+                <mat-icon class="empty-icon">groups</mat-icon>
+                <h2>No tienes grupos todavia</h2>
+                <p>Crea un grupo o unete con un codigo de invitacion para empezar a compartir listas de la compra.</p>
+            </div>
+        } @else {
+            <div class="groups-grid">
+                @for (group of groups; track group.groupId) {
+                    <mat-card class="group-card" (click)="goToGroup(group)">
+                        <mat-card-content>
+                            <div class="group-card-header">
+                                <mat-icon class="group-avatar">groups</mat-icon>
+                                <div class="group-card-info">
+                                    <h3 class="group-name">{{ group.name }}</h3>
+                                    <span class="group-owner">Propietario: {{ group.ownerUsername }}</span>
+                                </div>
+                            </div>
+                            <mat-divider></mat-divider>
+                            <div class="group-card-footer">
+                                <span class="group-members">
+                                    <mat-icon>person</mat-icon>
+                                    {{ getAcceptedCount(group) }} miembros
+                                </span>
+                                <mat-icon class="arrow-icon">chevron_right</mat-icon>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                }
+            </div>
+        }
+    }
+</div>

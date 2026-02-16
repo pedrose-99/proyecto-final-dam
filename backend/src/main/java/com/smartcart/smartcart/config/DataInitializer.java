@@ -6,10 +6,13 @@ import com.smartcart.smartcart.modules.scraping.service.ProductSyncService;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
 import com.smartcart.smartcart.modules.user.entity.Role;
+import com.smartcart.smartcart.modules.user.entity.User;
 import com.smartcart.smartcart.modules.user.repository.RoleRepository;
+import com.smartcart.smartcart.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,6 +21,8 @@ import org.springframework.stereotype.Component;
 public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final StoreRepository storeRepository;
     private final ProductStoreRepository productStoreRepository;
     private final CsvImportService csvImportService;
@@ -25,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         initRoles();
+        initAdminUser();
         initStores();
         initProducts();
     }
@@ -44,6 +50,21 @@ public class DataInitializer implements CommandLineRunner {
             adminRole.setPermissions("READ,WRITE,DELETE,ADMIN");
             roleRepository.save(adminRole);
             log.info("Rol ADMIN creado");
+        }
+    }
+
+    private void initAdminUser() {
+        if (userRepository.countByRole_Name("ADMIN") == 0) {
+            Role adminRole = roleRepository.findByName("ADMIN")
+                    .orElseThrow(() -> new RuntimeException("Rol ADMIN no encontrado"));
+
+            User admin = new User();
+            admin.setUsername("admin");
+            admin.setEmail("admin@admin.com");
+            admin.setPassword(passwordEncoder.encode("pass"));
+            admin.setRole(adminRole);
+            userRepository.save(admin);
+            log.info("Usuario ADMIN por defecto creado (admin@admin.com / pass)");
         }
     }
 

@@ -1,0 +1,47 @@
+# ==========================================
+# GRUPOS COLABORATIVOS Y NOTIFICACIONES
+# ==========================================
+
+extend type Query {
+    getMyGroups: [GroupDTO]
+    getNotifications: [NotificationDTO]
+    getGroupDetails(groupId: ID!): GroupDTO
+}
+
+extend type Mutation {
+    createGroup(name: String!): GroupDTO
+    inviteToGroup(groupId: ID!, target: String!): Boolean
+    joinGroupByCode(code: String!): GroupDTO
+    respondToInvite(notificationId: ID!, accept: Boolean!): Boolean
+}
+
+# ==================== TYPES ====================
+
+type GroupDTO {
+    groupId: ID
+    name: String
+    groupCode: String
+    ownerUsername: String
+    ownerId: Int
+    createdAt: String
+    members: [GroupMemberDTO]
+    shoppingLists: [ShoppingListDTO]
+}
+
+type GroupMemberDTO {
+    id: ID
+    userId: Int
+    username: String
+    email: String
+    status: String
+}
+
+type NotificationDTO {
+    notificationId: ID
+    message: String
+    type: String
+    isRead: Boolean
+    relatedGroupId: Int
+    relatedGroupName: String
+    createdAt: String
+}

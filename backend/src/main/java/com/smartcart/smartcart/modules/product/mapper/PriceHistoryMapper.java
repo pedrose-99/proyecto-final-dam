@@ -1,7 +1,5 @@
 package com.smartcart.smartcart.modules.product.mapper;
 
-
-
 import com.smartcart.smartcart.modules.product.dto.PriceHistoryDTO;
 import com.smartcart.smartcart.modules.product.dto.PriceUpdateDTO;
 import com.smartcart.smartcart.modules.product.entity.PriceHistory;
@@ -10,32 +8,32 @@ import java.time.LocalDateTime;
 
 public class PriceHistoryMapper {
 
-    // PARA EL FRONT: De Entidad a DTO
     public static PriceHistoryDTO toDTO(PriceHistory entity) {
-        PriceHistoryDTO dto = new PriceHistoryDTO();
-        dto.setPriceHistoryId(entity.getPriceHistoryId());
-        dto.setPrice(entity.getPrice());
-        dto.setOriginalPrice(entity.getOriginalPrice());
-        dto.setIsOnSale(entity.getIsOnSale());
-        dto.setRecordedAt(entity.getRecordedAt());
-        
-        // Navegamos por las relaciones para sacar nombres
+        String storeName = null;
+        String productName = null;
         if (entity.getProductStoreId() != null) {
-            dto.setStoreName(entity.getProductStoreId().getStoreId().getName());
-            dto.setProductName(entity.getProductStoreId().getProductId().getName());
+            storeName = entity.getProductStoreId().getStoreId().getName();
+            productName = entity.getProductStoreId().getProductId().getName();
         }
-        return dto;
+        return new PriceHistoryDTO(
+            entity.getPriceHistoryId(),
+            entity.getPrice(),
+            entity.getOriginalPrice(),
+            entity.getIsOnSale(),
+            entity.getRecordedAt(),
+            storeName,
+            productName
+        );
     }
 
-    // PARA EL SCRAPER: De DTO a Entidad (Para crear el registro)
     public static PriceHistory toEntity(PriceUpdateDTO dto, ProductStore ps) {
         PriceHistory history = new PriceHistory();
         history.setProductStoreId(ps);
         history.setStoreId(ps.getStoreId());
-        history.setPrice(dto.getPrice());
-        history.setOriginalPrice(dto.getOriginalPrice());
-        history.setIsOnSale(dto.getIsOnSale());
-        history.setRecordedAt(LocalDateTime.now()); // Fecha de ahora
+        history.setPrice(dto.price());
+        history.setOriginalPrice(dto.originalPrice());
+        history.setIsOnSale(dto.isOnSale());
+        history.setRecordedAt(LocalDateTime.now());
         return history;
     }
 }
