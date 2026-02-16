@@ -27,6 +27,12 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query("SELECT DISTINCT p FROM Product p JOIN ProductStore ps ON p.productId = ps.productId.productId WHERE ps.storeId.storeId = :storeId")
     List<Product> findByStoreId(@Param("storeId") Integer storeId);
 
-    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query(value = "SELECT * FROM product WHERE " +
+            "LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
+            "OR LOWER(translate(COALESCE(brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%'",
+            countQuery = "SELECT count(*) FROM product WHERE " +
+            "LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
+            "OR LOWER(translate(COALESCE(brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%'",
+            nativeQuery = true)
     Page<Product> searchByText(@Param("query") String query, Pageable pageable);
 }

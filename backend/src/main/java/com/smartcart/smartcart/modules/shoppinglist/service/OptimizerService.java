@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
@@ -29,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OptimizerService 
+public class OptimizerService
 {
     private final ShoppingListRepository slRepository;
     private final ProductRepository productRepository;
@@ -41,11 +43,11 @@ public class OptimizerService
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         try
         {
-           return userRepository.findByEmail(email);
+            return userRepository.findByEmail(email);
         }
-        catch(RuntimeException e)
+        catch (RuntimeException e)
         {
-            log.error("Usuario no encontrado", e.getMessage());
+            log.error("Usuario no encontrado: {}", e.getMessage());
         }
         return Optional.empty();
     }
@@ -62,38 +64,47 @@ public class OptimizerService
 
     private BestMatch findBestPrice(ListItem item, List<Integer> storeIds)
     {
-        List<ProductStore> candidates;
+        List<ProductStore> candidates = new ArrayList<>();
 
         if (item.getProduct() != null)
         {
             candidates = psRepository.findByProductId_ProductId(item.getProduct().getProductId());
         }
         else
-        {            
+        {
             String searchTerm = item.getGenericName();
             if (searchTerm == null || searchTerm.isBlank())
             {
                 return null;
             }
 
-            Optional<Product> productOpt = productRepository.findByNameIgnoreCase(searchTerm);
-            if (productOpt.isEmpty())
+            // Try exact match first
+            Optional<Product> exactMatch = productRepository.findByNameIgnoreCase(searchTerm);
+            if (exactMatch.isPresent())
             {
-                return null;
+                candidates = psRepository.findByProductId_ProductId(exactMatch.get().getProductId());
             }
-
-            List<Product> matchingProducts = List.of(productOpt.get());
-
-            candidates = new ArrayList<>();
-            for (Product p : matchingProducts)
+            else
             {
-                candidates.addAll(psRepository.findByProductId_ProductId(p.getProductId()));
+                // Fallback: text search
+                List<Product> searchResults = productRepository
+                    .searchByText(searchTerm, PageRequest.of(0, 5))
+                    .getContent();
+
+                for (Product p : searchResults)
+                {
+                    candidates.addAll(psRepository.findByProductId_ProductId(p.getProductId()));
+                }
             }
+        }
+
+        if (candidates.isEmpty())
+        {
+            return null;
         }
 
         return candidates.stream()
                 .filter(ps -> storeIds.contains(ps.getStoreId().getStoreId()))
-                .filter(ps -> Boolean.TRUE.equals(ps.getAvailable()))
                 .filter(ps -> ps.getCurrentPrice() != null && ps.getCurrentPrice() > 0)
                 .min(Comparator.comparingDouble(ProductStore::getCurrentPrice))
                 .map(ps -> new BestMatch(
@@ -108,24 +119,36 @@ public class OptimizerService
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public OptimizedListDTO optimize(Integer listId, List<Integer> storeIds)
     {
         Optional<User> user = getCurrentUser();
-        Optional<ShoppingList> list = slRepository.findByListIdAndUser_IdUser(listId,user.get().getIdUser());
+        if (user.isEmpty())
+        {
+            throw new RuntimeException("Usuario no encontrado");
+        }
 
+        Optional<ShoppingList> listOpt = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
+        if (listOpt.isEmpty())
+        {
+            throw new RuntimeException("Lista no encontrada");
+        }
+
+        ShoppingList list = listOpt.get();
         LinkedHashMap<Integer, List<OptimizedItemDTO>> storeItemsMap = new LinkedHashMap<>();
         LinkedHashMap<Integer, String[]> storeInfoMap = new LinkedHashMap<>();
         List<String> notFound = new ArrayList<>();
 
-        for(ListItem item : list.get().getItems())
+        for (ListItem item : list.getItems())
         {
             BestMatch bestMatch = findBestPrice(item, storeIds);
 
-            if(bestMatch == null)
+            if (bestMatch == null)
             {
-                notFound.add(item.getDisplayName());
+                notFound.add(item.getProduct() != null ? item.getProduct().getName() : item.getGenericName());
                 continue;
             }
+
             storeInfoMap.putIfAbsent(bestMatch.storeId(), new String[]{bestMatch.storeName(), bestMatch.storeLogo()});
 
             OptimizedItemDTO optimizedItem = new OptimizedItemDTO(
@@ -143,7 +166,7 @@ public class OptimizerService
         List<OptimizedStoreDTO> storeGroups = new ArrayList<>();
         double total = 0.0;
 
-        for(Map.Entry<Integer, List<OptimizedItemDTO>> entry : storeItemsMap.entrySet())
+        for (Map.Entry<Integer, List<OptimizedItemDTO>> entry : storeItemsMap.entrySet())
         {
             Integer storeId = entry.getKey();
             List<OptimizedItemDTO> items = entry.getValue();
@@ -167,7 +190,4 @@ public class OptimizerService
 
         return new OptimizedListDTO(total, storeGroups, notFound);
     }
-
-
 }
-    

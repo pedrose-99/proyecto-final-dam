@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
 import { noAuthGuard } from './core/guards/no-auth.guard';
-import { ProductDetailComponent } from './features/product/product-list/product-detail/product-detail';
-import { ShoppingListComponent } from './features/shopping-list/shopping-list.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -25,11 +23,11 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     canActivate: [authGuard],
     children: [
-      { path: 'home', component: HomeComponent },
-      { path: 'producto/:id', component: ProductDetailComponent },
-      { path: 'lists', component: ShoppingListComponent }
       { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
-      { path: 'producto/:id', loadComponent: () => import('./features/product/product-list/product-detail/product-detail').then(m => m.ProductDetailComponent) }
+      { path: 'producto/:id', loadComponent: () => import('./features/product/product-list/product-detail/product-detail').then(m => m.ProductDetailComponent) },
+      { path: 'lists', loadComponent: () => import('./features/shopping-list/shopping-list.component').then(m => m.ShoppingListComponent) },
+      { path: 'grupos', loadComponent: () => import('./features/groups/groups.component').then(m => m.GroupsComponent) },
+      { path: 'grupos/:id', loadComponent: () => import('./features/groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent) }
     ]
   },
   { path: '**', redirectTo: '/login' }

@@ -310,16 +310,18 @@ public class CollaborationService {
                         sl.getUser().getIdUser(),
                         sl.getUser().getRealUsername(),
                         sl.getGroup() != null ? sl.getGroup().getGroupId() : null,
+                        sl.getGroup() != null ? sl.getGroup().getName() : null,
                         sl.getCreatedAt(),
                         sl.getItems() != null
                                 ? sl.getItems().stream()
                                     .map(item -> new ListItemDTO(
                                             item.getItemId(),
                                             item.getProduct() != null ? item.getProduct().getProductId() : null,
-                                            item.getProduct() != null ? item.getProduct().getName() : null,
-                                            item.getCustomName(),
+                                            item.getProduct() != null ? item.getProduct().getName() : item.getGenericName(),
+                                            item.getProduct() != null ? item.getProduct().getImageUrl() : null,
                                             item.getQuantity(),
-                                            item.getChecked()
+                                            item.getChecked(),
+                                            item.getProduct() == null
                                     ))
                                     .collect(Collectors.toList())
                                 : Collections.emptyList()

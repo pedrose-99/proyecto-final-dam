@@ -84,12 +84,62 @@
       </mat-icon>
     </button>
 
-    <!-- Carrito / Lista -->
-    <button mat-icon-button (click)="goToCart()" aria-label="Lista de compra">
-      <mat-icon [matBadge]="cartCount > 0 ? cartCount : null" matBadgeColor="accent">
-        shopping_basket
+    <!-- Listas de la compra -->
+    <button mat-icon-button (click)="goToCart()" aria-label="Mis listas" matTooltip="Mis listas">
+      <mat-icon>list_alt</mat-icon>
+    </button>
+
+    <!-- Grupos -->
+    <button mat-icon-button (click)="goToGroups()" aria-label="Grupos" matTooltip="Grupos">
+      <mat-icon>groups</mat-icon>
+    </button>
+
+    <!-- Notificaciones -->
+    <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notificaciones" matTooltip="Notificaciones">
+      <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn" matBadgeSize="small">
+        notifications
       </mat-icon>
     </button>
+
+    <mat-menu #notifMenu="matMenu" class="notifications-menu">
+      <div class="notif-menu-header" (click)="$event.stopPropagation()">
+        <span class="notif-menu-title">Notificaciones</span>
+      </div>
+      <mat-divider></mat-divider>
+
+      @if (notifications.length === 0) {
+        <div class="notif-empty" (click)="$event.stopPropagation()">
+          <span>No tienes notificaciones</span>
+        </div>
+      }
+
+      @for (notif of notifications; track notif.notificationId) {
+        <div class="notif-item" (click)="$event.stopPropagation()">
+          <div class="notif-item-content">
+            <mat-icon class="notif-icon" [class.notif-unread]="!notif.isRead">
+              {{ notif.type === 'INVITE' ? 'group_add' : notif.type === 'UPDATE' ? 'update' : 'info' }}
+            </mat-icon>
+            <div class="notif-text">
+              <span class="notif-message" [class.notif-unread-text]="!notif.isRead">{{ notif.message }}</span>
+              @if (notif.relatedGroupName) {
+                <span class="notif-group">{{ notif.relatedGroupName }}</span>
+              }
+            </div>
+          </div>
+          @if (notif.type === 'INVITE' && !notif.isRead) {
+            <div class="notif-actions">
+              <button mat-icon-button color="primary" (click)="respondToInvite(notif, true)" matTooltip="Aceptar">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="respondToInvite(notif, false)" matTooltip="Rechazar">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <mat-divider></mat-divider>
+      }
+    </mat-menu>
 
     <!-- Menu Usuario -->
     <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menu de usuario">
@@ -118,6 +168,11 @@
       <button mat-menu-item (click)="goToLists()">
         <mat-icon>list_alt</mat-icon>
         <span>Mis listas</span>
+      </button>
+
+      <button mat-menu-item (click)="goToGroups()">
+        <mat-icon>groups</mat-icon>
+        <span>Grupos</span>
       </button>
 
       <button mat-menu-item (click)="goToHistory()">

@@ -45,22 +45,3 @@ type NotificationDTO {
     relatedGroupName: String
     createdAt: String
 }
-
-type ShoppingListDTO {
-    listId: ID
-    name: String
-    userId: Int
-    username: String
-    groupId: Int
-    createdAt: String
-    items: [ListItemDTO]
-}
-
-type ListItemDTO {
-    itemId: ID
-    productId: Int
-    productName: String
-    customName: String
-    quantity: Int
-    checked: Boolean
-}

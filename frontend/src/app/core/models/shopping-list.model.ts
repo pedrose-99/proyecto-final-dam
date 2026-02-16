@@ -1,8 +1,9 @@
 export interface ShoppingList {
   listId: number;
   name: string;
+  groupId: number | null;
+  groupName: string | null;
   createdAt: string;
-  updatedAt: string;
   items: ListItem[];
 }
 
@@ -37,4 +38,14 @@ export interface OptimizedItem {
   unitPrice: number;
   quantity: number;
   lineTotal: number;
+}
+
+export interface SublistInput {
+  storeName: string;
+  items: SublistItemInput[];
+}
+
+export interface SublistItemInput {
+  productId: number;
+  quantity: number;
 }

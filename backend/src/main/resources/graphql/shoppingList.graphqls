@@ -6,19 +6,34 @@ extend type Query
 }
 extend type Mutation 
 {
-    createShoppingList(name: String!): ShoppingListDTO
+    createShoppingList(name: String!, groupId: ID): ShoppingListDTO
     deleteShoppingList(listId: ID!): Boolean
 
     addItemToList(listId: ID!, productId: ID, genericName: String, quantity: Int): ShoppingListDTO
     updateListItem(listId: ID!, itemId: ID!, quantity: Int, checked: Boolean): ShoppingListDTO
     removeListItem(listId: ID!, itemId: ID!): ShoppingListDTO
+
+    createSublists(originalListName: String!, sublists: [SublistInput!]!): [ShoppingListDTO]
+}
+
+input SublistInput {
+    storeName: String!
+    items: [SublistItemInput!]!
+}
+
+input SublistItemInput {
+    productId: ID!
+    quantity: Int!
 }
 
 type ShoppingListDTO {
     listId: ID
     name: String
+    userId: ID
+    username: String
+    groupId: ID
+    groupName: String
     createdAt: String
-    updatedAt: String
     items: [ListItemDTO]
 }
 

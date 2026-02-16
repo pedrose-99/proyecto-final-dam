@@ -1,6 +1,7 @@
 package com.smartcart.smartcart.modules.shoppinglist.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -40,9 +41,9 @@ public class ShoppingListController
     }
 
     @MutationMapping
-    public ShoppingListDTO createShoppingList(@Argument String name)
+    public ShoppingListDTO createShoppingList(@Argument String name, @Argument Integer groupId)
     {
-        return slService.createList(name);
+        return slService.createList(name, groupId);
     }
 
     @MutationMapping
@@ -75,6 +76,14 @@ public class ShoppingListController
     public ShoppingListDTO removeListItem(@Argument Integer listId, @Argument Integer itemId)
     {
         return slService.removeItem(listId, itemId);
+    }
+
+    @MutationMapping
+    public List<ShoppingListDTO> createSublists(
+            @Argument String originalListName,
+            @Argument List<Map<String, Object>> sublists)
+    {
+        return slService.createSublists(originalListName, sublists);
     }
 
 }

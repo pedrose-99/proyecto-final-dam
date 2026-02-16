@@ -5,14 +5,13 @@
 
     <!-- Formulario para crear nueva lista -->
     <div class="create-list-form">
-      <mat-form-field appearance="outline" class="list-name-field">
-        <mat-label>Ej: Compra semanal</mat-label>
-        <input matInput [formControl]="newListNameControl" 
+      <mat-form-field appearance="outline" class="list-name-field" subscriptSizing="dynamic">
+        <mat-label>Nombre de la lista</mat-label>
+        <input matInput [formControl]="newListNameControl"
+               placeholder="Ej: Compra semanal"
                (keyup.enter)="createList()" />
       </mat-form-field>
-      <button mat-raised-button color="primary" 
-              (click)="createList()"
-              [disabled]="!newListNameControl.value">
+      <button mat-raised-button class="primary-btn" (click)="createList()">
         <mat-icon>add</mat-icon>
         Crear Lista
       </button>
@@ -26,7 +25,7 @@
 
     <!-- Grid de tarjetas con las listas -->
     <div *ngIf="!isLoading && lists.length > 0" class="lists-grid">
-      <mat-card *ngFor="let list of lists" class="list-card" (click)="selectList(list)">
+      <mat-card *ngFor="let list of lists" class="list-card" [class.group-list]="list.groupId" (click)="selectList(list)">
         <mat-card-content>
           <div class="card-header">
             <h2>{{ list.name }}</h2>
@@ -34,8 +33,14 @@
               <mat-icon>delete</mat-icon>
             </button>
           </div>
-          <p class="item-count">{{ list.items.length }} producto{{ list.items.length !== 1 ? 's' : '' }}</p>
-          <p class="last-updated">Actualizado: {{ list.updatedAt }}</p>
+          <p class="item-count">{{ (list.items?.length || 0) }} producto{{ (list.items?.length || 0) !== 1 ? 's' : '' }}</p>
+          <div class="card-footer">
+            <p class="last-updated">{{ list.createdAt | date:'dd/MM/yyyy' }}</p>
+            <span *ngIf="list.groupId" class="group-badge">
+              <mat-icon>groups</mat-icon>
+              {{ list.groupName || 'Grupo' }}
+            </span>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>
@@ -95,8 +100,8 @@
     <!-- Lista de items -->
     <div class="items-section">
       <h2>Productos en la lista</h2>
-      <div *ngIf="selectedList.items.length > 0; else emptyList" class="items-list">
-        <div *ngFor="let item of selectedList.items" 
+      <div *ngIf="selectedList!.items?.length! > 0; else emptyList" class="items-list">
+        <div *ngFor="let item of selectedList!.items"
              class="item-row" 
              [class.checked]="item.checked">
           <!-- Checkbox -->
@@ -164,7 +169,7 @@
     <div class="optimize-section">
       <button mat-raised-button color="accent" 
               (click)="optimize()"
-              [disabled]="isOptimizing || selectedStoreIds.size === 0 || selectedList.items.length === 0"
+              [disabled]="isOptimizing || selectedStoreIds.size === 0 || !selectedList.items?.length"
               class="optimize-button">
         <mat-icon *ngIf="!isOptimizing">savings</mat-icon>
         <mat-spinner *ngIf="isOptimizing" diameter="20" class="inline-spinner"></mat-spinner>
@@ -172,31 +177,31 @@
       </button>
     </div>
 
-    <!-- Sección de resultado de optimización -->
-    <div *ngIf="optimizedResult" class="optimization-result">
+    <!-- Sección de resultado de optimización (editable) -->
+    <div *ngIf="editableResult" class="optimization-result">
       <h2>Resultado de la Optimización</h2>
 
       <!-- Coste total -->
       <div class="total-cost">
         <span class="label">Coste total estimado:</span>
-        <span class="amount">{{ optimizedResult.totalCost | number: '1.2-2' }} EUR</span>
+        <span class="amount">{{ editableResult.totalCost | number: '1.2-2' }} EUR</span>
       </div>
 
       <!-- Tiendas optimizadas -->
-      <div *ngFor="let storeGroup of optimizedResult.storeGroups" class="store-group">
+      <div *ngFor="let storeGroup of editableResult.storeGroups; let si = index" class="store-group">
         <mat-card class="store-card">
           <mat-card-header>
             <img [src]="storeGroup.storeLogo" class="store-avatar">
             <mat-card-title>{{ storeGroup.storeName }}</mat-card-title>
             <mat-card-subtitle>
-              {{ storeGroup.items.length }} producto{{ storeGroup.items.length !== 1 ? 's' : '' }} • 
+              {{ storeGroup.items.length }} producto{{ storeGroup.items.length !== 1 ? 's' : '' }} •
               {{ storeGroup.subtotal | number: '1.2-2' }} EUR
             </mat-card-subtitle>
           </mat-card-header>
 
           <mat-card-content>
             <div class="store-items">
-              <div *ngFor="let item of storeGroup.items" class="optimized-item-row">
+              <div *ngFor="let item of storeGroup.items; let ii = index" class="optimized-item-row">
                 <div class="item-image">
                   <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.productName }}">
                   <mat-icon *ngIf="!item.imageUrl" class="placeholder-icon">shopping_basket</mat-icon>
@@ -205,11 +210,28 @@
                 <div class="item-details">
                   <span class="product-name">{{ item.productName }}</span>
                   <span class="price-info">
-                    {{ item.unitPrice | number: '1.2-2' }} EUR × {{ item.quantity }}
+                    {{ item.unitPrice | number: '1.2-2' }} EUR x {{ item.quantity }}
                   </span>
                 </div>
 
+                <!-- Controles de cantidad editables -->
+                <div class="optimized-quantity-controls">
+                  <button mat-icon-button (click)="changeOptimizedQuantity(si, ii, -1)" [disabled]="item.quantity <= 1">
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <span class="quantity-value">{{ item.quantity }}</span>
+                  <button mat-icon-button (click)="changeOptimizedQuantity(si, ii, 1)">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+
                 <span class="line-total">{{ item.lineTotal | number: '1.2-2' }} EUR</span>
+
+                <!-- Botón eliminar item -->
+                <button mat-icon-button color="warn" (click)="removeOptimizedItem(si, ii)"
+                        matTooltip="Quitar producto">
+                  <mat-icon>close</mat-icon>
+                </button>
               </div>
             </div>
           </mat-card-content>
@@ -217,13 +239,32 @@
       </div>
 
       <!-- Productos no encontrados -->
-      <div *ngIf="optimizedResult.notFound && optimizedResult.notFound.length > 0" class="not-found-section">
+      <div *ngIf="editableResult.notFound && editableResult.notFound.length > 0" class="not-found-section">
         <strong>No encontrados en las tiendas seleccionadas:</strong>
         <div class="not-found-chips">
-          <mat-chip *ngFor="let item of optimizedResult.notFound" disabled>
-            {{ item }}
+          <mat-chip *ngFor="let nf of editableResult.notFound" disabled>
+            <ng-container *ngIf="nf">{{ nf }}</ng-container>
           </mat-chip>
         </div>
+      </div>
+
+      <!-- Preview de sublistas y botón Aceptar -->
+      <div *ngIf="editableResult.storeGroups.length > 0" class="accept-section">
+        <div class="sublists-preview">
+          <strong>Se crearán las siguientes listas:</strong>
+          <ul>
+            <li *ngFor="let g of editableResult.storeGroups">
+              {{ g.storeName }} de {{ selectedList!.name }}
+            </li>
+          </ul>
+        </div>
+        <button mat-raised-button class="accept-button"
+                (click)="acceptOptimization()"
+                [disabled]="isCreatingSublists">
+          <mat-spinner *ngIf="isCreatingSublists" diameter="20" class="inline-spinner"></mat-spinner>
+          <mat-icon *ngIf="!isCreatingSublists">check_circle</mat-icon>
+          <span>{{ isCreatingSublists ? 'Creando...' : 'Aceptar' }}</span>
+        </button>
       </div>
     </div>
   </div>

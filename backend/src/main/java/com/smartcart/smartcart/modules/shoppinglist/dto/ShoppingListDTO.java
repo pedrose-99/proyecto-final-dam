@@ -9,6 +9,7 @@ public record ShoppingListDTO(
     Integer userId,
     String username,
     Integer groupId,
+    String groupName,
     LocalDateTime createdAt,
     List<ListItemDTO> items
 ) {}
