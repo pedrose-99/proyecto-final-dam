@@ -18,9 +18,9 @@ import { Subject } from 'rxjs';
 import { takeUntil, debounceTime, filter } from 'rxjs/operators';
 import { ShoppingListService } from '../../shared/services/shopping-list.service';
 import { ProductService } from '../../shared/services/product.service';
-import { ShoppingList, ListItem, OptimizedList } from '../../core/models/shopping-list.model';
+import { ShoppingList, ListItem, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
 import { Store } from '../../core/models/store.model';
-import { Product } from '../../core/models/product.model';
+import { ProductSearchResult } from '../../core/models/product.model';
 
 @Component({
   selector: 'app-shopping-list',
@@ -49,16 +49,18 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   lists: ShoppingList[] = [];
   selectedList: ShoppingList | null = null;
   optimizedResult: OptimizedList | null = null;
+  editableResult: OptimizedList | null = null;
   stores: Store[] = [];
   selectedStoreIds: Set<number> = new Set();
-  
+
   searchControl = new FormControl<string>('');
-  searchResults: Product[] = [];
-  
+  searchResults: ProductSearchResult[] = [];
+
   newListNameControl = new FormControl<string>('');
-  
+
   isLoading = false;
   isOptimizing = false;
+  isCreatingSublists = false;
   
   private destroy$ = new Subject<void>();
 
@@ -85,7 +87,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (lists) => {
-          this.lists = lists;
+          this.lists = (lists || []).map(l => ({ ...l, items: l.items || [] }));
           this.isLoading = false;
         },
         error: () => {
@@ -136,6 +138,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   createList(): void {
     const name = (this.newListNameControl.value || '').trim();
     if (!name) {
+      this.snackBar.open('Escribe un nombre para la lista', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -143,6 +146,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (list) => {
+          if (!list.items) list.items = [];
           this.lists.unshift(list);
           this.selectedList = list;
           this.newListNameControl.reset();
@@ -156,6 +160,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
 
   selectList(list: ShoppingList): void {
     this.optimizedResult = null;
+    this.editableResult = null;
     this.shoppingListService.getListById(list.listId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -186,7 +191,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   }
 
   onProductSelected(event: any): void {
-    const product = event.option.value as Product;
+    const product = event.option.value as ProductSearchResult;
     if (!this.selectedList) return;
 
     this.shoppingListService.addItem(this.selectedList.listId, product.id, null, 1)
@@ -276,6 +281,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       this.selectedStoreIds.add(storeId);
     }
     this.optimizedResult = null;
+    this.editableResult = null;
   }
 
   isStoreSelected(storeId: number): boolean {
@@ -306,6 +312,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           this.optimizedResult = result;
+          this.editableResult = JSON.parse(JSON.stringify(result));
           this.isOptimizing = false;
         },
         error: () => {
@@ -315,13 +322,81 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       });
   }
 
-  displayProduct(product: Product): string {
+  removeOptimizedItem(storeIdx: number, itemIdx: number): void {
+    if (!this.editableResult) return;
+
+    const group = this.editableResult.storeGroups[storeIdx];
+    group.items.splice(itemIdx, 1);
+
+    if (group.items.length === 0) {
+      this.editableResult.storeGroups.splice(storeIdx, 1);
+    } else {
+      group.subtotal = group.items.reduce((sum, i) => sum + i.lineTotal, 0);
+    }
+
+    this.editableResult.totalCost = this.editableResult.storeGroups
+      .reduce((sum, g) => sum + g.subtotal, 0);
+  }
+
+  changeOptimizedQuantity(storeIdx: number, itemIdx: number, delta: number): void {
+    if (!this.editableResult) return;
+
+    const item = this.editableResult.storeGroups[storeIdx].items[itemIdx];
+    item.quantity = Math.max(1, item.quantity + delta);
+    item.lineTotal = item.unitPrice * item.quantity;
+
+    const group = this.editableResult.storeGroups[storeIdx];
+    group.subtotal = group.items.reduce((sum, i) => sum + i.lineTotal, 0);
+
+    this.editableResult.totalCost = this.editableResult.storeGroups
+      .reduce((sum, g) => sum + g.subtotal, 0);
+  }
+
+  acceptOptimization(): void {
+    if (!this.editableResult || !this.selectedList) return;
+    if (this.editableResult.storeGroups.length === 0) return;
+
+    this.isCreatingSublists = true;
+
+    const sublists: SublistInput[] = this.editableResult.storeGroups.map(group => ({
+      storeName: group.storeName,
+      items: group.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }))
+    }));
+
+    this.shoppingListService.createSublists(this.selectedList.name, sublists)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (newLists) => {
+          this.isCreatingSublists = false;
+          this.snackBar.open(
+            `Se crearon ${newLists.length} sublista${newLists.length !== 1 ? 's' : ''}`,
+            'Cerrar',
+            { duration: 3000 }
+          );
+          this.selectedList = null;
+          this.optimizedResult = null;
+          this.editableResult = null;
+          this.selectedStoreIds.clear();
+          this.loadLists();
+        },
+        error: () => {
+          this.isCreatingSublists = false;
+          this.snackBar.open('Error al crear las sublistas', 'Cerrar', { duration: 3000 });
+        }
+      });
+  }
+
+  displayProduct(product: ProductSearchResult): string {
     return product ? product.name : '';
   }
 
   backToLists(): void {
     this.selectedList = null;
     this.optimizedResult = null;
+    this.editableResult = null;
     this.selectedStoreIds.clear();
     this.searchControl.reset();
     this.searchResults = [];

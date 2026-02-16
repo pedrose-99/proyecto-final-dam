@@ -14,7 +14,9 @@ import com.smartcart.smartcart.modules.user.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -126,31 +128,33 @@ public class ShoppingListService
         {
             throw new RuntimeException("Lista no encontrada");
         }
-        
+
         ShoppingList list = listOpt.get();
         ListItem newItem = new ListItem();
         newItem.setShoppingList(list);
-        if(quantity == null)
-        {
-            quantity = 1;
-            newItem.setQuantity(quantity);
-        }
+        newItem.setQuantity(quantity != null ? quantity : 1);
         newItem.setChecked(false);
-        if(productId != null)
+
+        if (productId != null)
         {
-            try
+            var productOpt = productRepository.findById(productId);
+            if (productOpt.isEmpty())
             {
-                productRepository.findByNameIgnoreCase(genericName);
-                newItem.setGenericName(genericName);
+                throw new RuntimeException("Producto no encontrado con id: " + productId);
             }
-            catch(RuntimeException e)
-            {
-                log.error("Producto no encontrado", e.getMessage());
-            } 
+            newItem.setProduct(productOpt.get());
+        }
+        else if (genericName != null && !genericName.isBlank())
+        {
+            newItem.setGenericName(genericName);
+        }
+        else
+        {
+            throw new RuntimeException("Se requiere productId o genericName");
         }
 
-       list.getItems().add(newItem);
-       return ShoppingListMapper.toDTO(slRepository.save(list));
+        list.getItems().add(newItem);
+        return ShoppingListMapper.toDTO(slRepository.save(list));
     }
 
     @Transactional
@@ -212,6 +216,54 @@ public class ShoppingListService
 
         slRepository.save(list);
         return ShoppingListMapper.toDTO(list);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Transactional
+    public List<ShoppingListDTO> createSublists(String originalListName, List<Map<String, Object>> sublists)
+    {
+        Optional<User> user = getCurrentUser();
+        if (user.isEmpty())
+        {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+
+        List<ShoppingListDTO> result = new ArrayList<>();
+
+        for (Map<String, Object> sublist : sublists)
+        {
+            String storeName = (String) sublist.get("storeName");
+            List<Map<String, Object>> items = (List<Map<String, Object>>) sublist.get("items");
+
+            ShoppingList shoppingList = new ShoppingList();
+            shoppingList.setUser(user.get());
+            shoppingList.setName(storeName + " de " + originalListName);
+
+            for (Map<String, Object> item : items)
+            {
+                Integer productId = Integer.valueOf(item.get("productId").toString());
+                Integer quantity = Integer.valueOf(item.get("quantity").toString());
+
+                var productOpt = productRepository.findById(productId);
+                if (productOpt.isEmpty())
+                {
+                    log.warn("Producto no encontrado al crear sublista: {}", productId);
+                    continue;
+                }
+
+                ListItem listItem = new ListItem();
+                listItem.setShoppingList(shoppingList);
+                listItem.setProduct(productOpt.get());
+                listItem.setQuantity(quantity);
+                listItem.setChecked(false);
+
+                shoppingList.getItems().add(listItem);
+            }
+
+            result.add(ShoppingListMapper.toDTO(slRepository.save(shoppingList)));
+        }
+
+        return result;
     }
 
 }

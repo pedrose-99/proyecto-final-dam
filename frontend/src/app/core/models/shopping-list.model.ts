@@ -38,3 +38,13 @@ export interface OptimizedItem {
   quantity: number;
   lineTotal: number;
 }
+
+export interface SublistInput {
+  storeName: string;
+  items: SublistItemInput[];
+}
+
+export interface SublistItemInput {
+  productId: number;
+  quantity: number;
+}

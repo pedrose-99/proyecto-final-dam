@@ -326,6 +326,26 @@ export const REMOVE_LIST_ITEM = gql`
   }
 `;
 
+export const CREATE_SUBLISTS = gql`
+  mutation CreateSublists($originalListName: String!, $sublists: [SublistInput!]!) {
+    createSublists(originalListName: $originalListName, sublists: $sublists) {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
 export const OPTIMIZE_SHOPPING_LIST = gql`
   query OptimizeShoppingList($listId: ID!, $storeIds: [ID!]!) {
     optimizeShoppingList(listId: $listId, storeIds: $storeIds) {

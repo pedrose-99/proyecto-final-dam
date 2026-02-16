@@ -2,7 +2,7 @@ package com.smartcart.smartcart.modules.shoppinglist.dto;
 
 public record ListItemDTO
 (
-    Integer listId,
+    Integer itemId,
     Integer productId,
     String displayName,
     String imageUrl,
@@ -10,6 +10,3 @@ public record ListItemDTO
     Boolean checked,
     Boolean isGeneric
 ){}
-
-    
-

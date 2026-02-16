@@ -12,6 +12,18 @@ extend type Mutation
     addItemToList(listId: ID!, productId: ID, genericName: String, quantity: Int): ShoppingListDTO
     updateListItem(listId: ID!, itemId: ID!, quantity: Int, checked: Boolean): ShoppingListDTO
     removeListItem(listId: ID!, itemId: ID!): ShoppingListDTO
+
+    createSublists(originalListName: String!, sublists: [SublistInput!]!): [ShoppingListDTO]
+}
+
+input SublistInput {
+    storeName: String!
+    items: [SublistItemInput!]!
+}
+
+input SublistItemInput {
+    productId: ID!
+    quantity: Int!
 }
 
 type ShoppingListDTO {

@@ -33,7 +33,7 @@ public class ShoppingListMapper
         if (entity.getProduct() != null)
         {
             return new ListItemDTO(
-                    entity.getShoppingList().getListId(),
+                    entity.getItemId(),
                     entity.getProduct().getProductId(),
                     entity.getProduct().getName(),
                     entity.getProduct().getImageUrl(),
@@ -45,7 +45,7 @@ public class ShoppingListMapper
         else
         {
             return new ListItemDTO(
-                    entity.getShoppingList().getListId(),
+                    entity.getItemId(),
                     null,
                     entity.getGenericName(),
                     null,

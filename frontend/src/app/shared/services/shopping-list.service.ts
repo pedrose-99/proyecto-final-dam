@@ -10,9 +10,10 @@ import {
   ADD_ITEM_TO_LIST,
   UPDATE_LIST_ITEM,
   REMOVE_LIST_ITEM,
-  OPTIMIZE_SHOPPING_LIST
+  OPTIMIZE_SHOPPING_LIST,
+  CREATE_SUBLISTS
 } from '../../core/graphql/queries';
-import { ShoppingList, OptimizedList } from '../../core/models/shopping-list.model';
+import { ShoppingList, OptimizedList, SublistInput } from '../../core/models/shopping-list.model';
 
 @Injectable({
   providedIn: 'root'
@@ -21,24 +22,24 @@ export class ShoppingListService {
   constructor(private apollo: Apollo) {}
 
   getMyLists(): Observable<ShoppingList[]> {
-    return this.apollo.watchQuery<{ myShoppingLists: ShoppingList[] }>(
+    return this.apollo.query<{ myShoppingLists: ShoppingList[] }>(
       {
         query: GET_MY_SHOPPING_LISTS,
         fetchPolicy: 'network-only'
       }
-    ).valueChanges.pipe(
+    ).pipe(
       map(result => (result.data?.myShoppingLists || []) as ShoppingList[])
     );
   }
 
   getListById(listId: number): Observable<ShoppingList> {
-    return this.apollo.watchQuery<{ shoppingListById: ShoppingList }>(
+    return this.apollo.query<{ shoppingListById: ShoppingList }>(
       {
         query: GET_SHOPPING_LIST_BY_ID,
         variables: { listId: listId.toString() },
         fetchPolicy: 'network-only'
       }
-    ).valueChanges.pipe(
+    ).pipe(
       map(result => result.data?.shoppingListById as ShoppingList)
     );
   }
@@ -112,7 +113,7 @@ export class ShoppingListService {
   }
 
   optimize(listId: number, storeIds: number[]): Observable<OptimizedList> {
-    return this.apollo.watchQuery<{ optimizeShoppingList: OptimizedList }>(
+    return this.apollo.query<{ optimizeShoppingList: OptimizedList }>(
       {
         query: OPTIMIZE_SHOPPING_LIST,
         variables: {
@@ -121,8 +122,28 @@ export class ShoppingListService {
         },
         fetchPolicy: 'network-only'
       }
-    ).valueChanges.pipe(
+    ).pipe(
       map(result => result.data?.optimizeShoppingList as OptimizedList)
+    );
+  }
+
+  createSublists(originalListName: string, sublists: SublistInput[]): Observable<ShoppingList[]> {
+    return this.apollo.mutate<{ createSublists: ShoppingList[] }>(
+      {
+        mutation: CREATE_SUBLISTS,
+        variables: {
+          originalListName,
+          sublists: sublists.map(s => ({
+            storeName: s.storeName,
+            items: s.items.map(i => ({
+              productId: i.productId.toString(),
+              quantity: i.quantity
+            }))
+          }))
+        }
+      }
+    ).pipe(
+      map(result => result.data?.createSublists as ShoppingList[])
     );
   }
 }

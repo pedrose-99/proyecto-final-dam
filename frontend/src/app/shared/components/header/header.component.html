@@ -84,11 +84,9 @@
       </mat-icon>
     </button>
 
-    <!-- Carrito / Lista -->
-    <button mat-icon-button (click)="goToCart()" aria-label="Lista de compra">
-      <mat-icon [matBadge]="cartCount > 0 ? cartCount : null" matBadgeColor="accent">
-        shopping_basket
-      </mat-icon>
+    <!-- Listas de la compra -->
+    <button mat-icon-button (click)="goToCart()" aria-label="Mis listas" matTooltip="Mis listas">
+      <mat-icon>list_alt</mat-icon>
     </button>
 
     <!-- Menu Usuario -->
