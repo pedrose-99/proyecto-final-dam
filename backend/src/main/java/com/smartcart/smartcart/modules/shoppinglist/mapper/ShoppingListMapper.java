@@ -11,9 +11,9 @@ public class ShoppingListMapper
 {
     public static ShoppingListDTO toDTO(ShoppingList entity)
     {
-        List<ListItemDTO> items = entity.getItemsInList() == null
+        List<ListItemDTO> items = entity.getItems() == null
                 ? List.of()
-                : entity.getItemsInList().stream()
+                : entity.getItems().stream()
                     .map(ShoppingListMapper::toItemDTO)
                     .toList();
 
@@ -24,6 +24,8 @@ public class ShoppingListMapper
                 entity.getUpdatedAt() != null ? entity.getUpdatedAt().toString() : null,
                 items
         );
+
+
     }
 
     public static ListItemDTO toItemDTO(ListItem entity)
@@ -31,7 +33,7 @@ public class ShoppingListMapper
         if (entity.getProduct() != null)
         {
             return new ListItemDTO(
-                    entity.getShoppingList().getListId(), // listId
+                    entity.getShoppingList().getListId(),
                     entity.getProduct().getProductId(),
                     entity.getProduct().getName(),
                     entity.getProduct().getImageUrl(),

@@ -32,7 +32,7 @@ public class ShoppingList
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ListItem> itemsInList = new ArrayList<>();
+    private List<ListItem> items = new ArrayList<>();
     
 
     private ShoppingList() {}
