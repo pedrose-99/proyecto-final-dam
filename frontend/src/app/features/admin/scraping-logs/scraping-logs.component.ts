@@ -9,9 +9,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AdminService } from '../../../core/services/admin.service';
-import { ScrapeLogEntry, ScrapeErrorEntry } from '../../../core/models/admin.model';
+import { ScrapeLogEntry } from '../../../core/models/admin.model';
+import { LogErrorsDialogComponent } from './log-errors-dialog.component';
 
 @Component({
     selector: 'app-scraping-logs',
@@ -27,7 +28,7 @@ import { ScrapeLogEntry, ScrapeErrorEntry } from '../../../core/models/admin.mod
         MatIconModule,
         MatButtonModule,
         MatProgressSpinnerModule,
-        MatExpansionModule
+        MatDialogModule
     ],
     templateUrl: './scraping-logs.component.html',
     styleUrls: ['./scraping-logs.component.css']
@@ -47,10 +48,6 @@ export class ScrapingLogsComponent implements OnInit
 
     displayedColumns = ['startTime', 'storeName', 'durationSeconds', 'productsFound', 'productsCreated', 'productsUpdated', 'errorCount', 'status'];
 
-    expandedLog: ScrapeLogEntry | null = null;
-    errors: ScrapeErrorEntry[] = [];
-    errorsLoading = false;
-
     storeOptions = [
         { value: '', label: 'Todas' },
         { value: 'mercadona', label: 'Mercadona' },
@@ -63,10 +60,15 @@ export class ScrapingLogsComponent implements OnInit
         { value: '', label: 'Todos' },
         { value: 'COMPLETED', label: 'Completado' },
         { value: 'FAILED', label: 'Error' },
+        { value: 'CANCELLED', label: 'Cancelado' },
         { value: 'RUNNING', label: 'En curso' }
     ];
 
-    constructor(private adminService: AdminService, private cdr: ChangeDetectorRef) {}
+    constructor(
+        private adminService: AdminService,
+        private cdr: ChangeDetectorRef,
+        private dialog: MatDialog
+    ) {}
 
     ngOnInit(): void
     {
@@ -108,28 +110,19 @@ export class ScrapingLogsComponent implements OnInit
         this.loadLogs();
     }
 
-    toggleErrors(log: ScrapeLogEntry): void
+    openErrorsDialog(log: ScrapeLogEntry): void
     {
-        if (this.expandedLog?.id === log.id) {
-            this.expandedLog = null;
-            this.errors = [];
-            return;
-        }
-
-        this.expandedLog = log;
-        this.errorsLoading = true;
-        this.adminService.getScrapeErrors(log.id).subscribe({
-            next: (errors) => {
-                this.errors = errors;
-                this.errorsLoading = false;
-                this.cdr.detectChanges();
-            },
-            error: () => {
-                this.errors = [];
-                this.errorsLoading = false;
-                this.cdr.detectChanges();
-            }
+        if (!this.hasErrors(log)) return;
+        this.dialog.open(LogErrorsDialogComponent, {
+            width: '640px',
+            maxHeight: '80vh',
+            data: { log }
         });
+    }
+
+    hasErrors(log: ScrapeLogEntry): boolean
+    {
+        return (log.errorCount != null && log.errorCount > 0) || log.status === 'FAILED' || log.status === 'CANCELLED';
     }
 
     getStatusColor(status: string): string
@@ -138,6 +131,7 @@ export class ScrapingLogsComponent implements OnInit
             case 'COMPLETED': return 'completed';
             case 'FAILED': return 'failed';
             case 'RUNNING': return 'running';
+            case 'CANCELLED': return 'cancelled';
             default: return '';
         }
     }
@@ -148,6 +142,7 @@ export class ScrapingLogsComponent implements OnInit
             case 'COMPLETED': return 'Completado';
             case 'FAILED': return 'Error';
             case 'RUNNING': return 'En curso';
+            case 'CANCELLED': return 'Cancelado';
             default: return status;
         }
     }

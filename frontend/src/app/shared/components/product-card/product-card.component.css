@@ -14,6 +14,8 @@
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden;
+  background-color: var(--smartcart-card) !important;
+  border: 1px solid var(--smartcart-border);
 }
 
 .product-card:hover {
@@ -40,7 +42,7 @@
 }
 
 .favorite-btn:hover {
-  background-color: var(--smartcart-white) !important;
+  background-color: rgba(255, 255, 255, 1) !important;
 }
 
 .favorite-btn.is-favorite {
@@ -107,8 +109,8 @@
 /* Categoría - al final del contenido */
 .product-category {
   font-size: 11px;
-  color: var(--smartcart-primary);
-  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--smartcart-accent);
+  background-color: var(--smartcart-accent-light);
   padding: 4px 10px;
   border-radius: 4px;
   display: inline-block;
@@ -134,7 +136,7 @@
 .view-prices-btn {
   flex: 1;
   background-color: var(--smartcart-primary) !important;
-  color: var(--smartcart-white) !important;
+  color: #ffffff !important;
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -153,11 +155,11 @@
 }
 
 .add-btn {
-  color: var(--smartcart-primary) !important;
+  color: var(--smartcart-accent) !important;
 }
 
 .add-btn:hover {
-  background-color: rgba(37, 99, 235, 0.1) !important;
+  background-color: var(--smartcart-accent-light) !important;
 }
 
 .add-btn.in-list {

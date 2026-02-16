@@ -24,11 +24,13 @@
     margin-bottom: 8px;
 }
 
-.logo-icon {
-    font-size: 32px;
-    width: 32px;
-    height: 32px;
-    color: var(--smartcart-accent, #3b82f6);
+.sidebar-logo-img {
+    height: 44px;
+    width: 44px;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 50%;
+    background-color: #ffffff;
 }
 
 .logo-text {
@@ -87,7 +89,7 @@
     align-items: center;
     height: 64px;
     padding: 0 24px;
-    background: #fff;
+    background: var(--smartcart-surface, #ffffff);
     color: var(--smartcart-text, #1e293b);
     border-bottom: 1px solid var(--smartcart-border, #e2e8f0);
     flex-shrink: 0;
@@ -125,6 +127,10 @@
     padding: 24px;
     background: var(--smartcart-background, #f5f7fa);
     overflow-y: auto;
+}
+
+.admin-toolbar button {
+    color: var(--smartcart-text, #1e293b);
 }
 
 @media (max-width: 768px) {

@@ -35,7 +35,7 @@ export interface ScrapeLogEntry {
     productsUpdated: number | null;
     productsUnchanged: number | null;
     errorCount: number | null;
-    status: 'RUNNING' | 'COMPLETED' | 'FAILED';
+    status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
     errorMessage: string | null;
     durationSeconds: number | null;
 }

@@ -89,13 +89,19 @@ export class DashboardComponent implements OnInit, AfterViewInit
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Draw bars
-        const colors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
+        const storeColors: Record<string, string> = {
+            'mercadona': '#22c55e',
+            'alcampo': '#f59e0b',
+            'dia': '#ef4444',
+            'carrefour': '#3b82f6',
+        };
+        const defaultColor = '#8b5cf6';
         data.forEach((item, i) => {
             const barHeight = (item.count / maxVal) * chartHeight;
             const x = 50 + i * (barWidth + 10);
             const y = chartHeight - barHeight + 20;
 
-            ctx.fillStyle = colors[i % colors.length];
+            ctx.fillStyle = storeColors[item.storeSlug?.toLowerCase()] || defaultColor;
             ctx.beginPath();
             ctx.roundRect(x, y, barWidth, barHeight, 4);
             ctx.fill();

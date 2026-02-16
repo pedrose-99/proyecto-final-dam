@@ -43,12 +43,34 @@ public class ScrapeLogService {
     public ScrapeLog completeLog(ScrapeLog scrapeLog, int productsFound,
                                   ProductSyncService.SyncResult syncResult) {
         scrapeLog.setEndTime(LocalDateTime.now());
-        scrapeLog.setStatus(ScrapeStatus.COMPLETED);
         scrapeLog.setProductsFound(productsFound);
         scrapeLog.setProductsCreated(syncResult.created);
         scrapeLog.setProductsUpdated(syncResult.updated);
         scrapeLog.setProductsUnchanged(syncResult.unchanged);
-        scrapeLog.setErrorCount(syncResult.errors);
+
+        // Sumar errores de sync a los errores de scraping ya registrados
+        int scrapingErrors = scrapeLog.getErrorCount() != null ? scrapeLog.getErrorCount() : 0;
+        scrapeLog.setErrorCount(scrapingErrors + syncResult.errors);
+
+        // FAILED si no se encontró ningún producto o si todo falló
+        boolean nothingFound = productsFound == 0;
+        boolean allFailed = syncResult.created + syncResult.updated == 0 && syncResult.errors > 0;
+        scrapeLog.setStatus(nothingFound || allFailed ? ScrapeStatus.FAILED : ScrapeStatus.COMPLETED);
+
+        if (nothingFound) {
+            scrapeLog.setErrorMessage("Scraping finalizado sin encontrar productos");
+        }
+
+        scrapeLog.setDurationSeconds(
+                Duration.between(scrapeLog.getStartTime(), scrapeLog.getEndTime()).getSeconds());
+        return scrapeLogRepository.save(scrapeLog);
+    }
+
+    @Transactional
+    public ScrapeLog cancelLog(ScrapeLog scrapeLog) {
+        scrapeLog.setEndTime(LocalDateTime.now());
+        scrapeLog.setStatus(ScrapeStatus.CANCELLED);
+        scrapeLog.setErrorMessage("Cancelado por el administrador");
         scrapeLog.setDurationSeconds(
                 Duration.between(scrapeLog.getStartTime(), scrapeLog.getEndTime()).getSeconds());
         return scrapeLogRepository.save(scrapeLog);

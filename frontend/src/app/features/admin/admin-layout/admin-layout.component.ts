@@ -5,7 +5,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../../core/services/auth.service';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
     selector: 'app-admin-layout',
@@ -18,7 +20,8 @@ import { AuthService } from '../../../core/services/auth.service';
         MatIconModule,
         MatButtonModule,
         MatDividerModule,
-        MatMenuModule
+        MatMenuModule,
+        MatTooltipModule
     ],
     templateUrl: './admin-layout.component.html',
     styleUrls: ['./admin-layout.component.css']
@@ -36,10 +39,14 @@ export class AdminLayoutComponent
         { label: 'Tiendas', icon: 'store', route: '/admin/stores' }
     ];
 
+    themeService: ThemeService;
+
     constructor(
         private authService: AuthService,
-        private router: Router
+        private router: Router,
+        themeService: ThemeService
     ) {
+        this.themeService = themeService;
         const user = this.authService.getCurrentUser();
         if (!user || user.role !== 'ADMIN') {
             this.router.navigate(['/home']);

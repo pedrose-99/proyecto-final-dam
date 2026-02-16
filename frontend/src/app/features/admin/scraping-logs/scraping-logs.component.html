@@ -71,14 +71,7 @@
                         <th mat-header-cell *matHeaderCellDef>Errores</th>
                         <td mat-cell *matCellDef="let log">
                             @if (log.errorCount && log.errorCount > 0) {
-                                <button mat-button color="warn"
-                                        class="error-btn"
-                                        (click)="toggleErrors(log); $event.stopPropagation()">
-                                    {{ log.errorCount }}
-                                    <mat-icon class="expand-icon">
-                                        {{ expandedLog?.id === log.id ? 'expand_less' : 'expand_more' }}
-                                    </mat-icon>
-                                </button>
+                                <span class="error-count">{{ log.errorCount }}</span>
                             } @else {
                                 <span class="no-errors">0</span>
                             }
@@ -96,39 +89,10 @@
 
                     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                     <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                        [class.expanded-row]="expandedLog?.id === row.id"></tr>
+                        [class.clickable-row]="hasErrors(row)"
+                        (click)="openErrorsDialog(row)"></tr>
                 </table>
             </div>
-
-            <!-- Error detail panel -->
-            @if (expandedLog) {
-                <div class="errors-panel">
-                    <h4>
-                        <mat-icon>error_outline</mat-icon>
-                        Errores del scraping de {{ expandedLog.storeName }} ({{ formatDate(expandedLog.startTime) }})
-                    </h4>
-                    @if (errorsLoading) {
-                        <mat-spinner diameter="24"></mat-spinner>
-                    } @else if (errors.length === 0) {
-                        <p class="no-data">No se encontraron detalles de errores</p>
-                    } @else {
-                        <div class="errors-list">
-                            @for (error of errors; track error.id) {
-                                <div class="error-item">
-                                    <div class="error-header">
-                                        <span class="error-type">{{ error.errorType }}</span>
-                                        <span class="error-time">{{ formatDate(error.occurredAt) }}</span>
-                                    </div>
-                                    <p class="error-message">{{ error.errorMessage }}</p>
-                                    @if (error.failedUrl) {
-                                        <p class="error-url">URL: {{ error.failedUrl }}</p>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
 
             <mat-paginator [length]="totalElements"
                            [pageSize]="pageSize"
