@@ -65,23 +65,14 @@ html {
 
 body {
   color-scheme: light;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  background-color: var(--smartcart-background, var(--mat-sys-surface));
+  color: var(--smartcart-text, var(--mat-sys-on-surface));
   font: var(--mat-sys-body-medium);
   margin: 0;
   height: 100%;
 }
 
-// Variables CSS globales SmartCart
-:root {
-  --smartcart-primary: #1e3a5f;
-  --smartcart-primary-light: #2c5282;
-  --smartcart-accent: #5dade2;
-  --smartcart-accent-light: #85c1e9;
-  --smartcart-white: #ffffff;
-  --smartcart-background: #f0f4f8;
-  --smartcart-text: #1e3a5f;
-  --smartcart-text-light: #5a6c7d;
-  --smartcart-error: #e74c3c;
-  --smartcart-success: #27ae60;
+// Dark mode: override color-scheme
+html.dark body {
+  color-scheme: dark;
 }

@@ -84,8 +84,8 @@
 }
 
 .status-none {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--smartcart-background, #f1f5f9);
+    color: var(--smartcart-text-light, #64748b);
 }
 
 .store-stats {

@@ -1,7 +1,7 @@
 <mat-toolbar class="header">
   <!-- Logo -->
   <a class="logo" (click)="goHome()">
-    <mat-icon class="logo-icon">shopping_cart</mat-icon>
+    <img src="assets/images/logo.png" alt="SmartCart" class="logo-img">
     <span class="logo-text">SmartCart</span>
   </a>
 
@@ -72,6 +72,11 @@
 
   <!-- Acciones -->
   <div class="header-actions">
+    <!-- Tema -->
+    <button mat-icon-button (click)="themeService.toggle()" [matTooltip]="themeService.isDark() ? 'Modo claro' : 'Modo oscuro'" aria-label="Cambiar tema">
+      <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+    </button>
+
     <!-- Favoritos -->
     <button mat-icon-button (click)="goToFavorites()" aria-label="Favoritos">
       <mat-icon [matBadge]="favoritesCount > 0 ? favoritesCount : null" matBadgeColor="accent">

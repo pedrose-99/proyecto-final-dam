@@ -89,7 +89,7 @@
 }
 
 .clickable-row:hover {
-    background-color: #fef2f2 !important;
+    background-color: rgba(239, 68, 68, 0.08) !important;
 }
 
 .no-data {

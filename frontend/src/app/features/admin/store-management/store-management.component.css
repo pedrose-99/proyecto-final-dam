@@ -34,7 +34,7 @@
 }
 
 .slug-code {
-    background: #f1f5f9;
+    background: var(--smartcart-background, #f1f5f9);
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 13px;
@@ -50,12 +50,43 @@
 .edit-url-row {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.edit-url-row button mat-icon {
+    color: var(--smartcart-text-light, #64748b);
+}
+
+.edit-url-row button:first-of-type mat-icon {
+    color: var(--smartcart-success, #22c55e);
+}
+
+.edit-url-row button:last-of-type mat-icon {
+    color: var(--smartcart-danger, #ef4444);
 }
 
 .url-field {
     min-width: 250px;
     font-size: 13px;
+}
+
+::ng-deep .url-field .mat-mdc-text-field-wrapper {
+    background-color: var(--smartcart-surface, #ffffff) !important;
+}
+
+::ng-deep .url-field input.mat-mdc-input-element {
+    color: var(--smartcart-text, #1e293b) !important;
+}
+
+::ng-deep .url-field .mdc-notched-outline__leading,
+::ng-deep .url-field .mdc-notched-outline__notch,
+::ng-deep .url-field .mdc-notched-outline__trailing {
+    border-color: var(--smartcart-border, #e2e8f0) !important;
+}
+
+::ng-deep .url-field .mdc-floating-label {
+    color: var(--smartcart-text-light, #64748b) !important;
 }
 
 .url-field .mat-mdc-form-field-subscript-wrapper {
@@ -83,4 +114,13 @@
 .status-badge.running {
     background: #fef3c7;
     color: #92400e;
+}
+
+/* Action buttons in table */
+td button.mat-mdc-icon-button mat-icon {
+    color: var(--smartcart-text-light, #64748b);
+}
+
+td button.mat-mdc-icon-button:hover mat-icon {
+    color: var(--smartcart-accent, #3b82f6);
 }

@@ -110,7 +110,7 @@
     gap: 8px;
     padding: 8px 16px;
     border-radius: 8px;
-    background: #f8fafc;
+    background: var(--smartcart-background, #f8fafc);
     border: 1px solid var(--smartcart-border, #e2e8f0);
 }
 
