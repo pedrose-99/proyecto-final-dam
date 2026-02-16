@@ -1,16 +1,22 @@
 <div class="scraping-header">
     <h2>Control de Scraping</h2>
-    <button mat-flat-button
-            class="primary-btn"
-            (click)="triggerAll()"
-            [disabled]="scrapingAll || isAnyScraping() || loading">
-        @if (scrapingAll) {
-            <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
-            Scrapeando todo...
+    <div class="header-actions">
+        @if (scrapingAll || isAnyScraping()) {
+            <button mat-flat-button
+                    class="cancel-all-btn"
+                    (click)="cancelAll()">
+                <mat-icon>cancel</mat-icon>
+                Cancelar Todo
+            </button>
         } @else {
-            Lanzar Todos
+            <button mat-flat-button
+                    class="primary-btn"
+                    (click)="triggerAll()"
+                    [disabled]="loading">
+                Lanzar Todos
+            </button>
         }
-    </button>
+    </div>
 </div>
 
 @if (loading) {
@@ -59,9 +65,17 @@
 
                 <mat-card-actions>
                     @if (store.scraping) {
-                        <div class="scraping-indicator">
-                            <mat-spinner diameter="24"></mat-spinner>
-                            <span>Scrapeando...</span>
+                        <div class="scraping-actions">
+                            <div class="scraping-indicator">
+                                <mat-spinner diameter="24"></mat-spinner>
+                                <span>Scrapeando...</span>
+                            </div>
+                            <button mat-stroked-button
+                                    class="cancel-btn"
+                                    (click)="cancelScraping(store)">
+                                <mat-icon>cancel</mat-icon>
+                                Cancelar
+                            </button>
                         </div>
                     } @else {
                         <button mat-flat-button

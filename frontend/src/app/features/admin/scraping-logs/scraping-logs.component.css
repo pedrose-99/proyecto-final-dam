@@ -68,98 +68,28 @@
     color: #92400e;
 }
 
-.error-btn {
-    font-weight: 600;
-    min-width: auto;
-    padding: 0 8px;
+.status-badge.cancelled {
+    background: #fef3c7;
+    color: #92400e;
 }
 
-.expand-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
+.error-count {
+    font-weight: 600;
+    color: #dc2626;
 }
 
 .no-errors {
     color: var(--smartcart-text-light, #64748b);
 }
 
-.expanded-row {
-    background: #f8fafc;
+/* Clickable rows for logs with errors */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.15s;
 }
 
-/* Error detail panel */
-.errors-panel {
-    padding: 16px 24px;
-    background: #fef2f2;
-    border-top: 2px solid #fecaca;
-    border-bottom: 2px solid #fecaca;
-}
-
-.errors-panel h4 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 12px;
-    color: #991b1b;
-    font-size: 14px;
-}
-
-.errors-panel h4 mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-}
-
-.errors-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.error-item {
-    background: #fff;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    padding: 10px 14px;
-}
-
-.error-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-}
-
-.error-type {
-    font-weight: 600;
-    font-size: 13px;
-    color: #991b1b;
-    background: #fee2e2;
-    padding: 2px 8px;
-    border-radius: 4px;
-}
-
-.error-time {
-    font-size: 12px;
-    color: var(--smartcart-text-light, #64748b);
-}
-
-.error-message {
-    margin: 4px 0 0;
-    font-size: 13px;
-    color: var(--smartcart-text, #1e293b);
-    word-break: break-word;
-}
-
-.error-url {
-    margin: 4px 0 0;
-    font-size: 12px;
-    color: var(--smartcart-text-light, #64748b);
-    word-break: break-all;
+.clickable-row:hover {
+    background-color: #fef2f2 !important;
 }
 
 .no-data {

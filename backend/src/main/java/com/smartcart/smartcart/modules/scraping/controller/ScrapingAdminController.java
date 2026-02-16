@@ -7,6 +7,7 @@ import com.smartcart.smartcart.modules.scraping.service.ProductSyncService;
 import com.smartcart.smartcart.modules.scraping.service.ScrapeLogService;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
+import com.smartcart.smartcart.modules.scraping.service.ScrapingJobRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ public class ScrapingAdminController
     private final ProductSyncService productSyncService;
     private final ScrapeLogService scrapeLogService;
     private final StoreRepository storeRepository;
+    private final ScrapingJobRegistry jobRegistry;
 
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus()
@@ -45,6 +47,7 @@ public class ScrapingAdminController
                 .orElseThrow(() -> new RuntimeException("Store not found: mercadona"));
         ScrapeLog scrapeLog = scrapeLogService.startLog(store);
 
+        jobRegistry.register("mercadona");
         try {
             ScrapingResult scrapingResult = mercadonaService.scrapeAll();
 
@@ -67,9 +70,16 @@ public class ScrapingAdminController
                 "durationSeconds", scrapingResult.getDurationSeconds()
             ));
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted()) {
+                log.info("Scraping de Mercadona cancelado por el administrador");
+                scrapeLogService.cancelLog(scrapeLog);
+                return ResponseEntity.ok(Map.of("status", "CANCELLED"));
+            }
             log.error("Error during Mercadona scraping: {}", e.getMessage(), e);
             scrapeLogService.failLog(scrapeLog, e.getMessage());
             throw e;
+        } finally {
+            jobRegistry.deregister("mercadona");
         }
     }
 

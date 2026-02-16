@@ -5,6 +5,7 @@ import com.smartcart.smartcart.modules.scraping.entity.ScrapeLog;
 import com.smartcart.smartcart.modules.scraping.service.ProductSyncService;
 import com.smartcart.smartcart.modules.scraping.service.PythonScraperService;
 import com.smartcart.smartcart.modules.scraping.service.ScrapeLogService;
+import com.smartcart.smartcart.modules.scraping.service.ScrapingJobRegistry;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class DiaScrapingController
     private final ProductSyncService productSyncService;
     private final ScrapeLogService scrapeLogService;
     private final StoreRepository storeRepository;
+    private final ScrapingJobRegistry jobRegistry;
 
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus()
@@ -44,6 +46,7 @@ public class DiaScrapingController
                 .orElseThrow(() -> new RuntimeException("Store not found: dia"));
         ScrapeLog scrapeLog = scrapeLogService.startLog(store);
 
+        jobRegistry.register("dia");
         try {
             ScrapingResult scrapingResult = pythonScraperService.scrapeDia();
 
@@ -66,9 +69,16 @@ public class DiaScrapingController
                 "durationSeconds", scrapingResult.getDurationSeconds()
             ));
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted()) {
+                log.info("Scraping de Dia cancelado por el administrador");
+                scrapeLogService.cancelLog(scrapeLog);
+                return ResponseEntity.ok(Map.of("status", "CANCELLED"));
+            }
             log.error("Error during Dia scraping: {}", e.getMessage(), e);
             scrapeLogService.failLog(scrapeLog, e.getMessage());
             throw e;
+        } finally {
+            jobRegistry.deregister("dia");
         }
     }
 }

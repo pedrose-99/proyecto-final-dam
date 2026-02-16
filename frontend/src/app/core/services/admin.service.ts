@@ -107,6 +107,12 @@ export class AdminService
             `${this.apiUrl}/admin/scraping/${storeSlug}/sync/all`, {});
     }
 
+    cancelScraping(storeSlug: string): Observable<{ store: string; cancelled: boolean }>
+    {
+        return this.http.post<{ store: string; cancelled: boolean }>(
+            `${this.apiUrl}/admin/scraping/${storeSlug}/cancel`, {});
+    }
+
     getStoreScrapingStatus(storeSlug: string): Observable<any>
     {
         return this.http.get<any>(`${this.apiUrl}/admin/scraping/${storeSlug}/status`);
