@@ -1,0 +1,78 @@
+<div class="scraping-header">
+    <h2>Control de Scraping</h2>
+    <button mat-flat-button
+            class="primary-btn"
+            (click)="triggerAll()"
+            [disabled]="scrapingAll || isAnyScraping() || loading">
+        @if (scrapingAll) {
+            <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+            Scrapeando todo...
+        } @else {
+            Lanzar Todos
+        }
+    </button>
+</div>
+
+@if (loading) {
+    <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+    </div>
+} @else {
+    <div class="stores-grid">
+        @for (store of stores; track store.id) {
+            <mat-card class="store-card" [class.inactive]="!store.active">
+                <mat-card-header>
+                    <mat-card-title>{{ store.name }}</mat-card-title>
+                    <span class="store-status-chip" [class]="getStatusClass(store.lastScrapeStatus)">
+                        {{ store.active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                </mat-card-header>
+
+                <mat-card-content>
+                    <div class="store-stats">
+                        <div class="stat-row">
+                            <mat-icon>inventory_2</mat-icon>
+                            <span>{{ store.productCount | number }} productos</span>
+                        </div>
+                        <div class="stat-row">
+                            <mat-icon>schedule</mat-icon>
+                            <span>Último: {{ formatDate(store.lastScrapeDate) }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <mat-icon>info</mat-icon>
+                            <span class="last-status" [class]="getStatusClass(store.lastScrapeStatus)">
+                                {{ getStatusLabel(store.lastScrapeStatus) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (store.result) {
+                        <div class="result-summary">
+                            <span class="result-item success">+{{ store.result.created }} creados</span>
+                            <span class="result-item info">{{ store.result.updated }} actualizados</span>
+                            @if (store.result.scrapingErrors + store.result.syncErrors > 0) {
+                                <span class="result-item danger">{{ store.result.scrapingErrors + store.result.syncErrors }} errores</span>
+                            }
+                        </div>
+                    }
+                </mat-card-content>
+
+                <mat-card-actions>
+                    @if (store.scraping) {
+                        <div class="scraping-indicator">
+                            <mat-spinner diameter="24"></mat-spinner>
+                            <span>Scrapeando...</span>
+                        </div>
+                    } @else {
+                        <button mat-flat-button
+                                class="primary-btn scrape-btn"
+                                (click)="triggerScraping(store)"
+                                [disabled]="!store.active || scrapingAll">
+                            Lanzar Scraping
+                        </button>
+                    }
+                </mat-card-actions>
+            </mat-card>
+        }
+    </div>
+}

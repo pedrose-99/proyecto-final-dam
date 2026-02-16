@@ -33,6 +33,9 @@
             "styles": [
               "src/material-theme.scss",
               "src/styles.css"
+            ],
+            "polyfills": [
+              "zone.js"
             ]
           },
           "configurations": {

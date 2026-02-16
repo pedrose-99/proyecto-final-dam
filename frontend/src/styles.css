@@ -91,3 +91,60 @@ body {
 .mat-mdc-menu-item .mat-icon {
   color: var(--smartcart-text-light, #64748b) !important;
 }
+
+/* Admin buttons - fix M3 transparent buttons */
+.primary-btn {
+  background-color: var(--smartcart-primary, #1e3a5f) !important;
+  color: #fff !important;
+}
+
+.primary-btn:hover {
+  background-color: var(--smartcart-primary-light, #2c5282) !important;
+}
+
+.primary-btn:disabled {
+  background-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+}
+
+/* Fix: MatDialog overlay en M3 */
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.mat-mdc-dialog-container {
+  background-color: #ffffff !important;
+  border-radius: 12px !important;
+}
+
+.mat-mdc-dialog-surface {
+  background-color: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12) !important;
+}
+
+/* Fix: mat-select dropdown panel en M3 - texto invisible */
+.mat-mdc-select-panel {
+  background-color: #ffffff !important;
+}
+
+.mat-mdc-option {
+  color: var(--smartcart-text, #1e293b) !important;
+}
+
+.mat-mdc-option:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected {
+  background-color: var(--smartcart-accent-light, #dbeafe) !important;
+}
+
+/* Fix: mat-select trigger text invisible */
+.mat-mdc-select-value {
+  color: var(--smartcart-text, #1e293b) !important;
+}
+
+.mat-mdc-select-arrow {
+  color: var(--smartcart-text-light, #64748b) !important;
+}

@@ -56,8 +56,11 @@ def _get_categories(page) -> list[str]:
     """Obtiene las subcategorias hoja de supermercado de Carrefour."""
     try:
         data = _fetch_json(page, URL_CATEGORY_CARREFOUR)
-    except Exception:
-        log.error("No se pudieron obtener las categorias de Carrefour")
+    except Exception as e:
+        log.error("No se pudieron obtener las categorias de Carrefour: %s", e)
+        # Verificar si estamos bloqueados por Cloudflare
+        content = page.evaluate("() => document.body.innerText")
+        log.error("Contenido de la pagina (primeros 500 chars): %s", content[:500] if content else "VACIO")
         return []
 
     menu = data.get("menu", [])
@@ -155,11 +158,11 @@ def scrape_carrefour() -> list[dict]:
             # Navegar para pasar Cloudflare
             log.info("Navegando a carrefour.es para pasar Cloudflare...")
             page.goto(
-                "https://www.carrefour.es",
-                wait_until="domcontentloaded",
+                "https://www.carrefour.es/supermercado",
+                wait_until="networkidle",
                 timeout=60_000,
             )
-            time.sleep(3)
+            time.sleep(8)
 
             categories = _get_categories(page)
             log.info("Carrefour: %d categorias a procesar", len(categories))

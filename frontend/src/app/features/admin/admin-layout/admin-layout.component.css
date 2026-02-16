@@ -1,0 +1,138 @@
+.admin-wrapper {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ─── Sidebar ─── */
+.sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--smartcart-primary, #1e3a5f);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.sidenav-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 8px;
+}
+
+.logo-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: var(--smartcart-accent, #3b82f6);
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.nav-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 8px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 2px 0;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.nav-item.active-link {
+    background: var(--smartcart-accent, #3b82f6);
+    color: #fff;
+}
+
+.nav-item mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+/* ─── Main area ─── */
+.main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-toolbar {
+    display: flex;
+    align-items: center;
+    height: 64px;
+    padding: 0 24px;
+    background: #fff;
+    color: var(--smartcart-text, #1e293b);
+    border-bottom: 1px solid var(--smartcart-border, #e2e8f0);
+    flex-shrink: 0;
+}
+
+.toolbar-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.spacer {
+    flex: 1;
+}
+
+/* User menu */
+.menu-header {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+}
+
+.menu-username {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--smartcart-text, #1e293b);
+}
+
+.menu-email {
+    font-size: 12px;
+    color: var(--smartcart-text-light, #64748b);
+}
+
+.page-content {
+    flex: 1;
+    padding: 24px;
+    background: var(--smartcart-background, #f5f7fa);
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+        min-width: 200px;
+    }
+    .page-content {
+        padding: 16px;
+    }
+}

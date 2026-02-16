@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { FooterComponent } from '../../components/footer/footer.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -36,4 +37,15 @@ import { FooterComponent } from '../../components/footer/footer.component';
     }
   `]
 })
-export class MainLayoutComponent {}
+export class MainLayoutComponent
+{
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {
+    const user = this.authService.getCurrentUser();
+    if (user?.role === 'ADMIN') {
+      this.router.navigate(['/admin/dashboard']);
+    }
+  }
+}
