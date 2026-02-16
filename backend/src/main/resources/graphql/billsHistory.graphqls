@@ -1,0 +1,24 @@
+type BillItem {
+    productName: String
+    price: Float
+    quantity: Int
+}
+
+type BillsHistory {
+    billsHistoryId: ID
+    idUser: Int
+    name: String
+    recordedAt: String
+    totalAmount: Float
+    exceededLimit: Boolean
+    itemsSummary: [BillItem]
+}
+
+extend type Mutation {
+    registerBill(name: String!): BillsHistory
+}
+
+extend type Query {
+    # Busca por nombre de registro O nombre de producto dentro del JSON
+    getBillsHistory(filter: String, month: Int, year: Int): [BillsHistory]
+}

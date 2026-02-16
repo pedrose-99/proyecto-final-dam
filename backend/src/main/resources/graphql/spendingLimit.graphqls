@@ -1,0 +1,19 @@
+type SpendingLimit {
+    limitId: ID
+    idUser: Int
+    amount: Float
+    type: String
+    createdAt: String
+    isActive: Boolean
+}
+
+extend type Mutation {
+    saveSpendingLimit(amount: Float!, type: String!): SpendingLimit
+}
+
+extend type Query {
+    
+    getSpendingLimits: [SpendingLimit]
+    
+}
+
