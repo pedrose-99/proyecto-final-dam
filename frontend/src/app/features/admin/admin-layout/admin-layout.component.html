@@ -1,0 +1,47 @@
+<div class="admin-wrapper">
+    <aside class="sidebar">
+        <div class="sidenav-header">
+            <img src="assets/images/logo.png" alt="SmartCart" class="sidebar-logo-img">
+            <span class="logo-text">SmartCart Admin</span>
+        </div>
+
+        <nav class="nav-list">
+            @for (item of navItems; track item.route) {
+                <a [routerLink]="item.route"
+                   routerLinkActive="active-link"
+                   class="nav-item">
+                    <mat-icon>{{ item.icon }}</mat-icon>
+                    <span>{{ item.label }}</span>
+                </a>
+            }
+        </nav>
+    </aside>
+
+    <div class="main-area">
+        <header class="admin-toolbar">
+            <span class="toolbar-title">Panel de Administración</span>
+            <span class="spacer"></span>
+            <button mat-icon-button (click)="themeService.toggle()" [matTooltip]="themeService.isDark() ? 'Modo claro' : 'Modo oscuro'" aria-label="Cambiar tema">
+                <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            </button>
+            <button mat-icon-button [matMenuTriggerFor]="userMenu">
+                <mat-icon>account_circle</mat-icon>
+            </button>
+            <mat-menu #userMenu="matMenu">
+                <div class="menu-header">
+                    <span class="menu-username">{{ username }}</span>
+                    <span class="menu-email">{{ email }}</span>
+                </div>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="logout()">
+                    <mat-icon>logout</mat-icon>
+                    <span>Cerrar sesión</span>
+                </button>
+            </mat-menu>
+        </header>
+
+        <div class="page-content">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+</div>

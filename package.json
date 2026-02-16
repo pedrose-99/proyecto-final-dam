@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@angular/cdk": "^21.1.4",
+    "@angular/material": "^21.1.4",
+    "apollo-angular": "^13.0.0",
+    "graphql": "^16.12.0"
+  }
+}

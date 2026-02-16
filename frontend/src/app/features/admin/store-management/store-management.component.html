@@ -1,0 +1,99 @@
+<div class="stores-header">
+    <h2>Gestión de Tiendas</h2>
+</div>
+
+@if (loading) {
+    <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+    </div>
+} @else {
+    <mat-card class="table-card">
+        <mat-card-content>
+            <div class="table-container">
+                <table mat-table [dataSource]="stores" class="stores-table">
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                        <td mat-cell *matCellDef="let store">
+                            <span class="store-name">{{ store.name }}</span>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="slug">
+                        <th mat-header-cell *matHeaderCellDef>Slug</th>
+                        <td mat-cell *matCellDef="let store">
+                            <code class="slug-code">{{ store.slug }}</code>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="scrapingUrl">
+                        <th mat-header-cell *matHeaderCellDef>URL Scraping</th>
+                        <td mat-cell *matCellDef="let store">
+                            @if (editingStoreId === store.id) {
+                                <div class="edit-url-row">
+                                    <mat-form-field appearance="outline" class="url-field">
+                                        <input matInput [(ngModel)]="editUrl" placeholder="URL de scraping">
+                                    </mat-form-field>
+                                    <button mat-icon-button color="primary" (click)="saveUrl(store)">
+                                        <mat-icon>check</mat-icon>
+                                    </button>
+                                    <button mat-icon-button (click)="cancelEdit()">
+                                        <mat-icon>close</mat-icon>
+                                    </button>
+                                </div>
+                            } @else {
+                                <span class="url-text" [title]="store.scrapingUrl || ''">
+                                    {{ truncateUrl(store.scrapingUrl) }}
+                                </span>
+                            }
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="productCount">
+                        <th mat-header-cell *matHeaderCellDef>Productos</th>
+                        <td mat-cell *matCellDef="let store">{{ store.productCount | number }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="lastScrapeDate">
+                        <th mat-header-cell *matHeaderCellDef>Último Scraping</th>
+                        <td mat-cell *matCellDef="let store">{{ formatDate(store.lastScrapeDate) }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="lastScrapeStatus">
+                        <th mat-header-cell *matHeaderCellDef>Estado</th>
+                        <td mat-cell *matCellDef="let store">
+                            <span class="status-badge" [class]="getStatusClass(store.lastScrapeStatus)">
+                                {{ getStatusLabel(store.lastScrapeStatus) }}
+                            </span>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="active">
+                        <th mat-header-cell *matHeaderCellDef>Activa</th>
+                        <td mat-cell *matCellDef="let store">
+                            <mat-slide-toggle
+                                [checked]="store.active"
+                                (change)="toggleActive(store)"
+                                color="primary">
+                            </mat-slide-toggle>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                        <td mat-cell *matCellDef="let store">
+                            <button mat-icon-button
+                                    color="primary"
+                                    (click)="startEditUrl(store)"
+                                    [disabled]="editingStoreId !== null">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+            </div>
+        </mat-card-content>
+    </mat-card>
+}

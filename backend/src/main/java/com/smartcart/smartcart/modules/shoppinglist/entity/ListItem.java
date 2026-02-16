@@ -35,8 +35,8 @@ public class ListItem {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    @Column(name = "custom_name")
-    private String customName;
+    @Column(name = "generic_name")
+    private String genericName;
 
     @Column(nullable = false)
     private Integer quantity = 1;

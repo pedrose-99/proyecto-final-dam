@@ -2,17 +2,14 @@ package com.smartcart.smartcart.modules.product.dto;
 
 import java.util.List;
 
-import lombok.Data;
-
-@Data
-public class ProductComparisonDTO {
-    private Integer productId;
-    private String name;
-    private String brand;
-    private String ean;
-    private String imageUrl;
-    private String description;
-    private String categoryName;
-    private List<StorePriceDTO> storePrices;
-    private StorePriceDTO bestPrice;
-}
+public record ProductComparisonDTO(
+    Integer productId,
+    String name,
+    String brand,
+    String ean,
+    String imageUrl,
+    String description,
+    String categoryName,
+    List<StorePriceDTO> storePrices,
+    StorePriceDTO bestPrice
+) {}

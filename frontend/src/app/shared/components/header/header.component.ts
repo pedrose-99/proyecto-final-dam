@@ -11,10 +11,12 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProductService } from '../../services/product.service';
 import { ProductSearchResult } from '../../../core/models/product.model';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -31,7 +33,8 @@ import { ProductSearchResult } from '../../../core/models/product.model';
     MatAutocompleteModule,
     MatInputModule,
     MatFormFieldModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
@@ -48,11 +51,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  themeService: ThemeService;
+
   constructor(
     private authService: AuthService,
     private productService: ProductService,
-    private router: Router
+    private router: Router,
+    themeService: ThemeService
   ) {
+    this.themeService = themeService;
     this.currentUser = this.authService.getCurrentUser();
   }
 
@@ -124,6 +131,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   goToSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  goToAdmin(): void {
+    this.router.navigate(['/admin/dashboard']);
+  }
+
+  get isAdmin(): boolean {
+    return this.currentUser?.role === 'ADMIN';
   }
 
   logout(): void {

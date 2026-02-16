@@ -117,7 +117,7 @@ public class ProductService {
                 productPage.isLast()
         );
     }
-    
+
     public ProductPageDTO searchProducts(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productRepository.searchByText(query, pageable);
@@ -180,49 +180,50 @@ public class ProductService {
         List<ProductStore> productStores = productStoreRepository.findByProductId_ProductId(productId);
 
         List<StorePriceDTO> storePrices = productStores.stream()
-                .map(ps -> {
-                    StorePriceDTO sp = new StorePriceDTO();
-                    sp.setStoreId(ps.getStoreId().getStoreId());
-                    sp.setStoreName(ps.getStoreId().getName());
-                    sp.setStoreLogo(ps.getStoreId().getLogo());
-                    sp.setStoreWebsite(ps.getStoreId().getWebsite());
-                    sp.setCurrentPrice(ps.getCurrentPrice());
-                    sp.setAvailable(ps.getAvailable());
-                    sp.setExternaId(ps.getExternaId());
-                    sp.setStock(ps.getStock());
-                    sp.setUrl(ps.getUrl());
-                    return sp;
-                })
+                .map(ps -> new StorePriceDTO(
+                        ps.getStoreId().getStoreId(),
+                        ps.getStoreId().getName(),
+                        ps.getStoreId().getLogo(),
+                        ps.getStoreId().getWebsite(),
+                        ps.getCurrentPrice(),
+                        ps.getAvailable(),
+                        ps.getStock(),
+                        ps.getUrl(),
+                        ps.getExternaId()
+                ))
                 .toList();
 
-        // Encontrar el precio más barato entre los disponibles
         StorePriceDTO bestPrice = storePrices.stream()
-                .filter(sp -> Boolean.TRUE.equals(sp.getAvailable()) && sp.getCurrentPrice() != null)
-                .min(Comparator.comparingDouble(StorePriceDTO::getCurrentPrice))
+                .filter(sp -> Boolean.TRUE.equals(sp.available()) && sp.currentPrice() != null)
+                .min(Comparator.comparingDouble(StorePriceDTO::currentPrice))
                 .orElse(null);
 
-        ProductComparisonDTO comparison = new ProductComparisonDTO();
-        comparison.setProductId(product.getProductId());
-        comparison.setName(product.getName());
-        comparison.setBrand(product.getBrand());
-        comparison.setEan(product.getEan());
-        comparison.setDescription(product.getDescription());
-        comparison.setImageUrl(product.getImageUrl());
-        if (product.getCategoryId() != null) {
-            comparison.setCategoryName(product.getCategoryId().getName());
-        }
-        comparison.setStorePrices(storePrices);
-        comparison.setBestPrice(bestPrice);
+        String categoryName = product.getCategoryId() != null ? product.getCategoryId().getName() : null;
 
-        return comparison;
+        return new ProductComparisonDTO(
+                product.getProductId(),
+                product.getName(),
+                product.getBrand(),
+                product.getEan(),
+                product.getImageUrl(),
+                product.getDescription(),
+                categoryName,
+                storePrices,
+                bestPrice
+        );
     }
 
     // ─── OPTIMIZACIÓN DE CESTA ─────────────────────────────
 
     public BasketOptimizationDTO optimizeBasket(List<Integer> productIds) {
-        // Mapa: storeId → StoreBasketDTO
-        Map<Integer, StoreBasketDTO> storeMap = new HashMap<>();
         int totalProducts = productIds.size();
+
+        // Accumulators per store
+        Map<Integer, String> storeNames = new HashMap<>();
+        Map<Integer, String> storeLogos = new HashMap<>();
+        Map<Integer, List<BasketItemDTO>> storeItems = new HashMap<>();
+        Map<Integer, Double> storeCosts = new HashMap<>();
+        Map<Integer, Integer> storeAvailable = new HashMap<>();
 
         for (Integer productId : productIds) {
             Product product = productRepository.findById(productId).orElse(null);
@@ -233,51 +234,43 @@ public class ProductService {
             for (ProductStore ps : productStores) {
                 Integer storeId = ps.getStoreId().getStoreId();
 
-                StoreBasketDTO basket = storeMap.computeIfAbsent(storeId, k -> {
-                    StoreBasketDTO b = new StoreBasketDTO();
-                    b.setStoreId(storeId);
-                    b.setStoreName(ps.getStoreId().getName());
-                    b.setStoreLogo(ps.getStoreId().getLogo());
-                    b.setTotalCost(0.0);
-                    b.setAvailableProducts(0);
-                    b.setTotalProducts(totalProducts);
-                    b.setItems(new ArrayList<>());
-                    return b;
-                });
+                storeNames.putIfAbsent(storeId, ps.getStoreId().getName());
+                storeLogos.putIfAbsent(storeId, ps.getStoreId().getLogo());
+                storeItems.computeIfAbsent(storeId, k -> new ArrayList<>());
 
-                BasketItemDTO item = new BasketItemDTO();
-                item.setProductId(productId);
-                item.setProductName(product.getName());
-                item.setPrice(ps.getCurrentPrice());
-                item.setAvailable(Boolean.TRUE.equals(ps.getAvailable()));
-                basket.getItems().add(item);
+                boolean available = Boolean.TRUE.equals(ps.getAvailable());
+                BasketItemDTO item = new BasketItemDTO(productId, product.getName(), ps.getCurrentPrice(), available);
+                storeItems.get(storeId).add(item);
 
-                if (Boolean.TRUE.equals(ps.getAvailable()) && ps.getCurrentPrice() != null) {
-                    basket.setTotalCost(basket.getTotalCost() + ps.getCurrentPrice());
-                    basket.setAvailableProducts(basket.getAvailableProducts() + 1);
+                if (available && ps.getCurrentPrice() != null) {
+                    storeCosts.merge(storeId, ps.getCurrentPrice(), Double::sum);
+                    storeAvailable.merge(storeId, 1, Integer::sum);
                 }
             }
         }
 
-        List<StoreBasketDTO> storeOptions = new ArrayList<>(storeMap.values());
+        List<StoreBasketDTO> storeOptions = storeItems.entrySet().stream()
+                .map(e -> {
+                    Integer storeId = e.getKey();
+                    return new StoreBasketDTO(
+                            storeId,
+                            storeNames.get(storeId),
+                            storeLogos.get(storeId),
+                            storeCosts.getOrDefault(storeId, 0.0),
+                            storeAvailable.getOrDefault(storeId, 0),
+                            totalProducts,
+                            e.getValue()
+                    );
+                })
+                .sorted((a, b) -> {
+                    int availableCompare = Integer.compare(b.availableProducts(), a.availableProducts());
+                    if (availableCompare != 0) return availableCompare;
+                    return Double.compare(a.totalCost(), b.totalCost());
+                })
+                .toList();
 
-        // Ordenar: primero las tiendas que tengan TODOS los productos, luego por precio
-        storeOptions.sort((a, b) -> {
-            // Priorizar tiendas con más productos disponibles
-            int availableCompare = Integer.compare(b.getAvailableProducts(), a.getAvailableProducts());
-            if (availableCompare != 0) return availableCompare;
-            // A igualdad de productos, la más barata
-            return Double.compare(a.getTotalCost(), b.getTotalCost());
-        });
-
-        // La tienda más barata que tenga TODOS los productos, o la que más tenga
         StoreBasketDTO cheapest = storeOptions.isEmpty() ? null : storeOptions.get(0);
 
-        BasketOptimizationDTO result = new BasketOptimizationDTO();
-        result.setStoreOptions(storeOptions);
-        result.setCheapestStore(cheapest);
-        result.setTotalProducts(totalProducts);
-
-        return result;
+        return new BasketOptimizationDTO(storeOptions, cheapest, totalProducts);
     }
 }

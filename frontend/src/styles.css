@@ -1,47 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-body {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background-color: #f8f9fa;
-  color: #333;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
+/* ============================================
+   CSS Variables — Light Mode (default)
+   ============================================ */
 :root {
-  --primary: #14b8a6;
-  --navy: #0f172a;
-  --background-light: #f1f5f9;
-  --card-light: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --white: #ffffff;
-  
-  /* Variables para el modo oscuro (se activan con la clase .dark) */
-  --bg-color: var(--background-light);
-  --card-bg: var(--card-light);
-  --text-color: var(--text-main);
+  --smartcart-primary: #1e3a5f;
+  --smartcart-primary-light: #2c5282;
+  --smartcart-accent: #3b82f6;
+  --smartcart-accent-light: #dbeafe;
+  --smartcart-success: #22c55e;
+  --smartcart-warning: #f59e0b;
+  --smartcart-danger: #ef4444;
+  --smartcart-error: #ef4444;
+  --smartcart-white: #ffffff;
+  --smartcart-background: #f5f7fa;
+  --smartcart-surface: #ffffff;
+  --smartcart-card: #ffffff;
+  --smartcart-text: #1e293b;
+  --smartcart-text-light: #64748b;
+  --smartcart-border: #e2e8f0;
 }
 
+/* ============================================
+   CSS Variables — Dark Mode
+   ============================================ */
 .dark {
-  --bg-color: #0f172a;
-  --card-bg: #1e293b;
-  --text-color: #f1f5f9;
+  --smartcart-primary: #1e3a5f;
+  --smartcart-primary-light: #2c5282;
+  --smartcart-accent: #60a5fa;
+  --smartcart-accent-light: rgba(96, 165, 250, 0.15);
+  --smartcart-success: #34d399;
+  --smartcart-warning: #fbbf24;
+  --smartcart-danger: #f87171;
+  --smartcart-error: #f87171;
+  --smartcart-white: #1e293b;
+  --smartcart-background: #0f172a;
+  --smartcart-surface: #1e293b;
+  --smartcart-card: #1e293b;
+  --smartcart-text: #e2e8f0;
+  --smartcart-text-light: #94a3b8;
+  --smartcart-border: #334155;
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
-}
-
-/* Global styles */
+/* ============================================
+   Global Reset & Base
+   ============================================ */
 * {
   box-sizing: border-box;
 }
@@ -55,33 +58,32 @@ html, body {
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  background-color: var(--smartcart-background);
+  color: var(--smartcart-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* CSS Variables */
-:root {
-  --smartcart-primary: #1e3a5f;
-  --smartcart-primary-light: #2c5282;
-  --smartcart-accent: #3b82f6;
-  --smartcart-accent-light: #dbeafe;
-  --smartcart-success: #22c55e;
-  --smartcart-warning: #f59e0b;
-  --smartcart-danger: #ef4444;
-  --smartcart-white: #ffffff;
-  --smartcart-background: #f5f7fa;
-  --smartcart-text: #1e293b;
-  --smartcart-text-light: #64748b;
-  --smartcart-border: #e2e8f0;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
-/* Ensure Angular Material cards don't have overflow hidden */
+/* ============================================
+   Angular Material Overrides — Light + Dark
+   ============================================ */
+
+/* Cards */
 .mat-mdc-card {
   overflow: visible !important;
+  background-color: var(--smartcart-card) !important;
+  color: var(--smartcart-text) !important;
 }
 
-/* Fix: mat-menu del perfil se renderiza en overlay fuera del componente */
+/* Menus */
 .mat-mdc-menu-panel {
-  background-color: var(--smartcart-white, #ffffff) !important;
+  background-color: var(--smartcart-surface, #ffffff) !important;
 }
 
 .mat-mdc-menu-item {
@@ -90,4 +92,270 @@ body {
 
 .mat-mdc-menu-item .mat-icon {
   color: var(--smartcart-text-light, #64748b) !important;
+}
+
+/* Dialogs */
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.mat-mdc-dialog-container {
+  background-color: var(--smartcart-surface) !important;
+  border-radius: 12px !important;
+}
+
+.mat-mdc-dialog-surface {
+  background-color: var(--smartcart-surface) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12) !important;
+}
+
+/* Select dropdowns */
+.mat-mdc-select-panel {
+  background-color: var(--smartcart-surface) !important;
+}
+
+.mat-mdc-option {
+  color: var(--smartcart-text, #1e293b) !important;
+}
+
+.mat-mdc-option:hover {
+  background-color: var(--smartcart-accent-light) !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected {
+  background-color: var(--smartcart-accent-light, #dbeafe) !important;
+}
+
+.mat-mdc-select-value {
+  color: var(--smartcart-text, #1e293b) !important;
+}
+
+.mat-mdc-select-arrow {
+  color: var(--smartcart-text-light, #64748b) !important;
+}
+
+/* Autocomplete panel */
+.mat-mdc-autocomplete-panel {
+  background-color: var(--smartcart-surface) !important;
+}
+
+/* Paginator */
+.mat-mdc-paginator {
+  background-color: var(--smartcart-surface) !important;
+  color: var(--smartcart-text) !important;
+}
+
+/* Form fields */
+.dark .mat-mdc-form-field {
+  color: var(--smartcart-text) !important;
+}
+
+.dark .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: var(--smartcart-surface) !important;
+}
+
+.dark .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__leading,
+.dark .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__notch,
+.dark .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__trailing {
+  border-color: var(--smartcart-border) !important;
+}
+
+.dark .mat-mdc-form-field-focus-overlay {
+  background-color: transparent !important;
+}
+
+.dark .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
+  color: var(--smartcart-text-light) !important;
+}
+
+.dark .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
+  color: var(--smartcart-text) !important;
+}
+
+/* Chips */
+.dark .mat-mdc-chip {
+  background-color: var(--smartcart-surface) !important;
+  color: var(--smartcart-text) !important;
+}
+
+/* Tabs */
+.dark .mat-mdc-tab-header {
+  background-color: var(--smartcart-surface) !important;
+}
+
+.dark .mat-mdc-tab:not(.mat-mdc-tab-disabled) .mdc-tab__text-label {
+  color: var(--smartcart-text-light) !important;
+}
+
+.dark .mat-mdc-tab:not(.mat-mdc-tab-disabled).mdc-tab--active .mdc-tab__text-label {
+  color: var(--smartcart-accent) !important;
+}
+
+/* Tooltip */
+.dark .mat-mdc-tooltip .mdc-tooltip__surface {
+  background-color: var(--smartcart-card) !important;
+  color: var(--smartcart-text) !important;
+}
+
+/* ============================================
+   Admin / Global Button Styles
+   ============================================ */
+.primary-btn {
+  background-color: var(--smartcart-primary, #1e3a5f) !important;
+  color: #fff !important;
+}
+
+.primary-btn:hover {
+  background-color: var(--smartcart-primary-light, #2c5282) !important;
+}
+
+.primary-btn:disabled {
+  background-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+}
+
+.dark .primary-btn:disabled {
+  background-color: #374151 !important;
+  color: #6b7280 !important;
+}
+
+/* ============================================
+   Dark Mode — Material Table overrides
+   ============================================ */
+.dark .mat-mdc-table {
+  background-color: var(--smartcart-card) !important;
+}
+
+.dark .mat-mdc-header-row {
+  background-color: var(--smartcart-background) !important;
+}
+
+.dark .mat-mdc-header-cell {
+  color: var(--smartcart-text-light) !important;
+  border-bottom-color: var(--smartcart-border) !important;
+}
+
+.dark .mat-mdc-row {
+  background-color: var(--smartcart-card) !important;
+}
+
+.dark .mat-mdc-row:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .mat-mdc-cell {
+  color: var(--smartcart-text) !important;
+  border-bottom-color: var(--smartcart-border) !important;
+}
+
+.dark .mat-mdc-no-data-row {
+  color: var(--smartcart-text-light) !important;
+}
+
+/* ============================================
+   Dark Mode — Toolbar overrides
+   ============================================ */
+.dark .mat-toolbar {
+  background-color: var(--smartcart-surface) !important;
+  color: var(--smartcart-text) !important;
+}
+
+/* ============================================
+   Dark Mode — Status badge overrides (admin)
+   ============================================ */
+.dark .status-badge.completed {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #34d399 !important;
+}
+
+.dark .status-badge.failed {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+}
+
+.dark .status-badge.running {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: #fbbf24 !important;
+}
+
+.dark .status-badge.cancelled {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: #fbbf24 !important;
+}
+
+/* ============================================
+   Dark Mode — Role/result badges
+   ============================================ */
+.dark .role-badge.admin {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #a78bfa !important;
+}
+
+.dark .role-badge.user {
+  background: rgba(96, 165, 250, 0.15) !important;
+  color: #60a5fa !important;
+}
+
+.dark .result-item.success {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #34d399 !important;
+}
+
+.dark .result-item.info {
+  background: rgba(96, 165, 250, 0.15) !important;
+  color: #60a5fa !important;
+}
+
+.dark .result-item.danger {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+}
+
+/* ============================================
+   Dark Mode — Slide toggle
+   ============================================ */
+.dark .mdc-switch__track {
+  background-color: #475569 !important;
+  border-color: #475569 !important;
+}
+
+.dark .mdc-switch--selected .mdc-switch__track {
+  background-color: rgba(96, 165, 250, 0.4) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+.dark .mdc-switch--selected .mdc-switch__handle::after {
+  background-color: #60a5fa !important;
+}
+
+.dark .mdc-switch__handle::after {
+  background-color: #94a3b8 !important;
+}
+
+.dark .mdc-switch__icons {
+  color: #0f172a !important;
+}
+
+/* ============================================
+   Dark Mode — Icon buttons in tables
+   ============================================ */
+.dark .mat-mdc-icon-button {
+  color: var(--smartcart-text-light) !important;
+}
+
+.dark .mat-mdc-icon-button[color="primary"] {
+  color: var(--smartcart-accent) !important;
+}
+
+/* ============================================
+   Dark Mode — Snackbar
+   ============================================ */
+.dark .mat-mdc-snack-bar-container .mdc-snackbar__surface {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .mat-mdc-snack-bar-container .mat-mdc-button {
+  color: #60a5fa !important;
 }

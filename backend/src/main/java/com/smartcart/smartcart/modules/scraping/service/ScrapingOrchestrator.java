@@ -24,8 +24,9 @@ public class ScrapingOrchestrator
     private final PythonScraperService pythonScraperService;
     private final ProductSyncService productSyncService;
 
-    @Async
-    @EventListener(ApplicationReadyEvent.class)
+    // TODO: Descomentar para activar scraping automático al arrancar
+    // @Async
+    // @EventListener(ApplicationReadyEvent.class)
     public void onStartup()
     {
         log.info("========== INICIO SCRAPING AUTOMATICO ==========");

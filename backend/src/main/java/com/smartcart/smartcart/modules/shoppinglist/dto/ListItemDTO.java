@@ -1,10 +1,15 @@
 package com.smartcart.smartcart.modules.shoppinglist.dto;
 
-public record ListItemDTO(
-    Integer itemId,
+public record ListItemDTO
+(
+    Integer listId,
     Integer productId,
-    String productName,
-    String customName,
+    String displayName,
+    String imageUrl,
     Integer quantity,
-    Boolean checked
-) {}
+    Boolean checked,
+    Boolean isGeneric
+){}
+
+    
+

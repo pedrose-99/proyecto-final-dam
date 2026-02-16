@@ -15,10 +15,25 @@ URL_PRODUCTS_BY_CATEGORY_CARREFOUR = (
 
 
 def _fetch_json(page, url: str) -> dict:
-    """Navega a una URL de API y extrae el JSON de la respuesta."""
-    page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-    content = page.evaluate("() => document.body.innerText")
-    return json.loads(content)
+    """Hace un fetch desde el contexto del navegador (usa cookies de sesion)."""
+    result = page.evaluate("""
+        async (url) => {
+            const res = await fetch(url, {
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json, text/plain, */*',
+                    'Referer': 'https://www.carrefour.es/supermercado',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'sec-fetch-dest': 'empty',
+                    'sec-fetch-mode': 'cors',
+                    'sec-fetch-site': 'same-origin'
+                }
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return await res.text();
+        }
+    """, url)
+    return json.loads(result)
 
 
 def _get_subcategory_urls(page, category_ids: list[str]) -> list[str]:
@@ -56,8 +71,8 @@ def _get_categories(page) -> list[str]:
     """Obtiene las subcategorias hoja de supermercado de Carrefour."""
     try:
         data = _fetch_json(page, URL_CATEGORY_CARREFOUR)
-    except Exception:
-        log.error("No se pudieron obtener las categorias de Carrefour")
+    except Exception as e:
+        log.error("No se pudieron obtener las categorias de Carrefour: %s", e)
         return []
 
     menu = data.get("menu", [])
@@ -143,6 +158,23 @@ def _get_products_by_category(
     return products
 
 
+def _wait_for_cloudflare(page, max_wait: int = 30) -> bool:
+    """Espera a que Cloudflare termine su challenge. Devuelve True si pasa."""
+    blocked_texts = ["just a moment", "attention required", "sorry, you have been blocked"]
+    start = time.time()
+
+    while time.time() - start < max_wait:
+        try:
+            content = page.evaluate("() => document.body.innerText.substring(0, 300)").lower()
+            if not any(t in content for t in blocked_texts):
+                return True
+        except Exception:
+            pass
+        time.sleep(2)
+
+    return False
+
+
 def scrape_carrefour() -> list[dict]:
     """Scraper principal de Carrefour. Devuelve lista de dicts con campos camelCase."""
     log.info("=== Iniciando scraping de Carrefour ===")
@@ -154,12 +186,38 @@ def scrape_carrefour() -> list[dict]:
         try:
             # Navegar para pasar Cloudflare
             log.info("Navegando a carrefour.es para pasar Cloudflare...")
-            page.goto(
-                "https://www.carrefour.es",
-                wait_until="domcontentloaded",
-                timeout=60_000,
-            )
-            time.sleep(3)
+            for attempt in range(3):
+                try:
+                    page.goto(
+                        "https://www.carrefour.es/supermercado",
+                        wait_until="domcontentloaded",
+                        timeout=30_000,
+                    )
+                    if _wait_for_cloudflare(page):
+                        log.info("Carrefour: pagina cargada correctamente (intento %d)", attempt + 1)
+                        break
+                    log.warning("Carrefour: bloqueado por Cloudflare (intento %d)", attempt + 1)
+                    if attempt < 2:
+                        # Cerrar y reabrir contexto con nuevas cookies
+                        context.close()
+                        context = browser.new_context(
+                            user_agent=(
+                                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                                "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                            ),
+                            viewport={"width": 1920, "height": 1080},
+                            locale="es-ES",
+                        )
+                        page = context.new_page()
+                        page.add_init_script(
+                            'Object.defineProperty(navigator, "webdriver", {get: () => undefined});'
+                        )
+                        time.sleep(5)
+                except Exception as e:
+                    log.warning("Carrefour: error en intento %d: %s", attempt + 1, e)
+                    if attempt == 2:
+                        raise
+                    time.sleep(5)
 
             categories = _get_categories(page)
             log.info("Carrefour: %d categorias a procesar", len(categories))
@@ -171,7 +229,7 @@ def scrape_carrefour() -> list[dict]:
                 log.info("[%d/%d] Carrefour — categoria: %s", idx, len(categories), cat)
                 products = _get_products_by_category(page, cat, seen_ids)
                 all_products.extend(products)
-                time.sleep(1)
+                time.sleep(0.5)
 
         finally:
             browser.close()
