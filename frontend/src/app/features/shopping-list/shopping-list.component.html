@@ -1,0 +1,230 @@
+<div class="shopping-list-container">
+  <!-- VISTA 1: Mis Listas (visible cuando no hay lista seleccionada) -->
+  <div *ngIf="!selectedList" class="lists-view">
+    <h1>Mis Listas de la Compra</h1>
+
+    <!-- Formulario para crear nueva lista -->
+    <div class="create-list-form">
+      <mat-form-field appearance="outline" class="list-name-field">
+        <mat-label>Ej: Compra semanal</mat-label>
+        <input matInput [formControl]="newListNameControl" 
+               (keyup.enter)="createList()" />
+      </mat-form-field>
+      <button mat-raised-button color="primary" 
+              (click)="createList()"
+              [disabled]="!newListNameControl.value">
+        <mat-icon>add</mat-icon>
+        Crear Lista
+      </button>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div *ngIf="isLoading" class="loading-spinner">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando listas...</p>
+    </div>
+
+    <!-- Grid de tarjetas con las listas -->
+    <div *ngIf="!isLoading && lists.length > 0" class="lists-grid">
+      <mat-card *ngFor="let list of lists" class="list-card" (click)="selectList(list)">
+        <mat-card-content>
+          <div class="card-header">
+            <h2>{{ list.name }}</h2>
+            <button mat-icon-button color="warn" (click)="deleteList(list); $event.stopPropagation()">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          <p class="item-count">{{ list.items.length }} producto{{ list.items.length !== 1 ? 's' : '' }}</p>
+          <p class="last-updated">Actualizado: {{ list.updatedAt }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Mensaje cuando no hay listas -->
+    <div *ngIf="!isLoading && lists.length === 0" class="empty-state empty-state--lists">
+      <mat-icon class="empty-icon">shopping_cart</mat-icon>
+      <p>No tienes listas todavía. Crea una para empezar.</p>
+    </div>
+  </div>
+
+  <!-- VISTA 2: Detalle de una lista (visible cuando hay selectedList) -->
+  <div *ngIf="selectedList" class="list-detail-view">
+    <!-- Header -->
+    <div class="detail-header">
+      <button mat-icon-button (click)="backToLists()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>{{ selectedList.name }}</h1>
+    </div>
+
+    <!-- Buscador de productos -->
+    <div class="search-section">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Escribe un producto (ej: Leche, Pollo...)</mat-label>
+        <input matInput 
+               [formControl]="searchControl"
+               [matAutocomplete]="auto"
+               (keyup.enter)="addGenericItem()" />
+        <mat-icon matSuffix>search</mat-icon>
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onProductSelected($event)">
+          <!-- Resultados de búsqueda -->
+          <mat-optgroup *ngFor="let group of [{ label: 'Productos encontrados', items: searchResults }]" [label]="group.label">
+            <mat-option *ngFor="let product of group.items" [value]="product">
+              <div class="search-option">
+                <img *ngIf="product.imageUrl" [src]="product.imageUrl" 
+                     class="option-image" alt="{{ product.name }}">
+                <div class="option-info">
+                  <span class="product-name">{{ product.name }}</span>
+                  <span class="product-brand" *ngIf="product.brand">{{ product.brand }}</span>
+                </div>
+              </div>
+            </mat-option>
+          </mat-optgroup>
+
+          <!-- Opción para añadir como genérico -->
+          <mat-optgroup label="Opciones">
+            <mat-option *ngIf="(searchControl.value || '').length >= 2" (click)="addGenericItem()">
+              <mat-icon class="generic-icon">add_circle_outline</mat-icon>
+              Añadir "{{ searchControl.value }}" como producto genérico
+            </mat-option>
+          </mat-optgroup>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    <!-- Lista de items -->
+    <div class="items-section">
+      <h2>Productos en la lista</h2>
+      <div *ngIf="selectedList.items.length > 0; else emptyList" class="items-list">
+        <div *ngFor="let item of selectedList.items" 
+             class="item-row" 
+             [class.checked]="item.checked">
+          <!-- Checkbox -->
+          <mat-checkbox [checked]="item.checked" 
+                        (change)="toggleChecked(item)">
+          </mat-checkbox>
+
+          <!-- Imagen o icono -->
+          <div class="item-image">
+            <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.displayName }}">
+            <mat-icon *ngIf="!item.imageUrl && item.isGeneric" class="placeholder-icon">edit_note</mat-icon>
+            <mat-icon *ngIf="!item.imageUrl && !item.isGeneric" class="placeholder-icon">shopping_basket</mat-icon>
+          </div>
+
+          <!-- Info del producto -->
+          <div class="item-info">
+            <span class="product-name">{{ item.displayName }}</span>
+            <span *ngIf="item.isGeneric" class="generic-badge">genérico</span>
+          </div>
+
+          <!-- Controles de cantidad -->
+          <div class="quantity-controls">
+            <button mat-icon-button (click)="changeQuantity(item, -1)" [disabled]="item.quantity <= 1">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span class="quantity-value">{{ item.quantity }}</span>
+            <button mat-icon-button (click)="changeQuantity(item, 1)">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <!-- Botón de eliminar -->
+          <button mat-icon-button color="warn" (click)="removeItem(item)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <ng-template #emptyList>
+        <div class="empty-state">
+          <mat-icon class="empty-icon">shopping_bag</mat-icon>
+          <p>Lista vacía. Usa el buscador para añadir productos.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Selector de tiendas -->
+    <div class="stores-section">
+      <h2>Selecciona supermercados para comparar</h2>
+      <div class="stores-grid">
+        <button *ngFor="let store of stores" 
+                (click)="toggleStore(store.id)"
+                class="store-chip"
+                [class.selected]="isStoreSelected(store.id)">
+          <img [src]="store.logoUrl" class="store-logo" [alt]="store.name">
+          <span class="store-name">{{ store.name }}</span>
+          <mat-icon *ngIf="isStoreSelected(store.id)" class="check-icon">check</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Botón Optimizar -->
+    <div class="optimize-section">
+      <button mat-raised-button color="accent" 
+              (click)="optimize()"
+              [disabled]="isOptimizing || selectedStoreIds.size === 0 || selectedList.items.length === 0"
+              class="optimize-button">
+        <mat-icon *ngIf="!isOptimizing">savings</mat-icon>
+        <mat-spinner *ngIf="isOptimizing" diameter="20" class="inline-spinner"></mat-spinner>
+        <span>{{ isOptimizing ? 'Optimizando...' : 'Optimizar Compra' }}</span>
+      </button>
+    </div>
+
+    <!-- Sección de resultado de optimización -->
+    <div *ngIf="optimizedResult" class="optimization-result">
+      <h2>Resultado de la Optimización</h2>
+
+      <!-- Coste total -->
+      <div class="total-cost">
+        <span class="label">Coste total estimado:</span>
+        <span class="amount">{{ optimizedResult.totalCost | number: '1.2-2' }} EUR</span>
+      </div>
+
+      <!-- Tiendas optimizadas -->
+      <div *ngFor="let storeGroup of optimizedResult.storeGroups" class="store-group">
+        <mat-card class="store-card">
+          <mat-card-header>
+            <img [src]="storeGroup.storeLogo" class="store-avatar">
+            <mat-card-title>{{ storeGroup.storeName }}</mat-card-title>
+            <mat-card-subtitle>
+              {{ storeGroup.items.length }} producto{{ storeGroup.items.length !== 1 ? 's' : '' }} • 
+              {{ storeGroup.subtotal | number: '1.2-2' }} EUR
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="store-items">
+              <div *ngFor="let item of storeGroup.items" class="optimized-item-row">
+                <div class="item-image">
+                  <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.productName }}">
+                  <mat-icon *ngIf="!item.imageUrl" class="placeholder-icon">shopping_basket</mat-icon>
+                </div>
+
+                <div class="item-details">
+                  <span class="product-name">{{ item.productName }}</span>
+                  <span class="price-info">
+                    {{ item.unitPrice | number: '1.2-2' }} EUR × {{ item.quantity }}
+                  </span>
+                </div>
+
+                <span class="line-total">{{ item.lineTotal | number: '1.2-2' }} EUR</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Productos no encontrados -->
+      <div *ngIf="optimizedResult.notFound && optimizedResult.notFound.length > 0" class="not-found-section">
+        <strong>No encontrados en las tiendas seleccionadas:</strong>
+        <div class="not-found-chips">
+          <mat-chip *ngFor="let item of optimizedResult.notFound" disabled>
+            {{ item }}
+          </mat-chip>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
