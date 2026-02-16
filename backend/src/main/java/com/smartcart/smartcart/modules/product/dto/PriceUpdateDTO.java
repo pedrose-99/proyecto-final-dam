@@ -1,15 +1,11 @@
 package com.smartcart.smartcart.modules.product.dto;
 
-import lombok.Data;
-
-
-@Data
-public class PriceUpdateDTO {
-    private Integer productId;
-    private Integer storeId;
-    private Double price;
-    private Double originalPrice;
-    private Boolean isOnSale;
-    private Integer stock;      
-    private String externaId;
-}
+public record PriceUpdateDTO(
+    Integer productId,
+    Integer storeId,
+    Double price,
+    Double originalPrice,
+    Boolean isOnSale,
+    Integer stock,
+    String externaId
+) {}

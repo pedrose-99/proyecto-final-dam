@@ -164,6 +164,19 @@ export class ProductService {
       );
     }
 
+    // Si hay búsqueda por texto, usar query de búsqueda del servidor
+    if (filters.search) {
+      return this.apollo.query<any>({
+        query: SEARCH_PRODUCTS,
+        variables: { query: filters.search, page: page, size: size },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => {
+          return this.mapGraphQLPageToProductPage(result.data?.searchProducts, filters);
+        })
+      );
+    }
+
     // Query general de todos los productos
     return this.apollo.query<any>({
       query: GET_ALL_PRODUCTS,
@@ -191,16 +204,6 @@ export class ProductService {
     }
 
     let content = (graphqlPage.content || []).map((p: any) => this.mapToProduct(p));
-
-    // Aplicar filtro de búsqueda en cliente si existe
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      content = content.filter((p: Product) =>
-        p.name?.toLowerCase().includes(searchLower) ||
-        p.brand?.toLowerCase().includes(searchLower)
-      );
-    }
-
 
     // Aplicar ordenamiento en cliente si no es relevancia
     content = this.applySorting(content, filters.sortBy);

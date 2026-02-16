@@ -17,11 +17,29 @@ services:
       timeout: 5s
       retries: 10
 
+  scraper-python:
+    build: ./scraper-python
+    container_name: smartcart-scraper-python
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
   backend:
     build: ./backend
     container_name: smartcart-backend
     depends_on:
       postgres:
+        condition: service_healthy
+      scraper-python:
         condition: service_healthy
     ports:
       - "8081:8080"
@@ -32,6 +50,7 @@ services:
       SPRING_DATASOURCE_USERNAME: smartcart
       SPRING_DATASOURCE_PASSWORD: smartcart123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      PYTHON_SCRAPER_URL: http://scraper-python:8000
 
   frontend:
     build: ./frontend
@@ -42,7 +61,6 @@ services:
       - "4200:4200"
     volumes:
       - ./frontend/src:/app/src
-      - ./frontend/angular.json:/app/angular.json
     environment:
       - WATCHPACK_POLLING=true
 

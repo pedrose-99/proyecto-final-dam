@@ -36,17 +36,17 @@ public class PriceHistoryService {
     @Transactional
     public PriceHistoryDTO register(PriceUpdateDTO input) {
         ProductStore ps = productStoreRepository
-                .findByProductId_ProductIdAndStoreId_StoreId(input.getProductId(), input.getStoreId())
+                .findByProductId_ProductIdAndStoreId_StoreId(input.productId(), input.storeId())
                 .orElseThrow(() -> new RuntimeException("Relación producto-tienda no encontrada"));
 
         boolean priceChanged = ps.getCurrentPrice() == null
-                || !ps.getCurrentPrice().equals(input.getPrice());
+                || !ps.getCurrentPrice().equals(input.price());
 
         // Actualizar precio actual en ProductStore
-        ps.setCurrentPrice(input.getPrice());
-        ps.setAvailable(input.getPrice() > 0);
-        if (input.getStock() != null) ps.setStock(input.getStock());
-        if (input.getExternaId() != null) ps.setExternaId(input.getExternaId());
+        ps.setCurrentPrice(input.price());
+        ps.setAvailable(input.price() > 0);
+        if (input.stock() != null) ps.setStock(input.stock());
+        if (input.externaId() != null) ps.setExternaId(input.externaId());
         productStoreRepository.save(ps);
 
         // Crear registro histórico solo si cambió el precio
@@ -55,7 +55,7 @@ public class PriceHistoryService {
             PriceHistoryDTO dto = PriceHistoryMapper.toDTO(priceHistoryRepository.save(history));
 
             // Comprobar alertas activas para este producto
-            checkAlerts(ps.getProductId().getProductId(), input.getPrice());
+            checkAlerts(ps.getProductId().getProductId(), input.price());
 
             return dto;
         }
