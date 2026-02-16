@@ -20,12 +20,13 @@ public class ShoppingListMapper
         return new ShoppingListDTO(
                 entity.getListId(),
                 entity.getName(),
-                entity.getCreatedAt() != null ? entity.getCreatedAt().toString() : null,
-                entity.getUpdatedAt() != null ? entity.getUpdatedAt().toString() : null,
+                entity.getUser() != null ? entity.getUser().getIdUser() : null,
+                entity.getUser() != null ? entity.getUser().getRealUsername() : null,
+                entity.getGroup() != null ? entity.getGroup().getGroupId() : null,
+                entity.getGroup() != null ? entity.getGroup().getName() : null,
+                entity.getCreatedAt(),
                 items
         );
-
-
     }
 
     public static ListItemDTO toItemDTO(ListItem entity)

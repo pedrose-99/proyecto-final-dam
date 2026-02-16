@@ -67,10 +67,38 @@
   margin: 8px 0;
 }
 
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .last-updated {
   font-size: 12px;
   color: var(--smartcart-text-light);
   margin: 0;
+}
+
+.group-list {
+  border-left: 4px solid var(--smartcart-accent);
+}
+
+.group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--smartcart-accent);
+  background-color: rgba(37, 99, 235, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.group-badge mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
 }
 
 /* VISTA 2: Detalle de una lista */

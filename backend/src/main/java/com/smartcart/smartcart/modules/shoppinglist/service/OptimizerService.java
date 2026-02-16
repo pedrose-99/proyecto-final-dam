@@ -145,7 +145,7 @@ public class OptimizerService
 
             if (bestMatch == null)
             {
-                notFound.add(item.getDisplayName());
+                notFound.add(item.getProduct() != null ? item.getProduct().getName() : item.getGenericName());
                 continue;
             }
 

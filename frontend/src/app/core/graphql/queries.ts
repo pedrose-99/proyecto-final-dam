@@ -205,8 +205,10 @@ export const GET_MY_SHOPPING_LISTS = gql`
     myShoppingLists {
       listId
       name
+      groupId
+      groupName
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -226,7 +228,7 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
       listId
       name
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -241,12 +243,12 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
 `;
 
 export const CREATE_SHOPPING_LIST = gql`
-  mutation CreateShoppingList($name: String!) {
-    createShoppingList(name: $name) {
+  mutation CreateShoppingList($name: String!, $groupId: ID) {
+    createShoppingList(name: $name, groupId: $groupId) {
       listId
       name
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -272,7 +274,7 @@ export const ADD_ITEM_TO_LIST = gql`
       listId
       name
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -292,7 +294,7 @@ export const UPDATE_LIST_ITEM = gql`
       listId
       name
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -312,7 +314,7 @@ export const REMOVE_LIST_ITEM = gql`
       listId
       name
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -332,7 +334,7 @@ export const CREATE_SUBLISTS = gql`
       listId
       name
       createdAt
-      updatedAt
+
       items {
         itemId
         productId
@@ -366,6 +368,119 @@ export const OPTIMIZE_SHOPPING_LIST = gql`
       }
       notFound
     }
+  }
+`;
+
+// Grupos colaborativos
+export const GET_MY_GROUPS = gql`
+  query GetMyGroups {
+    getMyGroups {
+      groupId
+      name
+      groupCode
+      ownerUsername
+      ownerId
+      createdAt
+      members {
+        id
+        userId
+        username
+        email
+        status
+      }
+    }
+  }
+`;
+
+export const GET_GROUP_DETAILS = gql`
+  query GetGroupDetails($groupId: ID!) {
+    getGroupDetails(groupId: $groupId) {
+      groupId
+      name
+      groupCode
+      ownerUsername
+      ownerId
+      createdAt
+      members {
+        id
+        userId
+        username
+        email
+        status
+      }
+      shoppingLists {
+        listId
+        name
+        createdAt
+      }
+    }
+  }
+`;
+
+export const CREATE_GROUP = gql`
+  mutation CreateGroup($name: String!) {
+    createGroup(name: $name) {
+      groupId
+      name
+      groupCode
+      ownerUsername
+      ownerId
+      createdAt
+      members {
+        id
+        userId
+        username
+        email
+        status
+      }
+    }
+  }
+`;
+
+export const INVITE_TO_GROUP = gql`
+  mutation InviteToGroup($groupId: ID!, $target: String!) {
+    inviteToGroup(groupId: $groupId, target: $target)
+  }
+`;
+
+export const JOIN_GROUP_BY_CODE = gql`
+  mutation JoinGroupByCode($code: String!) {
+    joinGroupByCode(code: $code) {
+      groupId
+      name
+      groupCode
+      ownerUsername
+      ownerId
+      createdAt
+      members {
+        id
+        userId
+        username
+        email
+        status
+      }
+    }
+  }
+`;
+
+// Notificaciones
+export const GET_NOTIFICATIONS = gql`
+  query GetNotifications {
+    getNotifications {
+      notificationId
+      message
+      type
+      isRead
+      relatedGroupId
+      relatedGroupName
+      createdAt
+    }
+  }
+`;
+
+export const RESPOND_TO_INVITE = gql`
+  mutation RespondToInvite($notificationId: ID!, $accept: Boolean!) {
+    respondToInvite(notificationId: $notificationId, accept: $accept)
   }
 `;
 

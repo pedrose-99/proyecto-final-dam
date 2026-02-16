@@ -9,15 +9,21 @@ import com.smartcart.smartcart.modules.shoppinglist.entity.ListItem;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ShoppingList;
 import com.smartcart.smartcart.modules.shoppinglist.mapper.ShoppingListMapper;
 import com.smartcart.smartcart.modules.shoppinglist.repository.ShoppingListRepository;
+import com.smartcart.smartcart.modules.group.entity.Group;
+import com.smartcart.smartcart.modules.group.entity.GroupMember;
+import com.smartcart.smartcart.modules.group.repository.GroupMemberRepository;
+import com.smartcart.smartcart.modules.group.repository.GroupRepository;
 import com.smartcart.smartcart.modules.user.entity.User;
 import com.smartcart.smartcart.modules.user.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +35,8 @@ public class ShoppingListService
     private final ShoppingListRepository slRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
 
     private Optional<User> getCurrentUser()
     {
@@ -51,12 +59,44 @@ public class ShoppingListService
         {
             return List.of();
         }
-        
+
         try
         {
-            return slRepository.findByUser_IdUserOrderByUpdatedAtDesc(user.get().getIdUser()).stream()
-                .map(ShoppingListMapper::toDTO)
-                .toList();
+            Integer userId = user.get().getIdUser();
+
+            // Listas propias del usuario
+            List<ShoppingList> ownLists = slRepository.findByUser_IdUserOrderByCreatedAtDesc(userId);
+
+            // Listas de grupos a los que pertenece el usuario
+            List<GroupMember> memberships = groupMemberRepository.findAcceptedMembershipsByUserId(userId);
+            List<Integer> groupIds = memberships.stream()
+                    .map(gm -> gm.getGroup().getGroupId())
+                    .toList();
+
+            List<ShoppingList> groupLists = groupIds.isEmpty()
+                    ? List.of()
+                    : slRepository.findByGroup_GroupIdInOrderByCreatedAtDesc(groupIds);
+
+            // Combinar sin duplicados (las propias que ya tienen grupo se meten por ownLists)
+            Set<Integer> seenIds = new LinkedHashSet<>();
+            List<ShoppingListDTO> result = new ArrayList<>();
+
+            for (ShoppingList sl : ownLists)
+            {
+                if (seenIds.add(sl.getListId()))
+                {
+                    result.add(ShoppingListMapper.toDTO(sl));
+                }
+            }
+            for (ShoppingList sl : groupLists)
+            {
+                if (seenIds.add(sl.getListId()))
+                {
+                    result.add(ShoppingListMapper.toDTO(sl));
+                }
+            }
+
+            return result;
         }
         catch(RuntimeException e)
         {
@@ -68,17 +108,44 @@ public class ShoppingListService
     public ShoppingListDTO getListById(Integer listId)
     {
         Optional<User> user = getCurrentUser();
-        if(user.isEmpty())
+        if (user.isEmpty())
         {
             return null;
         }
-        return slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser())
+        return findAccessibleList(listId, user.get())
                 .map(ShoppingListMapper::toDTO)
                 .orElse(null);
     }
 
+    /**
+     * Busca una lista accesible: propia del usuario O perteneciente a un grupo del usuario.
+     */
+    private Optional<ShoppingList> findAccessibleList(Integer listId, User user)
+    {
+        // Primero buscar como propietario
+        Optional<ShoppingList> ownList = slRepository.findByListIdAndUser_IdUser(listId, user.getIdUser());
+        if (ownList.isPresent())
+        {
+            return ownList;
+        }
+
+        // Si no es propietario, buscar en listas de grupos del usuario
+        Optional<ShoppingList> listOpt = slRepository.findById(listId);
+        if (listOpt.isPresent() && listOpt.get().getGroup() != null)
+        {
+            Integer groupId = listOpt.get().getGroup().getGroupId();
+            Optional<GroupMember> membership = groupMemberRepository.findAcceptedMember(groupId, user.getIdUser());
+            if (membership.isPresent())
+            {
+                return listOpt;
+            }
+        }
+
+        return Optional.empty();
+    }
+
     @Transactional
-    public ShoppingListDTO createList(String name)
+    public ShoppingListDTO createList(String name, Integer groupId)
     {
         Optional<User> user = getCurrentUser();
 
@@ -87,7 +154,13 @@ public class ShoppingListService
             ShoppingList shoppinglist = new ShoppingList();
             shoppinglist.setUser(user.get());
             shoppinglist.setName(name);
-            
+
+            if (groupId != null)
+            {
+                Optional<Group> group = groupRepository.findById(groupId);
+                group.ifPresent(shoppinglist::setGroup);
+            }
+
             return ShoppingListMapper.toDTO(slRepository.save(shoppinglist));
         }
         catch(RuntimeException e)
@@ -123,7 +196,7 @@ public class ShoppingListService
             throw new RuntimeException("Usuario no encontrado");
         }
 
-        Optional<ShoppingList> listOpt = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
+        Optional<ShoppingList> listOpt = findAccessibleList(listId, user.get());
         if (listOpt.isEmpty())
         {
             throw new RuntimeException("Lista no encontrada");
@@ -166,7 +239,7 @@ public class ShoppingListService
             throw new RuntimeException("Usuario no encontrado");
         }
 
-        Optional<ShoppingList> listOpt = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
+        Optional<ShoppingList> listOpt = findAccessibleList(listId, user.get());
         if (listOpt.isEmpty())
         {
             throw new RuntimeException("Lista no encontrada");
@@ -205,7 +278,7 @@ public class ShoppingListService
             throw new RuntimeException("Usuario no encontrado");
         }
 
-        Optional<ShoppingList> listOpt = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
+        Optional<ShoppingList> listOpt = findAccessibleList(listId, user.get());
         if (listOpt.isEmpty())
         {
             throw new RuntimeException("Lista no encontrada");

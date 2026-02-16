@@ -41,9 +41,9 @@ public class ShoppingListController
     }
 
     @MutationMapping
-    public ShoppingListDTO createShoppingList(@Argument String name)
+    public ShoppingListDTO createShoppingList(@Argument String name, @Argument Integer groupId)
     {
-        return slService.createList(name);
+        return slService.createList(name, groupId);
     }
 
     @MutationMapping

@@ -44,11 +44,11 @@ export class ShoppingListService {
     );
   }
 
-  createList(name: string): Observable<ShoppingList> {
+  createList(name: string, groupId?: number): Observable<ShoppingList> {
     return this.apollo.mutate<{ createShoppingList: ShoppingList }>(
       {
         mutation: CREATE_SHOPPING_LIST,
-        variables: { name }
+        variables: { name, groupId: groupId ? groupId.toString() : null }
       }
     ).pipe(
       map(result => result.data?.createShoppingList as ShoppingList)

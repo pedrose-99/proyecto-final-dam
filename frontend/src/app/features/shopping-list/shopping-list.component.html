@@ -25,7 +25,7 @@
 
     <!-- Grid de tarjetas con las listas -->
     <div *ngIf="!isLoading && lists.length > 0" class="lists-grid">
-      <mat-card *ngFor="let list of lists" class="list-card" (click)="selectList(list)">
+      <mat-card *ngFor="let list of lists" class="list-card" [class.group-list]="list.groupId" (click)="selectList(list)">
         <mat-card-content>
           <div class="card-header">
             <h2>{{ list.name }}</h2>
@@ -34,7 +34,13 @@
             </button>
           </div>
           <p class="item-count">{{ (list.items?.length || 0) }} producto{{ (list.items?.length || 0) !== 1 ? 's' : '' }}</p>
-          <p class="last-updated">Actualizado: {{ list.updatedAt }}</p>
+          <div class="card-footer">
+            <p class="last-updated">{{ list.createdAt | date:'dd/MM/yyyy' }}</p>
+            <span *ngIf="list.groupId" class="group-badge">
+              <mat-icon>groups</mat-icon>
+              {{ list.groupName || 'Grupo' }}
+            </span>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>
