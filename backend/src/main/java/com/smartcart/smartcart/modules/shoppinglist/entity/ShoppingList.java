@@ -35,7 +35,7 @@ public class ShoppingList
     private List<ListItem> items = new ArrayList<>();
     
 
-    private ShoppingList() {}
+    public ShoppingList() {}
 
     //Ciclo de vida;
     @PrePersist

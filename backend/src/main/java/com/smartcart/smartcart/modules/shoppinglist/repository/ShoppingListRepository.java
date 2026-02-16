@@ -9,6 +9,6 @@ import com.smartcart.smartcart.modules.shoppinglist.entity.ShoppingList;
 
 public interface ShoppingListRepository extends JpaRepository<ShoppingList, Integer> 
 {
-    List<ShoppingList> findByUserId(Integer userId);
-    Optional<ShoppingList> findByListAndUserId(Integer listId, Integer userId);
+    List<ShoppingList> findByUser_IdUserOrderByUpdatedAtDesc(Integer userId);
+    Optional<ShoppingList> findByListIdAndUser_IdUser(Integer listId, Integer userId);
 }

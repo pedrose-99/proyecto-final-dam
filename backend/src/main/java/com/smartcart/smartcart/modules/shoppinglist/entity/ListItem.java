@@ -19,7 +19,7 @@ public class ListItem
     private ShoppingList shoppingList;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "peoduct_id")
+    @JoinColumn(name = "product_id")
     private Product product;
 
     @Column(name = "generic_name")
@@ -42,6 +42,4 @@ public class ListItem
         }
         return genericName;
     }
-
-
 }
