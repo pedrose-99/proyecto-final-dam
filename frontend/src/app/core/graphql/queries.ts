@@ -198,3 +198,154 @@ export const GET_PRICE_HISTORY = gql`
     }
   }
 `;
+
+// Shopping Lists
+export const GET_MY_SHOPPING_LISTS = gql`
+  query MyShoppingLists {
+    myShoppingLists {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
+export const GET_SHOPPING_LIST_BY_ID = gql`
+  query GetShoppingListById($listId: ID!) {
+    shoppingListById(listId: $listId) {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
+export const CREATE_SHOPPING_LIST = gql`
+  mutation CreateShoppingList($name: String!) {
+    createShoppingList(name: $name) {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
+export const DELETE_SHOPPING_LIST = gql`
+  mutation DeleteShoppingList($listId: ID!) {
+    deleteShoppingList(listId: $listId)
+  }
+`;
+
+export const ADD_ITEM_TO_LIST = gql`
+  mutation AddItemToList($listId: ID!, $productId: ID, $genericName: String, $quantity: Int) {
+    addItemToList(listId: $listId, productId: $productId, genericName: $genericName, quantity: $quantity) {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
+export const UPDATE_LIST_ITEM = gql`
+  mutation UpdateListItem($listId: ID!, $itemId: ID!, $quantity: Int, $checked: Boolean) {
+    updateListItem(listId: $listId, itemId: $itemId, quantity: $quantity, checked: $checked) {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
+export const REMOVE_LIST_ITEM = gql`
+  mutation RemoveListItem($listId: ID!, $itemId: ID!) {
+    removeListItem(listId: $listId, itemId: $itemId) {
+      listId
+      name
+      createdAt
+      updatedAt
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+      }
+    }
+  }
+`;
+
+export const OPTIMIZE_SHOPPING_LIST = gql`
+  query OptimizeShoppingList($listId: ID!, $storeIds: [ID!]!) {
+    optimizeShoppingList(listId: $listId, storeIds: $storeIds) {
+      totalCost
+      storeGroups {
+        storeId
+        storeName
+        storeLogo
+        subtotal
+        items {
+          productId
+          productName
+          imageUrl
+          unitPrice
+          quantity
+          lineTotal
+        }
+      }
+      notFound
+    }
+  }
+`;
+

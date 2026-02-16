@@ -1,5 +1,12 @@
 package com.smartcart.smartcart.modules.shoppinglist.dto;
 
-public class ShoppingListDTO {
+import java.util.List;
 
-}
+public record ShoppingListDTO 
+(
+    Integer listId,
+    String name,
+    String createdAt,
+    String updatedAt,
+    List<ListItemDTO> items
+){}

@@ -1,0 +1,56 @@
+extend type Query 
+{
+    myShoppingLists: [ShoppingListDTO]
+    shoppingListById(listId: ID!): ShoppingListDTO
+    optimizeShoppingList(listId: ID!, storeIds: [ID!]!): OptimizedListDTO
+}
+extend type Mutation 
+{
+    createShoppingList(name: String!): ShoppingListDTO
+    deleteShoppingList(listId: ID!): Boolean
+
+    addItemToList(listId: ID!, productId: ID, genericName: String, quantity: Int): ShoppingListDTO
+    updateListItem(listId: ID!, itemId: ID!, quantity: Int, checked: Boolean): ShoppingListDTO
+    removeListItem(listId: ID!, itemId: ID!): ShoppingListDTO
+}
+
+type ShoppingListDTO {
+    listId: ID
+    name: String
+    createdAt: String
+    updatedAt: String
+    items: [ListItemDTO]
+}
+
+type ListItemDTO {
+    itemId: ID
+    productId: ID
+    displayName: String
+    imageUrl: String
+    quantity: Int
+    checked: Boolean
+    isGeneric: Boolean
+}
+
+type OptimizedListDTO {
+    totalCost: Float
+    storeGroups: [OptimizedStoreDTO]
+    notFound: [String]
+}
+
+type OptimizedStoreDTO {
+    storeId: ID
+    storeName: String
+    storeLogo: String
+    subtotal: Float
+    items: [OptimizedItemDTO]
+}
+
+type OptimizedItemDTO {
+    productId: ID
+    productName: String
+    imageUrl: String
+    unitPrice: Float
+    quantity: Int
+    lineTotal: Float
+}
