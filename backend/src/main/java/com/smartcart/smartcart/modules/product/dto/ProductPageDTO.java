@@ -2,19 +2,12 @@ package com.smartcart.smartcart.modules.product.dto;
 
 import java.util.List;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ProductPageDTO {
-    private List<ProductDTO> content;
-    private long totalElements;
-    private int totalPages;
-    private int number;
-    private int size;
-    private boolean first;
-    private boolean last;
-}
+public record ProductPageDTO(
+    List<ProductDTO> content,
+    long totalElements,
+    int totalPages,
+    int number,
+    int size,
+    boolean first,
+    boolean last
+) {}

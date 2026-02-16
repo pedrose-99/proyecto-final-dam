@@ -1,0 +1,142 @@
+<div class="logs-header">
+    <h2>Logs de Scraping</h2>
+</div>
+
+<!-- Filters -->
+<mat-card class="filters-card">
+    <mat-card-content>
+        <div class="filters-row">
+            <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Tienda</mat-label>
+                <mat-select [(ngModel)]="storeFilter" (selectionChange)="onFilterChange()">
+                    @for (opt of storeOptions; track opt.value) {
+                        <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="filter-field">
+                <mat-label>Estado</mat-label>
+                <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()">
+                    @for (opt of statusOptions; track opt.value) {
+                        <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </mat-card-content>
+</mat-card>
+
+<!-- Table -->
+@if (loading) {
+    <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+    </div>
+} @else {
+    <mat-card class="table-card">
+        <mat-card-content>
+            <div class="table-container">
+                <table mat-table [dataSource]="logs" class="logs-table">
+                    <ng-container matColumnDef="startTime">
+                        <th mat-header-cell *matHeaderCellDef>Fecha inicio</th>
+                        <td mat-cell *matCellDef="let log">{{ formatDate(log.startTime) }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="storeName">
+                        <th mat-header-cell *matHeaderCellDef>Tienda</th>
+                        <td mat-cell *matCellDef="let log">{{ log.storeName }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="durationSeconds">
+                        <th mat-header-cell *matHeaderCellDef>Duración</th>
+                        <td mat-cell *matCellDef="let log">{{ formatDuration(log.durationSeconds) }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="productsFound">
+                        <th mat-header-cell *matHeaderCellDef>Encontrados</th>
+                        <td mat-cell *matCellDef="let log">{{ log.productsFound ?? '-' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="productsCreated">
+                        <th mat-header-cell *matHeaderCellDef>Creados</th>
+                        <td mat-cell *matCellDef="let log">{{ log.productsCreated ?? '-' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="productsUpdated">
+                        <th mat-header-cell *matHeaderCellDef>Actualizados</th>
+                        <td mat-cell *matCellDef="let log">{{ log.productsUpdated ?? '-' }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="errorCount">
+                        <th mat-header-cell *matHeaderCellDef>Errores</th>
+                        <td mat-cell *matCellDef="let log">
+                            @if (log.errorCount && log.errorCount > 0) {
+                                <button mat-button color="warn"
+                                        class="error-btn"
+                                        (click)="toggleErrors(log); $event.stopPropagation()">
+                                    {{ log.errorCount }}
+                                    <mat-icon class="expand-icon">
+                                        {{ expandedLog?.id === log.id ? 'expand_less' : 'expand_more' }}
+                                    </mat-icon>
+                                </button>
+                            } @else {
+                                <span class="no-errors">0</span>
+                            }
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="status">
+                        <th mat-header-cell *matHeaderCellDef>Estado</th>
+                        <td mat-cell *matCellDef="let log">
+                            <span class="status-badge" [class]="getStatusColor(log.status)">
+                                {{ getStatusLabel(log.status) }}
+                            </span>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                        [class.expanded-row]="expandedLog?.id === row.id"></tr>
+                </table>
+            </div>
+
+            <!-- Error detail panel -->
+            @if (expandedLog) {
+                <div class="errors-panel">
+                    <h4>
+                        <mat-icon>error_outline</mat-icon>
+                        Errores del scraping de {{ expandedLog.storeName }} ({{ formatDate(expandedLog.startTime) }})
+                    </h4>
+                    @if (errorsLoading) {
+                        <mat-spinner diameter="24"></mat-spinner>
+                    } @else if (errors.length === 0) {
+                        <p class="no-data">No se encontraron detalles de errores</p>
+                    } @else {
+                        <div class="errors-list">
+                            @for (error of errors; track error.id) {
+                                <div class="error-item">
+                                    <div class="error-header">
+                                        <span class="error-type">{{ error.errorType }}</span>
+                                        <span class="error-time">{{ formatDate(error.occurredAt) }}</span>
+                                    </div>
+                                    <p class="error-message">{{ error.errorMessage }}</p>
+                                    @if (error.failedUrl) {
+                                        <p class="error-url">URL: {{ error.failedUrl }}</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <mat-paginator [length]="totalElements"
+                           [pageSize]="pageSize"
+                           [pageIndex]="pageIndex"
+                           [pageSizeOptions]="[10, 25, 50]"
+                           (page)="onPageChange($event)"
+                           showFirstLastButtons>
+            </mat-paginator>
+        </mat-card-content>
+    </mat-card>
+}

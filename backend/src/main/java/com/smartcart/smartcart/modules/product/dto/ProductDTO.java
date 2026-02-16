@@ -1,17 +1,14 @@
 package com.smartcart.smartcart.modules.product.dto;
 
-import lombok.Data;
-
-@Data
-public class ProductDTO {
-    private Integer productId;
-    private String name;
-    private String brand;
-    private String ean;
-    private String description;
-    private String imageUrl;
-    private Double quantity;
-    private String unit;
-    private String categoryName;
-    private Integer categoryId;
-}
+public record ProductDTO(
+    Integer productId,
+    String name,
+    String brand,
+    String ean,
+    String description,
+    String imageUrl,
+    Double quantity,
+    String unit,
+    String categoryName,
+    Integer categoryId
+) {}

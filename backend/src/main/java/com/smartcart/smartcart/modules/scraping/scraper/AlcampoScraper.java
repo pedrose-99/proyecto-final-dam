@@ -327,19 +327,14 @@ public class AlcampoScraper extends BaseScraper
         List<ScrapedProduct> products = new ArrayList<>();
 
         // Buscar productos en productEntities del HTML
-        // Formato real: "productId":"uuid","retailerProductId":"77081","name":"ALCAMPO...","available":true,...,"price":{"current":{"amount":"2.45"
+        // Formato: "productId":"uuid","retailerProductId":"num","brand":"...","available":true,...,"name":"text","price":{"current":{"amount":"3.13"
         Pattern pattern = Pattern.compile(
-            "\"productId\":\"([a-f0-9-]{36})\",\"retailerProductId\":\"(\\d+)\",\"name\":\"([^\"]+)\",\"available\":(true|false)[^}]*?\"price\":\\{\"current\":\\{\"amount\":\"([\\d.]+)\""
+            "\"productId\":\"([a-f0-9-]{36})\",\"retailerProductId\":\"(\\d+)\".{10,3000}?\"name\":\"([^\"]+)\",\"price\":\\{\"current\":\\{\"amount\":\"([\\d.]+)\""
         );
 
         Matcher matcher = pattern.matcher(html);
 
         log.info("[{}] Buscando productos en HTML de {} caracteres para categoria {}", STORE_NAME, html.length(), categoryName);
-
-        // Debug: verificar que el HTML contiene productEntities
-        boolean hasProductEntities = html.contains("\"productEntities\":");
-        boolean hasRetailerId = html.contains("\"retailerProductId\":");
-        log.info("[{}] HTML contiene 'productEntities': {}, contiene 'retailerProductId': {}", STORE_NAME, hasProductEntities, hasRetailerId);
 
         int matchCount = 0;
         while (matcher.find())
@@ -349,7 +344,7 @@ public class AlcampoScraper extends BaseScraper
                 String productUuid = matcher.group(1);
                 String externalId = matcher.group(2); // retailerProductId
                 String name = matcher.group(3);
-                String priceStr = matcher.group(5); // grupo 5 porque grupos 1-4 son uuid, retailerId, name, available
+                String priceStr = matcher.group(4);
 
                 // Saltar si ya lo vimos
                 if (seenIds.contains(externalId))

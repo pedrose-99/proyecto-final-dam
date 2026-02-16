@@ -126,6 +126,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.router.navigate(['/settings']);
   }
 
+  goToAdmin(): void {
+    this.router.navigate(['/admin/dashboard']);
+  }
+
+  get isAdmin(): boolean {
+    return this.currentUser?.role === 'ADMIN';
+  }
+
   logout(): void {
     this.authService.logout();
   }
