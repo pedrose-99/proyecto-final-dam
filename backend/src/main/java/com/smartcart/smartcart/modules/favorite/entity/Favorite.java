@@ -2,6 +2,8 @@ package com.smartcart.smartcart.modules.favorite.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import com.smartcart.smartcart.modules.product.entity.Product;
 import com.smartcart.smartcart.modules.user.entity.User;
 
@@ -30,7 +32,8 @@ public class Favorite
     @Column(name = "favorite_id")
     private Integer favoriteId;
 
-    @ManyToOne
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @ManyToOne

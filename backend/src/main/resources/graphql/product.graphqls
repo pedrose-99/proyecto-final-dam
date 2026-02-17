@@ -35,6 +35,7 @@ type ProductDTO {
     unit: String
     categoryName: String
     categoryId: Int
+    isFavorite: Boolean
 }
 
 # ─── Comparador ─────────────────────────────────────────

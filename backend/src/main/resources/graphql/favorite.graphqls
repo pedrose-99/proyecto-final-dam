@@ -1,0 +1,9 @@
+extend type Query {
+    myFavorites: [ProductDTO]
+    isFavorite(productId: ID!): Boolean
+}
+
+extend type Mutation {
+    addToFavorites(productId: ID!): Boolean
+    removeFromFavorites(productId: ID!): Boolean
+}

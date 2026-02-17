@@ -30,6 +30,7 @@ export const routes: Routes = [
     children: [
       { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
       { path: 'producto/:id', loadComponent: () => import('./features/product/product-list/product-detail/product-detail').then(m => m.ProductDetailComponent) },
+      { path: 'favorites', loadComponent: () => import('./features/favorites/favorites.component').then(m => m.FavoritesComponent) },
       { path: 'lists', loadComponent: () => import('./features/shopping-list/shopping-list.component').then(m => m.ShoppingListComponent) },
       { path: 'grupos', loadComponent: () => import('./features/groups/groups.component').then(m => m.GroupsComponent) },
       { path: 'grupos/:id', loadComponent: () => import('./features/groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent) },

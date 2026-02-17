@@ -484,3 +484,34 @@ export const RESPOND_TO_INVITE = gql`
   }
 `;
 
+// Favoritos
+export const GET_MY_FAVORITES = gql`
+  query MyFavorites {
+    myFavorites {
+      productId
+      name
+      brand
+      imageUrl
+      categoryName
+      isFavorite
+    }
+  }
+`;
+
+export const IS_FAVORITE = gql`
+  query IsFavorite($productId: ID!) {
+    isFavorite(productId: $productId)
+  }
+`;
+
+export const ADD_TO_FAVORITES = gql`
+  mutation AddToFavorites($productId: ID!) {
+    addToFavorites(productId: $productId)
+  }
+`;
+
+export const REMOVE_FROM_FAVORITES = gql`
+  mutation RemoveFromFavorites($productId: ID!) {
+    removeFromFavorites(productId: $productId)
+  }
+`;

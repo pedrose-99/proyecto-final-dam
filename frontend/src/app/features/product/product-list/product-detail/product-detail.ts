@@ -1,13 +1,24 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProductService } from '../../../../core/services/product.service';
+import { FavoriteService } from '../../../../shared/services/favorite.service';
 import { Chart, registerables } from 'chart.js';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatSnackBarModule
+  ],
   templateUrl: './product-detail.html',
   styleUrls: ['./product-detail.css']
 })
@@ -20,6 +31,8 @@ export class ProductDetailComponent implements OnInit {
   loading = true;
   stores: any[] = [];
   bestPrice: number | null = null;
+  productId: number | null = null;
+  isFavorite = false;
   
   product: any = {
     name: 'Cargando...',
@@ -33,8 +46,10 @@ export class ProductDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
+    private favoriteService: FavoriteService,
     private cdr: ChangeDetectorRef,
-    private location: Location
+    private location: Location,
+    private snackBar: MatSnackBar
   ) {}
 
   goBack(): void {
@@ -44,7 +59,9 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      // CORRECCIÓN: Quitamos loadProduct(id) porque la lógica está aquí abajo
+      this.productId = parseInt(id);
+      
+      // Cargar datos del producto
       this.productService.getComparison(id).subscribe({
         next: (data: any) => {
           if (data) {
@@ -69,6 +86,17 @@ export class ProductDetailComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+      
+      // Comprobar si está en favoritos
+      this.favoriteService.isFavorite(this.productId).subscribe({
+        next: (isFav) => {
+          this.isFavorite = isFav;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error al comprobar favorito:', err);
+        }
+      });
     }
   }
   toggleHistory() {
@@ -85,7 +113,31 @@ export class ProductDetailComponent implements OnInit {
     }
   }
   toggleFavorite(): void {
-    alert('¡Añadido a favoritos!');
+    if (!this.productId) return;
+    
+    if (this.isFavorite) {
+      this.favoriteService.removeFromFavorites(this.productId).subscribe({
+        next: () => {
+          this.isFavorite = false;
+          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.snackBar.open('Error al eliminar de favoritos', 'Cerrar', { duration: 3000 });
+        }
+      });
+    } else {
+      this.favoriteService.addToFavorites(this.productId).subscribe({
+        next: () => {
+          this.isFavorite = true;
+          this.snackBar.open('Añadido a favoritos', 'Cerrar', { duration: 2000 });
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.snackBar.open('Error al añadir a favoritos', 'Cerrar', { duration: 3000 });
+        }
+      });
+    }
   }
   loadHistoryData() {
   const id = this.route.snapshot.paramMap.get('id');

@@ -19,6 +19,26 @@
 .title-row { display: flex; justify-content: space-between; align-items: start; }
 .title-row h1 { color: var(--smartcart-primary); margin: 0; }
 
+.btn-fav {
+  color: var(--smartcart-text-light);
+  transition: all 0.2s ease;
+}
+
+.btn-fav:hover {
+  color: var(--smartcart-accent);
+  transform: scale(1.1);
+}
+
+.btn-fav.is-favorite {
+  color: #e74c3c;
+}
+
+.btn-fav mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
 .price-main {
   font-size: 28px;
   font-weight: 600;
