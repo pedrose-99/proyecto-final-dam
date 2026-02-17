@@ -11,9 +11,10 @@ import {
   UPDATE_LIST_ITEM,
   REMOVE_LIST_ITEM,
   OPTIMIZE_SHOPPING_LIST,
+  OPTIMIZE_BY_STORE,
   CREATE_SUBLISTS
 } from '../../core/graphql/queries';
-import { ShoppingList, OptimizedList, SublistInput } from '../../core/models/shopping-list.model';
+import { ShoppingList, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
 
 @Injectable({
   providedIn: 'root'
@@ -124,6 +125,21 @@ export class ShoppingListService {
       }
     ).pipe(
       map(result => result.data?.optimizeShoppingList as OptimizedList)
+    );
+  }
+
+  optimizeByStore(listId: number, storeIds: number[]): Observable<OptimizedStore[]> {
+    return this.apollo.query<{ optimizeByStore: OptimizedStore[] }>(
+      {
+        query: OPTIMIZE_BY_STORE,
+        variables: {
+          listId: listId.toString(),
+          storeIds: storeIds.map(id => id.toString())
+        },
+        fetchPolicy: 'network-only'
+      }
+    ).pipe(
+      map(result => result.data?.optimizeByStore as OptimizedStore[])
     );
   }
 

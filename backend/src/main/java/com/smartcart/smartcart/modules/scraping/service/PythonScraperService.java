@@ -46,6 +46,11 @@ public class PythonScraperService
         return callScraper("carrefour");
     }
 
+    public ScrapingResult scrapeAhorramas()
+    {
+        return callScraper("ahorramas");
+    }
+
     private ScrapingResult callScraper(String store)
     {
         ScrapingResult result = new ScrapingResult();

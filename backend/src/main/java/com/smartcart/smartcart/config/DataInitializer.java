@@ -69,51 +69,37 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initStores() {
-        if (storeRepository.findBySlug("mercadona").isEmpty()) {
-            Store mercadona = new Store();
-            mercadona.setName("Mercadona");
-            mercadona.setSlug("mercadona");
-            mercadona.setWebsite("https://www.mercadona.es");
-            mercadona.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Mercadona_Logo.svg/512px-Mercadona_Logo.svg.png");
-            mercadona.setActive(true);
-            mercadona.setScrapingUrl("https://tienda.mercadona.es/api");
-            storeRepository.save(mercadona);
-            log.info("Tienda Mercadona creada");
-        }
+        createOrUpdateStore("mercadona", "Mercadona", "https://www.mercadona.es",
+                "/assets/images/stores/mercadona.svg", "https://tienda.mercadona.es/api");
+        createOrUpdateStore("dia", "Dia", "https://www.dia.es",
+                "/assets/images/stores/dia.svg", null);
+        createOrUpdateStore("carrefour", "Carrefour", "https://www.carrefour.es",
+                "/assets/images/stores/carrefour.svg", "https://www.carrefour.es/supermercado");
+        createOrUpdateStore("ahorramas", "Ahorramas", "https://www.ahorramas.com",
+                "/assets/images/stores/ahorramas.svg", null);
+        createOrUpdateStore("alcampo", "Alcampo", "https://www.alcampo.es",
+                "/assets/images/stores/alcampo.svg", "https://www.compraonline.alcampo.es");
+    }
 
-        if (storeRepository.findBySlug("dia").isEmpty()) {
-            Store dia = new Store();
-            dia.setName("Dia");
-            dia.setSlug("dia");
-            dia.setWebsite("https://www.dia.es");
-            dia.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Grupo_DIA_logo.svg/512px-Grupo_DIA_logo.svg.png");
-            dia.setActive(true);
-            storeRepository.save(dia);
-            log.info("Tienda Dia creada");
-        }
-
-        if (storeRepository.findBySlug("carrefour").isEmpty()) {
-            Store carrefour = new Store();
-            carrefour.setName("Carrefour");
-            carrefour.setSlug("carrefour");
-            carrefour.setWebsite("https://www.carrefour.es");
-            carrefour.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Logo_Carrefour.svg/512px-Logo_Carrefour.svg.png");
-            carrefour.setActive(true);
-            carrefour.setScrapingUrl("https://www.carrefour.es/supermercado");
-            storeRepository.save(carrefour);
-            log.info("Tienda Carrefour creada");
-        }
-
-        if (storeRepository.findBySlug("alcampo").isEmpty()) {
-            Store alcampo = new Store();
-            alcampo.setName("Alcampo");
-            alcampo.setSlug("alcampo");
-            alcampo.setWebsite("https://www.alcampo.es");
-            alcampo.setLogo("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Logo_Alcampo.svg/512px-Logo_Alcampo.svg.png");
-            alcampo.setActive(true);
-            alcampo.setScrapingUrl("https://www.compraonline.alcampo.es");
-            storeRepository.save(alcampo);
-            log.info("Tienda Alcampo creada");
+    private void createOrUpdateStore(String slug, String name, String website, String logo, String scrapingUrl) {
+        var existing = storeRepository.findBySlug(slug);
+        if (existing.isEmpty()) {
+            Store store = new Store();
+            store.setName(name);
+            store.setSlug(slug);
+            store.setWebsite(website);
+            store.setLogo(logo);
+            store.setActive(true);
+            store.setScrapingUrl(scrapingUrl);
+            storeRepository.save(store);
+            log.info("Tienda {} creada", name);
+        } else {
+            Store store = existing.get();
+            if (!logo.equals(store.getLogo())) {
+                store.setLogo(logo);
+                storeRepository.save(store);
+                log.info("Tienda {} - logo actualizado", name);
+            }
         }
     }
 
@@ -122,6 +108,7 @@ public class DataInitializer implements CommandLineRunner {
         importCsvIfEmpty("dia", "data/products_dia.csv");
         importCsvIfEmpty("mercadona", "data/products_mercadona.csv");
         importCsvIfEmpty("alcampo", "data/products_alcampo.csv");
+        importCsvIfEmpty("ahorramas", "data/products_ahorramas.csv");
     }
 
     private void importCsvIfEmpty(String storeSlug, String classpathResource) {

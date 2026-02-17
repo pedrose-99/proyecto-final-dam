@@ -26,19 +26,19 @@ public class Product {
     @JoinColumn(name = "id_category")
     private Category categoryId;
 
-    @Column(name = "name")
+    @Column(name = "name", length = 500)
     private String name;
 
     @Column(name = "brand")
     private String brand;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 1000)
     private String description;
 
     @Column(name = "ean") //código de barras
     private String ean;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
     @Column(name = "quantity")
