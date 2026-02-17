@@ -178,13 +178,16 @@ export class ProductService {
     }
 
     // Query general de todos los productos
+    console.log('[DEBUG] Enviando query allProducts con page:', page, 'size:', size);
     return this.apollo.query<any>({
       query: GET_ALL_PRODUCTS,
       variables: { page: page, size: size },
       fetchPolicy: 'network-only'
     }).pipe(
       map(result => {
+        console.log('[DEBUG] Respuesta allProducts:', result);
         const mapped = this.mapGraphQLPageToProductPage(result.data?.allProducts, filters);
+        console.log('[DEBUG] Productos mapeados:', mapped.content.length, 'de', mapped.totalElements);
         return mapped;
       })
     );

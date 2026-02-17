@@ -35,6 +35,11 @@ public class ExpenseController {
         return expenseService.registerBill(getCurrentUserId(), name);
     }
 
+    @MutationMapping
+    public BillsHistory createBillFromList(@Argument Integer listId, @Argument String billName) {
+        return expenseService.createBillFromList(getCurrentUserId(), listId, billName);
+    }
+
     @QueryMapping
     public List<BillsHistory> getBillsHistory(@Argument String filter, @Argument Integer month, @Argument Integer year) {
         return expenseService.getHistory(getCurrentUserId(), filter, month, year);

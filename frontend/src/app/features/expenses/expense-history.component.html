@@ -1,0 +1,81 @@
+<div class="expense-container">
+  <h1>Mis Gastos</h1>
+
+  <!-- Filtro de busqueda -->
+  <div class="filter-section">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Buscar por nombre de compra o producto</mat-label>
+      <input matInput [formControl]="filterControl" placeholder="Ej: Compra semanal, Leche...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-spinner">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Cargando historial...</p>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!isLoading && bills.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">receipt_long</mat-icon>
+    <p>No tienes gastos registrados.</p>
+    <p class="empty-hint">Simula una compra desde tus listas para ver el historial aqui.</p>
+  </div>
+
+  <!-- Lista de tickets -->
+  <mat-accordion *ngIf="!isLoading && bills.length > 0" class="bills-accordion" multi>
+    <mat-expansion-panel *ngFor="let bill of bills" class="bill-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-title class="bill-title">
+          <mat-icon class="bill-icon">receipt</mat-icon>
+          <span class="bill-name">{{ bill.name }}</span>
+          <span *ngIf="bill.exceededLimit" class="exceeded-badge">Limite excedido</span>
+        </mat-panel-title>
+        <mat-panel-description class="bill-summary">
+          <span class="bill-date">{{ formatDate(bill.recordedAt) }}</span>
+          <span class="bill-total" [class.exceeded]="bill.exceededLimit">
+            {{ bill.totalAmount | number:'1.2-2' }} EUR
+          </span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <!-- Contenido: ticket detallado -->
+      <div class="ticket-content">
+        <div class="ticket-header-row">
+          <span class="col-product">Producto</span>
+          <span class="col-qty">Cant.</span>
+          <span class="col-price">P. Unit.</span>
+          <span class="col-line">Total</span>
+        </div>
+        <mat-divider></mat-divider>
+        <div *ngFor="let item of bill.itemsSummary" class="ticket-item-row">
+          <span class="col-product">{{ item.productName }}</span>
+          <span class="col-qty">{{ item.quantity }}</span>
+          <span class="col-price">{{ item.price | number:'1.2-2' }}</span>
+          <span class="col-line">{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="ticket-total-row">
+          <span class="total-label">TOTAL</span>
+          <span class="total-value">{{ bill.totalAmount | number:'1.2-2' }} EUR</span>
+        </div>
+      </div>
+
+      <!-- Cards para movil -->
+      <div class="ticket-cards-mobile">
+        <div *ngFor="let item of bill.itemsSummary" class="mobile-item-card">
+          <span class="mobile-item-name">{{ item.productName }}</span>
+          <div class="mobile-item-details">
+            <span>{{ item.quantity }} x {{ item.price | number:'1.2-2' }} EUR</span>
+            <span class="mobile-item-total">{{ (item.price * item.quantity) | number:'1.2-2' }} EUR</span>
+          </div>
+        </div>
+        <div class="mobile-total">
+          <span>TOTAL</span>
+          <span class="mobile-total-value">{{ bill.totalAmount | number:'1.2-2' }} EUR</span>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</div>
