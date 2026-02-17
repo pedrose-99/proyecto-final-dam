@@ -188,6 +188,27 @@
     gap: 8px;
 }
 
+.card-actions-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.card-actions-row .scrape-btn {
+    flex: 1;
+}
+
+.export-btn {
+    font-size: 13px;
+}
+
+.export-btn mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+}
+
 @media (max-width: 900px) {
     .stores-grid {
         grid-template-columns: 1fr;

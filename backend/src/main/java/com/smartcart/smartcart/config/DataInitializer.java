@@ -120,12 +120,19 @@ public class DataInitializer implements CommandLineRunner {
     private void initProducts() {
         importCsvIfEmpty("carrefour", "data/products_carrefour.csv");
         importCsvIfEmpty("dia", "data/products_dia.csv");
+        importCsvIfEmpty("mercadona", "data/products_mercadona.csv");
+        importCsvIfEmpty("alcampo", "data/products_alcampo.csv");
     }
 
     private void importCsvIfEmpty(String storeSlug, String classpathResource) {
         storeRepository.findBySlug(storeSlug).ifPresent(store -> {
             Long count = productStoreRepository.countProductsByStoreId(store.getStoreId());
             if (count == 0) {
+                // Verificar que el recurso existe antes de intentar importar
+                if (getClass().getClassLoader().getResource(classpathResource) == null) {
+                    log.info("[{}] CSV no encontrado en classpath ({}), saltando importacion", storeSlug, classpathResource);
+                    return;
+                }
                 log.info("[{}] No tiene productos, importando desde {}...", storeSlug, classpathResource);
                 try {
                     ProductSyncService.SyncResult result = csvImportService.importFromClasspath(classpathResource, storeSlug);
