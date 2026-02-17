@@ -10,5 +10,6 @@ public record ProductDTO(
     Double quantity,
     String unit,
     String categoryName,
-    Integer categoryId
+    Integer categoryId,
+    boolean isFavorite
 ) {}

@@ -45,7 +45,7 @@ public class ProductService {
 
     public List<ProductDTO> findAll() {
         return productRepository.findAll().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
     }
 
@@ -54,7 +54,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.findAll(pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
 
         return new ProductPageDTO(
@@ -71,12 +71,12 @@ public class ProductService {
     public ProductDTO findByEan(String ean) {
         Product p = productRepository.findByEan(ean)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con EAN: " + ean));
-        return ProductMapper.toDTO(p);
+        return ProductMapper.toDTO(p, false);
     }
 
     public List<ProductDTO> findByCategoryId(Integer categoryId) {
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
     }
 
@@ -85,7 +85,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.findByCategoryId_CategoryId(categoryId, pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
 
         return new ProductPageDTO(
@@ -104,7 +104,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.findByStoreId(storeId, pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
 
         return new ProductPageDTO(
@@ -123,7 +123,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.searchByText(query, pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
 
         return new ProductPageDTO(
@@ -146,7 +146,7 @@ public class ProductService {
         p.setEan(ean);
         p.setBrand(brand);
         p.setCategoryId(cat);
-        return ProductMapper.toDTO(productRepository.save(p));
+        return ProductMapper.toDTO(productRepository.save(p), false);
     }
 
     public ProductDTO update(Integer id, String name, String brand, String imageUrl) {
@@ -155,7 +155,7 @@ public class ProductService {
         if (name != null) p.setName(name);
         if (brand != null) p.setBrand(brand);
         if (imageUrl != null) p.setImageUrl(imageUrl);
-        return ProductMapper.toDTO(productRepository.save(p));
+        return ProductMapper.toDTO(productRepository.save(p), false);
     }
 
     public Boolean delete(Integer id) {
@@ -167,7 +167,7 @@ public class ProductService {
 
     public List<ProductDTO> findByCategory(Integer categoryId) {
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, false))
                 .toList();
     }
 

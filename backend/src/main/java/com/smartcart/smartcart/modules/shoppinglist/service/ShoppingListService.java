@@ -117,9 +117,6 @@ public class ShoppingListService
                 .orElse(null);
     }
 
-    /**
-     * Busca una lista accesible: propia del usuario O perteneciente a un grupo del usuario.
-     */
     private Optional<ShoppingList> findAccessibleList(Integer listId, User user)
     {
         // Primero buscar como propietario
