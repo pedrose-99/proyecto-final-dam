@@ -44,6 +44,14 @@ export class AuthService
         );
     }
 
+    forgotPassword(email: string): Observable<string>
+    {
+        return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email }, { responseType: 'text' })
+            .pipe(
+                catchError(this.handleError)
+            );
+    }
+
     refreshToken(): Observable<AuthResponse>
     {
         const refreshToken = this.getRefreshToken();
@@ -131,5 +139,23 @@ export class AuthService
     getCurrentUser(): AuthResponse | null
     {
         return this.currentUserSubject.value;
+    }
+
+    updateProfileData(data: { username: string; email: string; role?: string }): void
+    {
+        const currentUser = this.getCurrentUser();
+        if (!currentUser) {
+            return;
+        }
+
+        const updatedUser: AuthResponse = {
+            ...currentUser,
+            username: data.username,
+            email: data.email,
+            role: data.role ?? currentUser.role
+        };
+
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        this.currentUserSubject.next(updatedUser);
     }
 }

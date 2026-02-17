@@ -37,6 +37,10 @@
           </mat-error>
         </mat-form-field>
 
+        <div class="forgot-password-link">
+          <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+
         <div class="error-message" *ngIf="errorMessage">
           {{ errorMessage }}
         </div>
@@ -46,6 +50,10 @@
           <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
           <span *ngIf="!isLoading">Entrar</span>
         </button>
+
+        <div class="forgot-password-link">
+          <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
 
       </form>
     </mat-card-content>

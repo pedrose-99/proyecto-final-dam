@@ -150,8 +150,8 @@
       <div class="menu-header">
         <mat-icon>account_circle</mat-icon>
         <div class="menu-header-info">
-          <span class="menu-header-name">{{ currentUser?.username }}</span>
-          <span class="menu-header-email">{{ currentUser?.email }}</span>
+          <span class="menu-header-name">{{ (currentUser$ | async)?.username }}</span>
+          <span class="menu-header-email">{{ (currentUser$ | async)?.email }}</span>
         </div>
       </div>
 
