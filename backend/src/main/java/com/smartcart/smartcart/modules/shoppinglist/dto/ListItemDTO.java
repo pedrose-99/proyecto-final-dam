@@ -8,5 +8,6 @@ public record ListItemDTO
     String imageUrl,
     Integer quantity,
     Boolean checked,
-    Boolean isGeneric
+    Boolean isGeneric,
+    String cheapestStoreName
 ){}

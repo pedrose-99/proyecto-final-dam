@@ -2,6 +2,7 @@ type BillItem {
     productName: String
     price: Float
     quantity: Int
+    storeName: String
 }
 
 type BillsHistory {
@@ -14,6 +15,13 @@ type BillsHistory {
     itemsSummary: [BillItem]
 }
 
+type MonthlyExpenseSummary {
+    periodLabel: String
+    totalAmount: Float
+    billCount: Int
+    exceededCount: Int
+}
+
 extend type Mutation {
     registerBill(name: String!): BillsHistory
     createBillFromList(listId: ID!, billName: String!): BillsHistory
@@ -22,4 +30,5 @@ extend type Mutation {
 extend type Query {
     # Busca por nombre de registro O nombre de producto dentro del JSON
     getBillsHistory(filter: String, month: Int, year: Int): [BillsHistory]
+    getExpenseSummary(period: String, offset: Int): [MonthlyExpenseSummary]
 }

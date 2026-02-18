@@ -15,6 +15,8 @@ extend type Mutation
     removeListItem(listId: ID!, itemId: ID!): ShoppingListDTO
 
     createSublists(originalListName: String!, sublists: [SublistInput!]!): [ShoppingListDTO]
+
+    renameShoppingList(listId: ID!, name: String!): ShoppingListDTO
 }
 
 input SublistInput {
@@ -46,6 +48,7 @@ type ListItemDTO {
     quantity: Int
     checked: Boolean
     isGeneric: Boolean
+    cheapestStoreName: String
 }
 
 type OptimizedListDTO {

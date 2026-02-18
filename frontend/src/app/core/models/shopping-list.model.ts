@@ -15,6 +15,7 @@ export interface ListItem {
   quantity: number;
   checked: boolean;
   isGeneric: boolean;
+  cheapestStoreName?: string | null;
 }
 
 export interface OptimizedList {

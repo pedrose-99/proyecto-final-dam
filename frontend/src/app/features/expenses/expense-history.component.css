@@ -1,23 +1,183 @@
 .expense-container {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 24px;
 }
 
-h1 {
+/* Header */
+.expense-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.expense-header h1 {
   font-size: 28px;
   font-weight: 500;
-  margin-bottom: 24px;
+  margin: 0;
   color: var(--smartcart-accent);
 }
 
-/* Filtro */
-.filter-section {
+/* Pill buttons (reutilizando patrón de la app) */
+.pill-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 24px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pill-filled {
+  background-color: var(--smartcart-accent);
+  color: #fff;
+}
+
+.pill-filled:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.pill-filled:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pill-outlined {
+  background: transparent;
+  border: 1.5px solid var(--smartcart-accent);
+  color: var(--smartcart-accent);
+}
+
+.pill-outlined:hover {
+  background: var(--smartcart-accent);
+  color: #fff;
+}
+
+.pill-text {
+  background: transparent;
+  color: var(--smartcart-text-light);
+  padding: 8px 12px;
+}
+
+.pill-text:hover {
+  color: var(--smartcart-text);
+}
+
+.pill-small {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.inline-spinner {
+  display: inline-block;
+}
+
+/* Section headings */
+section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0 0 16px;
+  color: var(--smartcart-text);
+}
+
+section h2 mat-icon {
+  color: var(--smartcart-accent);
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+/* Limits section */
+.limits-section {
+  margin-bottom: 32px;
+}
+
+.limits-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.limit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--smartcart-card);
+  border-radius: 12px;
+  min-width: 120px;
+}
+
+.limit-type {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--smartcart-text-light);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.limit-amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--smartcart-accent);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.no-limits {
+  font-size: 14px;
+  color: var(--smartcart-text-light);
+  margin-bottom: 16px;
+}
+
+.limit-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.limit-type-field {
+  width: 140px;
+}
+
+.limit-amount-field {
+  width: 160px;
+}
+
+/* Charts section */
+.charts-section {
+  margin-bottom: 32px;
+}
+
+/* Filters section */
+.filters-section {
   margin-bottom: 24px;
 }
 
-.filter-field {
-  width: 100%;
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-text-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-select-field {
+  width: 140px;
 }
 
 /* Loading */
@@ -61,19 +221,43 @@ h1 {
   color: var(--smartcart-text-light);
 }
 
-/* Bills accordion */
-.bills-accordion {
+/* Month groups */
+.month-groups {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
+.month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--smartcart-card);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.month-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--smartcart-text);
+}
+
+.month-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--smartcart-accent);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Bill panels */
 .bill-panel {
   border-radius: 8px !important;
   background-color: var(--smartcart-card) !important;
+  margin-bottom: 8px;
 }
 
-/* Panel header */
 .bill-title {
   display: flex;
   align-items: center;
@@ -139,7 +323,7 @@ h1 {
 
 .ticket-header-row {
   display: grid;
-  grid-template-columns: 1fr 60px 80px 80px;
+  grid-template-columns: 1fr 100px 60px 80px 80px;
   gap: 8px;
   padding: 8px 0;
   font-weight: 600;
@@ -150,7 +334,7 @@ h1 {
 
 .ticket-item-row {
   display: grid;
-  grid-template-columns: 1fr 60px 80px 80px;
+  grid-template-columns: 1fr 100px 60px 80px 80px;
   gap: 8px;
   padding: 8px 0;
   color: var(--smartcart-text);
@@ -180,6 +364,53 @@ h1 {
   color: var(--smartcart-accent);
 }
 
+/* Store expenses section */
+.store-expenses-section {
+  margin-bottom: 32px;
+}
+
+.store-expenses-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.store-expense-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--smartcart-card);
+  border-radius: 12px;
+  min-width: 120px;
+  gap: 6px;
+}
+
+.store-expense-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.store-expense-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--smartcart-text-light);
+}
+
+.store-expense-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--smartcart-accent);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Store column in ticket */
+.col-store {
+  font-size: 12px;
+  color: var(--smartcart-text-light);
+}
+
 /* Mobile cards (hidden on desktop) */
 .ticket-cards-mobile {
   display: none;
@@ -191,8 +422,44 @@ h1 {
     padding: 16px;
   }
 
-  h1 {
+  .expense-header h1 {
     font-size: 22px;
+  }
+
+  .expense-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .limits-cards {
+    flex-direction: column;
+  }
+
+  .limit-card {
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: unset;
+  }
+
+  .limit-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .limit-type-field,
+  .limit-amount-field {
+    width: 100%;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-text-field,
+  .filter-select-field {
+    width: 100%;
+    min-width: unset;
   }
 
   .bill-title {
@@ -205,7 +472,6 @@ h1 {
     gap: 4px;
   }
 
-  /* Hide desktop ticket, show cards */
   .ticket-content {
     display: none;
   }
@@ -217,17 +483,45 @@ h1 {
     padding: 8px 0;
   }
 
+  .store-expenses-grid {
+    flex-direction: column;
+  }
+
+  .store-expense-card {
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: unset;
+    padding: 12px 16px;
+  }
+
   .mobile-item-card {
     background-color: var(--smartcart-background);
     border-radius: 8px;
     padding: 12px;
   }
 
+  .mobile-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
   .mobile-item-name {
     display: block;
     font-weight: 500;
     color: var(--smartcart-text);
-    margin-bottom: 4px;
+  }
+
+  .mobile-store-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--smartcart-accent);
+    color: #fff;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .mobile-item-details {

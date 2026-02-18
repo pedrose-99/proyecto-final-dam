@@ -82,6 +82,10 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   alternativesMode: 'optimize' | 'byStore' = 'optimize';
   alternativesSearchControl = new FormControl<string>('');
 
+  // Edit list name
+  isEditingName = false;
+  editNameControl = new FormControl<string>('');
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -624,6 +628,60 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
 
   displayProduct(product: ProductSearchResult): string {
     return product ? product.name : '';
+  }
+
+  hasGenericItems(): boolean {
+    return this.selectedList?.items?.some(i => i.isGeneric) ?? false;
+  }
+
+  getStoreFromListName(name: string): string | null {
+    const knownStores = ['mercadona', 'dia', 'carrefour', 'alcampo', 'ahorramas'];
+    const lower = name?.toLowerCase() || '';
+    for (const store of knownStores) {
+      if (lower.startsWith(store + ' ')) {
+        return store;
+      }
+    }
+    return null;
+  }
+
+  startEditName(): void {
+    if (!this.selectedList) return;
+    this.editNameControl.setValue(this.selectedList.name);
+    this.isEditingName = true;
+  }
+
+  saveListName(): void {
+    const newName = (this.editNameControl.value || '').trim();
+    if (!newName || !this.selectedList) {
+      this.cancelEditName();
+      return;
+    }
+
+    this.shoppingListService.renameList(this.selectedList.listId, newName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedList) => {
+          this.selectedList!.name = updatedList.name;
+          const idx = this.lists.findIndex(l => l.listId === updatedList.listId);
+          if (idx >= 0) {
+            this.lists[idx].name = updatedList.name;
+          }
+          this.isEditingName = false;
+          this.snackBar.open('Nombre actualizado', 'Cerrar', { duration: 3000 });
+        },
+        error: () => {
+          this.snackBar.open('Error al renombrar la lista', 'Cerrar', { duration: 3000 });
+        }
+      });
+  }
+
+  cancelEditName(): void {
+    this.isEditingName = false;
+  }
+
+  goToExpenses(): void {
+    this.router.navigate(['/mis-gastos']);
   }
 
   backToLists(): void {

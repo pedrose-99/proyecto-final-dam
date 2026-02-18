@@ -1,20 +1,23 @@
 package com.smartcart.smartcart.modules.shoppinglist.mapper;
 
+import com.smartcart.smartcart.modules.product.entity.ProductStore;
+import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
 import com.smartcart.smartcart.modules.shoppinglist.dto.ListItemDTO;
 import com.smartcart.smartcart.modules.shoppinglist.dto.ShoppingListDTO;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ListItem;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ShoppingList;
 
+import java.util.Comparator;
 import java.util.List;
 
 public class ShoppingListMapper
 {
-    public static ShoppingListDTO toDTO(ShoppingList entity)
+    public static ShoppingListDTO toDTO(ShoppingList entity, ProductStoreRepository productStoreRepo)
     {
         List<ListItemDTO> items = entity.getItems() == null
                 ? List.of()
                 : entity.getItems().stream()
-                    .map(ShoppingListMapper::toItemDTO)
+                    .map(item -> toItemDTO(item, productStoreRepo))
                     .toList();
 
         return new ShoppingListDTO(
@@ -29,10 +32,21 @@ public class ShoppingListMapper
         );
     }
 
-    public static ListItemDTO toItemDTO(ListItem entity)
+    public static ListItemDTO toItemDTO(ListItem entity, ProductStoreRepository productStoreRepo)
     {
         if (entity.getProduct() != null)
         {
+            String cheapestStoreName = null;
+            List<ProductStore> stores = productStoreRepo.findByProductId_ProductId(entity.getProduct().getProductId());
+            if (stores != null && !stores.isEmpty())
+            {
+                cheapestStoreName = stores.stream()
+                        .filter(ps -> ps.getCurrentPrice() != null && ps.getCurrentPrice() > 0)
+                        .min(Comparator.comparingDouble(ProductStore::getCurrentPrice))
+                        .map(ps -> ps.getStoreId().getName())
+                        .orElse(null);
+            }
+
             return new ListItemDTO(
                     entity.getItemId(),
                     entity.getProduct().getProductId(),
@@ -40,7 +54,8 @@ public class ShoppingListMapper
                     entity.getProduct().getImageUrl(),
                     entity.getQuantity(),
                     entity.getChecked(),
-                    false
+                    false,
+                    cheapestStoreName
             );
         }
         else
@@ -52,7 +67,8 @@ public class ShoppingListMapper
                     null,
                     entity.getQuantity(),
                     entity.getChecked(),
-                    true
+                    true,
+                    null
             );
         }
     }
