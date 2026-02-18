@@ -29,6 +29,7 @@ export interface OptimizedStore {
   storeLogo: string;
   subtotal: number;
   items: OptimizedItem[];
+  notFound?: string[];
 }
 
 export interface OptimizedItem {
@@ -38,6 +39,7 @@ export interface OptimizedItem {
   unitPrice: number;
   quantity: number;
   lineTotal: number;
+  searchTerm: string | null;
 }
 
 export interface SublistInput {

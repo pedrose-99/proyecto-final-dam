@@ -364,9 +364,52 @@ export const OPTIMIZE_SHOPPING_LIST = gql`
           unitPrice
           quantity
           lineTotal
+          searchTerm
         }
       }
       notFound
+    }
+  }
+`;
+
+export const OPTIMIZE_BY_STORE = gql`
+  query OptimizeByStore($listId: ID!, $storeIds: [ID!]!) {
+    optimizeByStore(listId: $listId, storeIds: $storeIds) {
+      storeId
+      storeName
+      storeLogo
+      subtotal
+      items {
+        productId
+        productName
+        imageUrl
+        unitPrice
+        quantity
+        lineTotal
+        searchTerm
+      }
+      notFound
+    }
+  }
+`;
+
+export const SEARCH_PRODUCTS_BY_STORE = gql`
+  query SearchProductsByStore($query: String!, $storeId: ID!, $page: Int, $size: Int) {
+    searchProductsByStore(query: $query, storeId: $storeId, page: $page, size: $size) {
+      content {
+        productId
+        name
+        brand
+        categoryName
+        imageUrl
+        currentPrice
+      }
+      totalElements
+      totalPages
+      number
+      size
+      first
+      last
     }
   }
 `;

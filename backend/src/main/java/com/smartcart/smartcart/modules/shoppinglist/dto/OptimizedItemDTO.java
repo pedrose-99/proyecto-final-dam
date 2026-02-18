@@ -7,5 +7,6 @@ public record OptimizedItemDTO
     String imageUrl,
     Double unitPrice,
     Integer quantity,
-    Double lineTotal
+    Double lineTotal,
+    String searchTerm
 ) {}
