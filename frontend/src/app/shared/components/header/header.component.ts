@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatChipsModule } from '@angular/material/chips';
 import { Observable, Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthResponse } from '../../../core/models/user.model';
@@ -37,7 +38,8 @@ import { ThemeService } from '../../../core/services/theme.service';
     MatInputModule,
     MatFormFieldModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatChipsModule
   ],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
@@ -47,6 +49,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   searchControl = new FormControl('');
   searchResults: ProductSearchResult[] = [];
   isSearching = false;
+  
+  // Multi-search terms
+  searchTerms: string[] = [];
 
   currentUser$: Observable<AuthResponse | null>;
   favoritesCount = 0;
@@ -64,6 +69,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private notificationService: NotificationService,
     private router: Router,
+    private route: ActivatedRoute,
     themeService: ThemeService
   ) {
     this.themeService = themeService;
@@ -71,6 +77,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Cargar los términos de búsqueda de los query params si existen
+    this.route.queryParams.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      if (params['search']) {
+        this.searchTerms = params['search'].split(',').map((t: string) => t.trim()).filter((t: string) => t);
+      }
+    });
+
     this.setupSearch();
     this.loadNotifications();
 
@@ -112,21 +127,42 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onProductSelected(product: ProductSearchResult): void {
-    this.router.navigate(['/producto', product.id]);
+    // Agregar término de búsqueda en lugar de navegar al producto
+    this.addSearchTerm(product.name);
+  }
+
+  addSearchTerm(term: string): void {
+    const trimmedTerm = term.trim().toLowerCase();
+    if (trimmedTerm && !this.searchTerms.includes(trimmedTerm)) {
+      this.searchTerms.push(trimmedTerm);
+    }
     this.searchControl.setValue('');
     this.searchResults = [];
+    this.navigateWithSearchTerms();
+  }
+
+  removeSearchTerm(term: string): void {
+    this.searchTerms = this.searchTerms.filter(t => t !== term);
+    this.navigateWithSearchTerms();
   }
 
   onSearchSubmit(): void {
     const query = this.searchControl.value;
     if (query && query.length > 0) {
-      this.router.navigate(['/home'], { queryParams: { search: query } });
-      this.searchResults = [];
+      this.addSearchTerm(query);
     }
   }
 
   viewAllResults(): void {
     this.onSearchSubmit();
+  }
+
+  navigateWithSearchTerms(): void {
+    if (this.searchTerms.length > 0) {
+      this.router.navigate(['/home'], { queryParams: { search: this.searchTerms.join(',') } });
+    } else {
+      this.router.navigate(['/home']);
+    }
   }
 
   goToFavorites(): void {

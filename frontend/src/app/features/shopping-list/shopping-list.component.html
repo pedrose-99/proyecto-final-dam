@@ -35,7 +35,7 @@
               <mat-icon>delete</mat-icon>
             </button>
           </div>
-          <p class="item-count">{{ (list.items?.length || 0) }} producto{{ (list.items?.length || 0) !== 1 ? 's' : '' }}</p>
+          <p class="item-count">{{ (list.items.length || 0) }} producto{{ (list.items.length || 0) !== 1 ? 's' : '' }}</p>
           <div class="card-footer">
             <p class="last-updated">{{ list.createdAt | date:'dd/MM/yyyy' }}</p>
             <span *ngIf="list.groupId" class="group-badge">
@@ -119,7 +119,7 @@
     <!-- Lista de items -->
     <div class="items-section">
       <h2>Productos en la lista</h2>
-      <div *ngIf="selectedList!.items?.length! > 0; else emptyList" class="items-list">
+      <div *ngIf="selectedList!.items.length! > 0; else emptyList" class="items-list">
         <div *ngFor="let item of selectedList!.items"
              class="item-row" 
              [class.checked]="item.checked">
@@ -192,21 +192,21 @@
     <!-- Botones Optimizar, Simular Compra y Ver por tienda -->
     <div class="optimize-section">
       <button (click)="optimize()"
-              [disabled]="isOptimizing || isLoadingByStore || !selectedList.items?.length"
+              [disabled]="isOptimizing || isLoadingByStore || !selectedList.items.length"
               class="pill-button pill-filled">
         <mat-icon *ngIf="!isOptimizing">savings</mat-icon>
         <mat-spinner *ngIf="isOptimizing" diameter="20" class="inline-spinner"></mat-spinner>
         <span>{{ isOptimizing ? 'Optimizando...' : 'Optimizar Compra' }}</span>
       </button>
       <button (click)="simulatePurchase()"
-              [disabled]="!selectedList.items?.length || hasGenericItems()"
+              [disabled]="!selectedList.items.length || hasGenericItems()"
               [matTooltip]="hasGenericItems() ? 'Todos los productos deben ser de tienda para simular la compra' : ''"
               class="pill-button pill-outlined">
         <mat-icon>receipt_long</mat-icon>
         <span>Simular Compra</span>
       </button>
       <button (click)="optimizeByStore()"
-              [disabled]="isOptimizing || isLoadingByStore || !selectedList.items?.length"
+              [disabled]="isOptimizing || isLoadingByStore || !selectedList.items.length"
               class="pill-button pill-outlined">
         <mat-icon *ngIf="!isLoadingByStore">store</mat-icon>
         <mat-spinner *ngIf="isLoadingByStore" diameter="20" class="inline-spinner"></mat-spinner>

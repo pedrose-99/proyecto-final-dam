@@ -64,6 +64,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Filters
   filters: ProductFilters = {};
   activeFilters: { key: string; label: string }[] = [];
+  searchTerms: string[] = [];  // Array de términos de búsqueda para OR
 
   // Form
   filterForm = new FormGroup({
@@ -93,41 +94,51 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadInitialData();
-    this.setupFilterSubscription();
-    this.handleRouteParams();
-    // Sincronizar productos en listas desde el inicio
-    this.syncProductsInLists();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  private loadInitialData(): void {
+    // Cargar datos iniciales y luego procesar los parámetros de ruta
     this.productService.getCategories().subscribe({
       next: (categories) => {
         this.categories = categories;
         this.filteredCategories = categories;
         this.setupCategorySearch();
+        this.checkDataLoaded();
       },
       error: (err) => {
         console.error('Error al cargar categorías:', err);
+        this.checkDataLoaded();
       }
     });
 
     this.productService.getStores().subscribe({
       next: (stores) => {
-        // Solo mostrar tiendas activas (con productos)
         this.stores = stores.filter(s => s.productCount && s.productCount > 0);
         this.filteredStores = this.stores;
         this.setupStoreSearch();
+        this.checkDataLoaded();
       },
       error: (err) => {
         console.error('Error al cargar tiendas:', err);
+        this.checkDataLoaded();
       }
     });
+
+    this.setupFilterSubscription();
+    this.syncProductsInLists();
+  }
+
+  private dataLoadedFlags = { categories: false, stores: false };
+
+  private checkDataLoaded(): void {
+    this.dataLoadedFlags.categories = this.categories.length > 0;
+    this.dataLoadedFlags.stores = this.stores.length > 0;
+
+    if (this.dataLoadedFlags.categories && this.dataLoadedFlags.stores) {
+      this.handleRouteParams();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private setupCategorySearch(): void {
@@ -191,16 +202,45 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
-      if (params['search']) {
-        this.filters.search = params['search'];
+      const newSearch = params['search'];
+      const newSearchTerms = newSearch 
+        ? newSearch.split(',').map((t: string) => t.trim()).filter((t: string) => t)
+        : [];
+      
+      const searchChanged = newSearch !== this.filters.search;
+      
+      if (newSearchTerms.length > 0) {
+        this.searchTerms = newSearchTerms;
+        // Mantener solo el primer término en filters.search para compatibilidad
+        this.filters.search = newSearchTerms[0];
+      } else {
+        this.searchTerms = [];
+        this.filters.search = undefined;
       }
-      if (params['categoryId']) {
-        const categoryId = +params['categoryId'];
-        const category = this.categories.find(c => c.id === categoryId);
-        if (category && !this.selectedCategories.some(sc => sc.id === categoryId)) {
-          this.selectedCategories.push(category);
-        }
+      
+      // Resetear página cuando cambia la búsqueda
+      if (searchChanged) {
+        this.pageIndex = 0;
       }
+      
+      // Restaurar filtros de categoría
+      if (params['categoryIds']) {
+        const categoryIds = Array.isArray(params['categoryIds'])
+          ? params['categoryIds'].map((id: string) => +id)
+          : [+params['categoryIds']];
+        
+        this.selectedCategories = this.categories.filter(category => categoryIds.includes(category.id));
+      }
+      
+      // Restaurar filtros de tienda
+      if (params['storeIds']) {
+        const storeIds = Array.isArray(params['storeIds'])
+          ? params['storeIds'].map((id: string) => +id)
+          : [+params['storeIds']];
+        
+        this.selectedStores = this.stores.filter(store => storeIds.includes(store.id));
+      }
+      
       this.loadProducts();
     });
   }
@@ -210,19 +250,29 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.buildFiltersFromForm();
     console.log('[DEBUG] loadProducts() llamado con filtros:', this.filters, 'página:', this.pageIndex);
 
+    // Si hay múltiples términos de búsqueda, hacer búsquedas separadas y combinar
+    if (this.searchTerms.length > 1) {
+      this.loadProductsWithMultipleSearchTerms();
+    } else {
+      this.loadProductsSingleSearch();
+    }
+  }
+
+  private loadProductsSingleSearch(): void {
     this.productService.getProducts(this.filters, this.pageIndex, this.pageSize)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page: ProductPage) => {
           console.log('[DEBUG] Productos recibidos:', page.content.length, 'total:', page.totalElements);
+          // Filtrar productos que contengan el término completo como palabra
+          if (this.filters.search) {
+            page.content = this.filterProductsByCompleteWord(page.content, this.filters.search);
+          }
           this.products = page.content;
           this.totalProducts = page.totalElements;
           this.isLoading = false;
           this.updateActiveFilters();
-          
-          // Sincronizar estado de productos en listas de compra
           this.syncProductsInLists();
-          
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -233,6 +283,77 @@ export class HomeComponent implements OnInit, OnDestroy {
           });
         }
       });
+  }
+
+  private loadProductsWithMultipleSearchTerms(): void {
+    // Hacer búsquedas para cada término y combinar resultados
+    const allProducts: Product[] = [];
+    const productIds = new Set<number>();
+    let completedRequests = 0;
+
+    this.searchTerms.forEach(term => {
+      const filtersCopy = { ...this.filters, search: term };
+      this.productService.getProducts(filtersCopy, 0, 1000) // Obtener más productos para combinar
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (page: ProductPage) => {
+            // Filtrar productos que contengan el término completo como palabra
+            const filteredContent = this.filterProductsByCompleteWord(page.content, term);
+            
+            // Agregar productos únicos por ID
+            filteredContent.forEach(product => {
+              if (!productIds.has(product.id)) {
+                productIds.add(product.id);
+                allProducts.push(product);
+              }
+            });
+
+            completedRequests++;
+            if (completedRequests === this.searchTerms.length) {
+              // Todas las búsquedas completadas
+              // Aplicar paginación manualmente
+              const startIndex = this.pageIndex * this.pageSize;
+              const endIndex = startIndex + this.pageSize;
+              this.products = allProducts.slice(startIndex, endIndex);
+              this.totalProducts = allProducts.length;
+              this.isLoading = false;
+              this.updateActiveFilters();
+              this.syncProductsInLists();
+              this.cdr.detectChanges();
+            }
+          },
+          error: (err) => {
+            console.error('Error al cargar productos para término:', term, err);
+            completedRequests++;
+            if (completedRequests === this.searchTerms.length) {
+              this.isLoading = false;
+              this.snackBar.open('Error al cargar los productos', 'Cerrar', {
+                duration: 3000
+              });
+            }
+          }
+        });
+    });
+  }
+
+  private filterProductsByCompleteWord(products: Product[], searchTerm: string): Product[] {
+    // Dividir el término en palabras individuales
+    const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+    
+    if (words.length === 0) {
+      return products;
+    }
+    
+    // Crear un regex para cada palabra como palabra completa
+    const wordRegexes = words.map(word => new RegExp(`\\b${word}\\b`, 'i'));
+    
+    return products.filter(product => {
+      const productName = (product.name || '').toLowerCase();
+      const productBrand = (product.brand || '').toLowerCase();
+      
+      // Comprobar que TODAS las palabras del término aparecen como palabras completa en nombre o marca
+      return wordRegexes.every(regex => regex.test(productName) || regex.test(productBrand));
+    });
   }
 
   private syncProductsInLists(): void {
@@ -286,8 +407,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   private updateActiveFilters(): void {
     this.activeFilters = [];
 
-    if (this.filters.search) {
-      this.activeFilters.push({ key: 'search', label: `"${this.filters.search}"` });
+    // Mostrar cada término de búsqueda como un filtro activo separado
+    if (this.searchTerms.length > 0) {
+      this.searchTerms.forEach(term => {
+        this.activeFilters.push({ key: `search-${term}`, label: `"${term}"` });
+      });
     }
   }
 
@@ -314,6 +438,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // Recargar productos
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
@@ -321,6 +446,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.selectedCategories = this.selectedCategories.filter(c => c.id !== category.id);
     this.filterCategories(this.categorySearchControl.value || '');
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
@@ -339,6 +465,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.filterStores('');
 
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
@@ -346,19 +473,53 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.selectedStores = this.selectedStores.filter(s => s.id !== store.id);
     this.filterStores(this.storeSearchControl.value || '');
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
+  private updateQueryParams(): void {
+    const queryParams: any = {};
+    
+    // Actualizar parámetro de búsqueda
+    if (this.searchTerms.length > 0) {
+      queryParams['search'] = this.searchTerms.join(',');
+    }
+    
+    // Actualizar parámetro de tiendas
+    if (this.selectedStores.length > 0) {
+      queryParams['storeIds'] = this.selectedStores.map(s => s.id);
+    }
+    
+    // Actualizar parámetro de categorías
+    if (this.selectedCategories.length > 0) {
+      queryParams['categoryIds'] = this.selectedCategories.map(c => c.id);
+    }
+    
+    this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
+  }
+
   removeFilter(filterKey: string): void {
-    if (filterKey === 'search') {
-      this.filters.search = undefined;
-      this.router.navigate([], { queryParams: { search: null }, queryParamsHandling: 'merge' });
+    if (filterKey.startsWith('search-')) {
+      // Remover un término de búsqueda específico
+      const term = filterKey.substring(7); // "search-".length = 7
+      
+      this.searchTerms = this.searchTerms.filter(t => t !== term);
+      
+      if (this.searchTerms.length > 0) {
+        const newSearchQuery = this.searchTerms.join(',');
+        this.filters.search = this.searchTerms[0];
+        this.router.navigate([], { queryParams: { search: newSearchQuery }, queryParamsHandling: 'merge' });
+      } else {
+        this.filters.search = undefined;
+        this.router.navigate([], { queryParams: { search: null }, queryParamsHandling: 'merge' });
+      }
     }
     this.loadProducts();
   }
 
   clearAllFilters(): void {
     this.filters = {};
+    this.searchTerms = [];
     this.selectedCategories = [];
     this.selectedStores = [];
     this.categorySearchControl.setValue('');
@@ -468,7 +629,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onViewProduct(product: Product): void {
-    this.router.navigate(['/producto', product.id]);
+    this.router.navigate(['/producto', product.id], { queryParamsHandling: 'preserve' });
   }
 
   isProductInList(productId: number): boolean {

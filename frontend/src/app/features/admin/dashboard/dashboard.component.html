@@ -96,7 +96,7 @@
     <!-- Chart + Recent Logs -->
     <div class="bottom-grid">
         <!-- Products by Store Chart -->
-        @if (stats.productsByStore?.length) {
+        @if (stats.productsByStore.length) {
             <mat-card class="section-card">
                 <mat-card-header>
                     <mat-card-title>Productos por Tienda</mat-card-title>
@@ -108,7 +108,7 @@
         }
 
         <!-- Recent Scrape Logs -->
-        @if (stats.recentScrapeLogs?.length) {
+        @if (stats.recentScrapeLogs.length) {
             <mat-card class="section-card">
                 <mat-card-header>
                     <mat-card-title>Últimos Scrapings</mat-card-title>

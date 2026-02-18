@@ -25,25 +25,110 @@ export class ProductService {
   constructor(private apollo: Apollo) {}
 
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
-    // Si hay filtro por UNA sola tienda, usar paginacion del servidor directamente
-    if (filters.storeIds && filters.storeIds.length === 1) {
-      return this.apollo.query<any>({
-        query: GET_PRODUCTS_BY_STORE,
-        variables: {
+    // Determinar cómo obtener los productos base
+    let baseQuery$: Observable<Product[]>;
+
+    // Prioridad 1: Si hay búsqueda Y una sola tienda, usar búsqueda específica en esa tienda
+    if (filters.search && filters.storeIds?.length === 1) {
+      baseQuery$ = this.apollo.query<any>({
+        query: SEARCH_PRODUCTS_BY_STORE,
+        variables: { 
+          query: filters.search, 
           storeId: filters.storeIds[0].toString(),
-          page: page,
-          size: size
+          page: 0, 
+          size: 1000 
         },
         fetchPolicy: 'network-only'
       }).pipe(
-        map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.productsByStore, filters);
+        map(result => (result.data?.searchProductsByStore?.content || []).map((p: any) => this.mapToProduct(p)))
+      );
+    }
+    // Prioridad 2: Si hay búsqueda Y múltiples tiendas, buscar en todas y combinar
+    else if (filters.search && filters.storeIds && filters.storeIds.length > 1) {
+      const queries = filters.storeIds.map(storeId =>
+        this.apollo.query<any>({
+          query: SEARCH_PRODUCTS_BY_STORE,
+          variables: {
+            query: filters.search,
+            storeId: storeId.toString(),
+            page: 0,
+            size: 1000
+          },
+          fetchPolicy: 'network-only'
+        })
+      );
+
+      baseQuery$ = forkJoin(queries).pipe(
+        map(results => {
+          let allProducts: Product[] = [];
+          const seenIds = new Set<number>();
+
+          results.forEach(result => {
+            const products = (result.data?.searchProductsByStore?.content || [])
+              .map((p: any) => this.mapToProduct(p));
+            products.forEach((p: Product) => {
+              if (!seenIds.has(p.id)) {
+                seenIds.add(p.id);
+                allProducts.push(p);
+              }
+            });
+          });
+          return allProducts;
         })
       );
     }
+    // Prioridad 3: Si hay búsqueda Y categorías, obtener productos de esas categorías y buscar
+    else if (filters.search && filters.categoryIds && filters.categoryIds.length > 0) {
+      const queries = filters.categoryIds.map(catId =>
+        this.apollo.query<any>({
+          query: GET_PRODUCTS_BY_CATEGORY,
+          variables: {
+            categoryId: catId.toString(),
+            page: 0,
+            size: 200
+          },
+          fetchPolicy: 'network-only'
+        })
+      );
 
-    // Si hay filtro por MULTIPLES tiendas, cargar todos de cada tienda y combinar
-    if (filters.storeIds && filters.storeIds.length > 1) {
+      baseQuery$ = forkJoin(queries).pipe(
+        map(results => {
+          let allProductsInCategory: Product[] = [];
+          const seenIds = new Set<number>();
+
+          results.forEach(result => {
+            const products = (result.data?.productsByCategoryPaginated?.content || [])
+              .map((p: any) => this.mapToProduct(p));
+            products.forEach((p: Product) => {
+              if (!seenIds.has(p.id)) {
+                seenIds.add(p.id);
+                allProductsInCategory.push(p);
+              }
+            });
+          });
+          
+          // Filtrar por búsqueda en cliente
+          return allProductsInCategory.filter(p => {
+            const name = (p.name || '').toLowerCase();
+            const brand = (p.brand || '').toLowerCase();
+            const query = (filters.search || '').toLowerCase();
+            return name.includes(query) || brand.includes(query);
+          });
+        })
+      );
+    }
+    // Prioridad 4: Solo búsqueda, sin tienda ni categoría
+    else if (filters.search) {
+      baseQuery$ = this.apollo.query<any>({
+        query: SEARCH_PRODUCTS,
+        variables: { query: filters.search, page: 0, size: 1000 },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => (result.data?.searchProducts?.content || []).map((p: any) => this.mapToProduct(p)))
+      );
+    }
+    // Prioridad 5: Si hay múltiples tiendas (sin búsqueda)
+    else if (filters.storeIds && filters.storeIds.length > 1) {
       const queries = filters.storeIds.map(storeId =>
         this.apollo.query<any>({
           query: GET_PRODUCTS_BY_STORE,
@@ -56,16 +141,14 @@ export class ProductService {
         })
       );
 
-      return forkJoin(queries).pipe(
+      baseQuery$ = forkJoin(queries).pipe(
         map(results => {
-          // Combinar productos de todas las tiendas
           let allProducts: Product[] = [];
           const seenIds = new Set<number>();
 
           results.forEach(result => {
             const products = (result.data?.productsByStore?.content || [])
               .map((p: any) => this.mapToProduct(p));
-
             products.forEach((p: Product) => {
               if (!seenIds.has(p.id)) {
                 seenIds.add(p.id);
@@ -73,53 +156,46 @@ export class ProductService {
               }
             });
           });
-
-          // Aplicar ordenamiento
-          allProducts = this.applySorting(allProducts, filters.sortBy);
-
-          // Aplicar paginación manual
-          const totalElements = allProducts.length;
-          const start = page * size;
-          const end = start + size;
-          const paginatedContent = allProducts.slice(start, end);
-
-          return {
-            content: paginatedContent,
-            totalElements: totalElements,
-            totalPages: Math.ceil(totalElements / size),
-            size: size,
-            number: page,
-            first: page === 0,
-            last: end >= totalElements
-          };
+          return allProducts;
         })
       );
     }
-
-    // Si hay filtro por múltiples categorías, hacer queries paralelas y combinar
-    if (filters.categoryIds && filters.categoryIds.length > 0) {
+    // Prioridad 6: Una sola tienda (sin búsqueda)
+    else if (filters.storeIds && filters.storeIds.length === 1) {
+      baseQuery$ = this.apollo.query<any>({
+        query: GET_PRODUCTS_BY_STORE,
+        variables: {
+          storeId: filters.storeIds[0].toString(),
+          page: 0,
+          size: 10000
+        },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => (result.data?.productsByStore?.content || []).map((p: any) => this.mapToProduct(p)))
+      );
+    }
+    // Prioridad 7: Múltiples categorías (sin búsqueda, sin tienda)
+    else if (filters.categoryIds && filters.categoryIds.length > 0) {
       const queries = filters.categoryIds.map(catId =>
         this.apollo.query<any>({
           query: GET_PRODUCTS_BY_CATEGORY,
           variables: {
             categoryId: catId.toString(),
             page: 0,
-            size: 200 // Cargar suficientes de cada categoría
+            size: 200
           },
           fetchPolicy: 'network-only'
         })
       );
 
-      return forkJoin(queries).pipe(
+      baseQuery$ = forkJoin(queries).pipe(
         map(results => {
-          // Combinar productos de todas las categorías
           let allProducts: Product[] = [];
           const seenIds = new Set<number>();
 
           results.forEach(result => {
             const products = (result.data?.productsByCategoryPaginated?.content || [])
               .map((p: any) => this.mapToProduct(p));
-
             products.forEach((p: Product) => {
               if (!seenIds.has(p.id)) {
                 seenIds.add(p.id);
@@ -127,71 +203,56 @@ export class ProductService {
               }
             });
           });
-
-          // Aplicar ordenamiento
-          allProducts = this.applySorting(allProducts, filters.sortBy);
-
-          // Aplicar paginación manual
-          const totalElements = allProducts.length;
-          const start = page * size;
-          const end = start + size;
-          const paginatedContent = allProducts.slice(start, end);
-
-          return {
-            content: paginatedContent,
-            totalElements: totalElements,
-            totalPages: Math.ceil(totalElements / size),
-            size: size,
-            number: page,
-            first: page === 0,
-            last: end >= totalElements
-          };
+          return allProducts;
         })
       );
     }
-
-    // Si hay filtro por una sola categoria, usar query especifica
-    if (filters.categoryId) {
-      return this.apollo.query<any>({
+    // Prioridad 8: Una sola categoría (sin búsqueda, sin tienda)
+    else if (filters.categoryId) {
+      baseQuery$ = this.apollo.query<any>({
         query: GET_PRODUCTS_BY_CATEGORY,
         variables: {
           categoryId: filters.categoryId.toString(),
-          page: page,
-          size: size
+          page: 0,
+          size: 10000
         },
         fetchPolicy: 'network-only'
       }).pipe(
-        map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.productsByCategoryPaginated, filters);
-        })
+        map(result => (result.data?.productsByCategoryPaginated?.content || []).map((p: any) => this.mapToProduct(p)))
       );
     }
-
-    // Si hay búsqueda por texto, usar query de búsqueda del servidor
-    if (filters.search) {
-      return this.apollo.query<any>({
-        query: SEARCH_PRODUCTS,
-        variables: { query: filters.search, page: page, size: size },
+    // Sin filtros específicos, obtener todos
+    else {
+      baseQuery$ = this.apollo.query<any>({
+        query: GET_ALL_PRODUCTS,
+        variables: { page: 0, size: 10000 },
         fetchPolicy: 'network-only'
       }).pipe(
-        map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.searchProducts, filters);
-        })
+        map(result => (result.data?.allProducts?.content || []).map((p: any) => this.mapToProduct(p)))
       );
     }
 
-    // Query general de todos los productos
-    console.log('[DEBUG] Enviando query allProducts con page:', page, 'size:', size);
-    return this.apollo.query<any>({
-      query: GET_ALL_PRODUCTS,
-      variables: { page: page, size: size },
-      fetchPolicy: 'network-only'
-    }).pipe(
-      map(result => {
-        console.log('[DEBUG] Respuesta allProducts:', result);
-        const mapped = this.mapGraphQLPageToProductPage(result.data?.allProducts, filters);
-        console.log('[DEBUG] Productos mapeados:', mapped.content.length, 'de', mapped.totalElements);
-        return mapped;
+    // Aplicar ordenamiento, filtrado adicional en cliente y paginación
+    return baseQuery$.pipe(
+      map(allProducts => {
+        // Aplicar ordenamiento
+        let filtered = this.applySorting(allProducts, filters.sortBy);
+
+        // Aplicar paginación manual
+        const totalElements = filtered.length;
+        const start = page * size;
+        const end = start + size;
+        const paginatedContent = filtered.slice(start, end);
+
+        return {
+          content: paginatedContent,
+          totalElements: totalElements,
+          totalPages: Math.ceil(totalElements / size),
+          size: size,
+          number: page,
+          first: page === 0,
+          last: end >= totalElements
+        };
       })
     );
   }

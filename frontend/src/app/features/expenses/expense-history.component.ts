@@ -238,7 +238,7 @@ export class ExpenseHistoryComponent implements OnInit, OnDestroy
 
   goToLists(): void
   {
-    this.router.navigate(['/mis-listas']);
+    this.router.navigate(['/lists']);
   }
 
   getLimitTypeLabel(type: string): string
