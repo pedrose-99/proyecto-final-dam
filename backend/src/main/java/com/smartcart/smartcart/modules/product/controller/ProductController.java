@@ -35,6 +35,11 @@ public class ProductController {
     }
 
     @QueryMapping
+    public ProductPageDTO searchProductsByStore(@Argument String query, @Argument Integer storeId, @Argument Integer page, @Argument Integer size) {
+        return productService.searchProductsByStore(query, storeId, page != null ? page : 0, size != null ? size : 10);
+    }
+
+    @QueryMapping
     public ProductDTO productByEan(@Argument String ean) {
         return productService.findByEan(ean);
     }

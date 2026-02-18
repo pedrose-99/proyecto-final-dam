@@ -34,6 +34,7 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
     stores: StoreCard[] = [];
     loading = true;
     scrapingAll = false;
+    exportingAll = false;
     private cancelledAll = false;
 
     constructor(
@@ -157,6 +158,45 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
         this.scrapingAll = false;
         this.cdr.detectChanges();
         this.snackBar.open('Todos los scrapings cancelados', 'OK', { duration: 3000 });
+    }
+
+    exportCsv(store: StoreCard): void
+    {
+        this.adminService.exportCsv(store.slug).subscribe({
+            next: (blob) => {
+                this.downloadBlob(blob, `products_${store.slug}.csv`);
+                this.snackBar.open(`CSV de ${store.name} descargado`, 'OK', { duration: 3000 });
+            },
+            error: () => {
+                this.snackBar.open(`Error al exportar CSV de ${store.name}`, 'Cerrar', { duration: 3000 });
+            }
+        });
+    }
+
+    exportAllCsv(): void
+    {
+        this.exportingAll = true;
+        this.adminService.exportAllCsv().subscribe({
+            next: (blob) => {
+                this.exportingAll = false;
+                this.downloadBlob(blob, 'products_all.zip');
+                this.snackBar.open('ZIP con todos los CSVs descargado', 'OK', { duration: 3000 });
+            },
+            error: () => {
+                this.exportingAll = false;
+                this.snackBar.open('Error al exportar CSVs', 'Cerrar', { duration: 3000 });
+            }
+        });
+    }
+
+    private downloadBlob(blob: Blob, filename: string): void
+    {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
     }
 
     getStatusLabel(status: string | null): string

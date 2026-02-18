@@ -94,7 +94,7 @@ public class CollaborationService {
 
     private boolean inviteByUsername(Group group, String username) {
         User targetUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario '" + username + "' no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("No existe una cuenta con el usuario '" + username + "'"));
 
         if (groupMemberRepository.existsByGroupAndUser(group, targetUser)) {
             throw new BadRequestException("El usuario ya es miembro o tiene una invitación pendiente");
@@ -143,19 +143,7 @@ public class CollaborationService {
 
             return true;
         } else {
-            // Usuario NO existe: crear GroupMember sin user_id (null)
-            // y disparar evento Kafka para envío de email de registro
-            GroupMember member = new GroupMember();
-            member.setGroup(group);
-            member.setUser(null); // user_id null hasta que se registre
-            member.setStatus(MemberStatus.PENDING);
-            groupMemberRepository.save(member);
-
-            // Publicar evento Kafka para email-service
-            listChangeProducer.sendEmailInviteEvent(
-                    new EmailInviteEvent(email, group.getGroupCode(), group.getName()));
-
-            return true;
+            throw new ResourceNotFoundException("No existe una cuenta con el correo '" + email + "'");
         }
     }
 

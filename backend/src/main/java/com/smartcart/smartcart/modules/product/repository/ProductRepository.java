@@ -29,10 +29,41 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     @Query(value = "SELECT * FROM product WHERE " +
             "LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
-            "OR LOWER(translate(COALESCE(brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%'",
+            "OR LOWER(translate(COALESCE(brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
+            "ORDER BY " +
+            "CASE " +
+            "  WHEN LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) = LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) THEN 0 " +
+            "  WHEN LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' THEN 1 " +
+            "  WHEN LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '% ' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || ' %' " +
+            "    OR LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '% ' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) THEN 2 " +
+            "  ELSE 3 " +
+            "END, " +
+            "LENGTH(name) ASC",
             countQuery = "SELECT count(*) FROM product WHERE " +
             "LOWER(translate(name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
             "OR LOWER(translate(COALESCE(brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%'",
             nativeQuery = true)
     Page<Product> searchByText(@Param("query") String query, Pageable pageable);
+
+    @Query(value = "SELECT p.* FROM product p " +
+            "JOIN product_store ps ON p.product_id = ps.product_id " +
+            "WHERE ps.store_id = :storeId " +
+            "AND (LOWER(translate(p.name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
+            "  OR LOWER(translate(COALESCE(p.brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%') " +
+            "ORDER BY " +
+            "CASE " +
+            "  WHEN LOWER(translate(p.name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) = LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) THEN 0 " +
+            "  WHEN LOWER(translate(p.name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' THEN 1 " +
+            "  WHEN LOWER(translate(p.name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '% ' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || ' %' " +
+            "    OR LOWER(translate(p.name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '% ' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) THEN 2 " +
+            "  ELSE 3 " +
+            "END, " +
+            "LENGTH(p.name) ASC",
+            countQuery = "SELECT count(*) FROM product p " +
+            "JOIN product_store ps ON p.product_id = ps.product_id " +
+            "WHERE ps.store_id = :storeId " +
+            "AND (LOWER(translate(p.name, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%' " +
+            "  OR LOWER(translate(COALESCE(p.brand, ''), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) LIKE '%' || LOWER(translate(:query, 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')) || '%')",
+            nativeQuery = true)
+    Page<Product> searchByTextAndStore(@Param("query") String query, @Param("storeId") Integer storeId, Pageable pageable);
 }

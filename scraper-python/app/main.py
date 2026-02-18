@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.models import ScrapedProduct
 from app.scrapers.dia import scrape_dia
 from app.scrapers.carrefour import scrape_carrefour
+from app.scrapers.ahorramas import scrape_ahorramas_async
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,4 +27,10 @@ def scrape_dia_endpoint():
 @app.post("/scrape/carrefour", response_model=list[ScrapedProduct])
 def scrape_carrefour_endpoint():
     products = scrape_carrefour()
+    return [ScrapedProduct(**p) for p in products]
+
+
+@app.post("/scrape/ahorramas", response_model=list[ScrapedProduct])
+async def scrape_ahorramas_endpoint():
+    products = await scrape_ahorramas_async()
     return [ScrapedProduct(**p) for p in products]
