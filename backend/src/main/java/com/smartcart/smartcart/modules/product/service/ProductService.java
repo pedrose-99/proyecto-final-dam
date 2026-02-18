@@ -25,6 +25,9 @@ import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.product.mapper.ProductMapper;
 import com.smartcart.smartcart.modules.product.repository.ProductRepository;
 import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
+import com.smartcart.smartcart.modules.favorite.repository.FavoriteRepository;
+import com.smartcart.smartcart.modules.user.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 public class ProductService {
@@ -32,20 +35,40 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductStoreRepository productStoreRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final UserRepository userRepository;
 
     public ProductService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          ProductStoreRepository productStoreRepository) {
+                          ProductStoreRepository productStoreRepository,
+                          FavoriteRepository favoriteRepository,
+                          UserRepository userRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productStoreRepository = productStoreRepository;
+        this.favoriteRepository = favoriteRepository;
+        this.userRepository = userRepository;
+    }
+
+    private boolean isFavorite(Integer productId) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            var user = userRepository.findByEmail(email);
+            if (user.isEmpty()) return false;
+            return favoriteRepository.existsByUser_IdUserAndProduct_ProductId(
+                user.get().getIdUser(), 
+                productId
+            );
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     // ─── CRUD ──────────────────────────────────────────────
 
     public List<ProductDTO> findAll() {
         return productRepository.findAll().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
     }
 
@@ -54,7 +77,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.findAll(pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -71,12 +94,12 @@ public class ProductService {
     public ProductDTO findByEan(String ean) {
         Product p = productRepository.findByEan(ean)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con EAN: " + ean));
-        return ProductMapper.toDTO(p);
+        return ProductMapper.toDTO(p, isFavorite(p.getProductId()));
     }
 
     public List<ProductDTO> findByCategoryId(Integer categoryId) {
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
     }
 
@@ -85,7 +108,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.findByCategoryId_CategoryId(categoryId, pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -104,7 +127,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.findByStoreId(storeId, pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -148,7 +171,7 @@ public class ProductService {
         Page<Product> productPage = productRepository.searchByText(query, pageable);
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -171,7 +194,8 @@ public class ProductService {
         p.setEan(ean);
         p.setBrand(brand);
         p.setCategoryId(cat);
-        return ProductMapper.toDTO(productRepository.save(p));
+        Product saved = productRepository.save(p);
+        return ProductMapper.toDTO(saved, isFavorite(saved.getProductId()));
     }
 
     public ProductDTO update(Integer id, String name, String brand, String imageUrl) {
@@ -180,7 +204,8 @@ public class ProductService {
         if (name != null) p.setName(name);
         if (brand != null) p.setBrand(brand);
         if (imageUrl != null) p.setImageUrl(imageUrl);
-        return ProductMapper.toDTO(productRepository.save(p));
+        Product saved = productRepository.save(p);
+        return ProductMapper.toDTO(saved, isFavorite(saved.getProductId()));
     }
 
     public Boolean delete(Integer id) {
@@ -192,7 +217,7 @@ public class ProductService {
 
     public List<ProductDTO> findByCategory(Integer categoryId) {
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
-                .map(ProductMapper::toDTO)
+                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
                 .toList();
     }
 

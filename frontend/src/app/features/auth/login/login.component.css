@@ -52,6 +52,23 @@
   width: 100%;
 }
 
+.forgot-password-link {
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
+
+.forgot-password-link a {
+  color: var(--smartcart-accent);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
+}
+
 .submit-btn {
   margin-top: 20px;
   height: 48px;
@@ -105,4 +122,21 @@ mat-card-actions a {
 
 mat-card-actions a:hover {
   text-decoration: underline;
+}
+
+.forgot-password-link {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.forgot-password-link a {
+  color: var(--smartcart-text-light);
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
+  color: var(--smartcart-accent);
 }

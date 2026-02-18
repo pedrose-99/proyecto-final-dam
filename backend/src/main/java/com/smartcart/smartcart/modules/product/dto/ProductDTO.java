@@ -11,6 +11,8 @@ public record ProductDTO(
     String unit,
     String categoryName,
     Integer categoryId,
+    boolean isFavorite
+) {}
     Double currentPrice
 ) {
     public ProductDTO(Integer productId, String name, String brand, String ean,

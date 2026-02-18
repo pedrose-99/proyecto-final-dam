@@ -36,6 +36,7 @@ type ProductDTO {
     unit: String
     categoryName: String
     categoryId: Int
+    isFavorite: Boolean
     currentPrice: Float
 }
 

@@ -359,3 +359,21 @@ body {
 .dark .mat-mdc-snack-bar-container .mat-mdc-button {
   color: #60a5fa !important;
 }
+
+/* ============================================
+   Light Mode — Snackbar variants
+   ============================================ */
+.mat-mdc-snack-bar-container.success-snackbar .mdc-snackbar__surface {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+.mat-mdc-snack-bar-container.error-snackbar .mdc-snackbar__surface {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.mat-mdc-snack-bar-container.success-snackbar .mat-mdc-button,
+.mat-mdc-snack-bar-container.error-snackbar .mat-mdc-button {
+  color: #ffffff !important;
+}

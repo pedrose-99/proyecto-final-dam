@@ -12,8 +12,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
+import { Observable, Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthResponse } from '../../../core/models/user.model';
 import { ProductService } from '../../services/product.service';
 import { NotificationService } from '../../services/notification.service';
 import { ProductSearchResult } from '../../../core/models/product.model';
@@ -47,7 +48,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   searchResults: ProductSearchResult[] = [];
   isSearching = false;
 
-  currentUser: any;
+  currentUser$: Observable<AuthResponse | null>;
   favoritesCount = 0;
   cartCount = 0;
 
@@ -66,7 +67,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     themeService: ThemeService
   ) {
     this.themeService = themeService;
-    this.currentUser = this.authService.getCurrentUser();
+    this.currentUser$ = this.authService.currentUser$;
   }
 
   ngOnInit(): void {
@@ -179,8 +180,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  deleteNotification(notification: AppNotification): void {
+    this.notificationService.deleteNotification(notification.notificationId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.loadNotifications();
+      }
+    });
+  }
+
   get isAdmin(): boolean {
-    return this.currentUser?.role === 'ADMIN';
+    return this.authService.getCurrentUser()?.role === 'ADMIN';
   }
 
   logout(): void {

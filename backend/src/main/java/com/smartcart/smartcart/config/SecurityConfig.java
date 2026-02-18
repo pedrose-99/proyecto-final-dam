@@ -48,7 +48,8 @@ public class SecurityConfig
                     ).permitAll()
                     // GraphQL
                     .requestMatchers("/graphql", "/graphiql").permitAll()
-                    // Rutas públicas
+                    // Rutas públicas (incluyendo OPTIONS para CORS preflight)
+                    .requestMatchers("OPTIONS", "/api/auth/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     // Rutas de admin (requieren ROLE_ADMIN)
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")

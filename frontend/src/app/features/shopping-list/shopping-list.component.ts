@@ -205,11 +205,11 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.lists = this.lists.filter(l => l.listId !== list.listId);
           if (this.selectedList?.listId === list.listId) {
             this.selectedList = null;
           }
-          this.snackBar.open('Lista eliminada', 'Cerrar', { duration: 3000 });
+          // La lista se actualizará automáticamente con refetchQueries
+          this.loadLists();
         },
         error: () => {
           this.snackBar.open('Error al eliminar la lista', 'Cerrar', { duration: 3000 });

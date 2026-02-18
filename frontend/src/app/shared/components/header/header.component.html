@@ -131,16 +131,19 @@
               }
             </div>
           </div>
-          @if (notif.type === 'INVITE' && !notif.isRead) {
-            <div class="notif-actions">
+          <div class="notif-actions">
+            @if (notif.type === 'INVITE' && !notif.isRead) {
               <button mat-icon-button color="primary" (click)="respondToInvite(notif, true)" matTooltip="Aceptar">
                 <mat-icon>check_circle</mat-icon>
               </button>
               <button mat-icon-button color="warn" (click)="respondToInvite(notif, false)" matTooltip="Rechazar">
                 <mat-icon>cancel</mat-icon>
               </button>
-            </div>
-          }
+            }
+            <button mat-icon-button (click)="deleteNotification(notif)" matTooltip="Eliminar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
         </div>
         <mat-divider></mat-divider>
       }
@@ -155,8 +158,8 @@
       <div class="menu-header">
         <mat-icon>account_circle</mat-icon>
         <div class="menu-header-info">
-          <span class="menu-header-name">{{ currentUser?.username }}</span>
-          <span class="menu-header-email">{{ currentUser?.email }}</span>
+          <span class="menu-header-name">{{ (currentUser$ | async)?.username }}</span>
+          <span class="menu-header-email">{{ (currentUser$ | async)?.email }}</span>
         </div>
       </div>
 

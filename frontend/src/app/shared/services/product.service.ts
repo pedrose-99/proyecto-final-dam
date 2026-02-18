@@ -12,6 +12,8 @@ import {
   GET_PRODUCTS_BY_STORE,
   GET_STORES_BY_PRODUCT,
   SEARCH_PRODUCTS,
+  ADD_TO_FAVORITES,
+  REMOVE_FROM_FAVORITES
   SEARCH_PRODUCTS_BY_STORE
 } from '../../core/graphql/queries';
 
@@ -344,15 +346,21 @@ export class ProductService {
 
   // Estas funciones necesitaran mutations en el backend
   addToFavorites(productId: number): Observable<void> {
-    // TODO: Implementar mutation GraphQL
-    console.log('addToFavorites - pendiente mutation GraphQL', productId);
-    return of(void 0);
+    return this.apollo.mutate<any>({
+      mutation: ADD_TO_FAVORITES,
+      variables: { productId: productId.toString() }
+    }).pipe(
+      map(() => void 0)
+    );
   }
 
   removeFromFavorites(productId: number): Observable<void> {
-    // TODO: Implementar mutation GraphQL
-    console.log('removeFromFavorites - pendiente mutation GraphQL', productId);
-    return of(void 0);
+    return this.apollo.mutate<any>({
+      mutation: REMOVE_FROM_FAVORITES,
+      variables: { productId: productId.toString() }
+    }).pipe(
+      map(() => void 0)
+    );
   }
 
   addToList(productId: number, listId?: number): Observable<void> {

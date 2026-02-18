@@ -57,4 +57,24 @@ public class GroupResolver {
     public Boolean respondToInvite(@Argument Integer notificationId, @Argument Boolean accept) {
         return collaborationService.respondToInvite(notificationId, accept);
     }
+
+    @MutationMapping
+    public Boolean deleteNotification(@Argument Integer notificationId) {
+        return collaborationService.deleteNotification(notificationId);
+    }
+
+    @MutationMapping
+    public Boolean deleteGroup(@Argument Integer groupId) {
+        return collaborationService.deleteGroup(groupId);
+    }
+
+    @MutationMapping
+    public Boolean leaveGroup(@Argument Integer groupId) {
+        return collaborationService.leaveGroup(groupId);
+    }
+
+    @MutationMapping
+    public Boolean removeGroupMember(@Argument Integer groupId, @Argument Integer userId) {
+        return collaborationService.removeGroupMember(groupId, userId);
+    }
 }

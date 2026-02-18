@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { GET_NOTIFICATIONS, RESPOND_TO_INVITE } from '../../core/graphql/queries';
+import { GET_NOTIFICATIONS, RESPOND_TO_INVITE, DELETE_NOTIFICATION } from '../../core/graphql/queries';
 import { AppNotification } from '../../core/models/group.model';
 
 @Injectable({
@@ -49,6 +49,20 @@ export class NotificationService
             }
         ).pipe(
             map(result => result.data?.respondToInvite || false)
+        );
+    }
+
+    deleteNotification(notificationId: number): Observable<boolean>
+    {
+        return this.apollo.mutate<{ deleteNotification: boolean }>(
+            {
+                mutation: DELETE_NOTIFICATION,
+                variables: {
+                    notificationId: notificationId.toString()
+                }
+            }
+        ).pipe(
+            map(result => result.data?.deleteNotification || false)
         );
     }
 

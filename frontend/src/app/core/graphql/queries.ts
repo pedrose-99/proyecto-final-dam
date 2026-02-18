@@ -205,6 +205,8 @@ export const GET_MY_SHOPPING_LISTS = gql`
     myShoppingLists {
       listId
       name
+      userId
+      username
       groupId
       groupName
       createdAt
@@ -228,6 +230,10 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
     shoppingListById(listId: $listId) {
       listId
       name
+      userId
+      username
+      groupId
+      groupName
       createdAt
 
       items {
@@ -555,6 +561,61 @@ export const RESPOND_TO_INVITE = gql`
   }
 `;
 
+export const DELETE_NOTIFICATION = gql`
+  mutation DeleteNotification($notificationId: ID!) {
+    deleteNotification(notificationId: $notificationId)
+  }
+`;
+
+export const DELETE_GROUP = gql`
+  mutation DeleteGroup($groupId: ID!) {
+    deleteGroup(groupId: $groupId)
+  }
+`;
+
+export const LEAVE_GROUP = gql`
+  mutation LeaveGroup($groupId: ID!) {
+    leaveGroup(groupId: $groupId)
+  }
+`;
+
+export const REMOVE_GROUP_MEMBER = gql`
+  mutation RemoveGroupMember($groupId: ID!, $userId: Int!) {
+    removeGroupMember(groupId: $groupId, userId: $userId)
+  }
+`;
+
+// Favoritos
+export const GET_MY_FAVORITES = gql`
+  query MyFavorites {
+    myFavorites {
+      productId
+      name
+      brand
+      imageUrl
+      categoryName
+      isFavorite
+    }
+  }
+`;
+
+export const IS_FAVORITE = gql`
+  query IsFavorite($productId: ID!) {
+    isFavorite(productId: $productId)
+  }
+`;
+
+export const ADD_TO_FAVORITES = gql`
+  mutation AddToFavorites($productId: ID!) {
+    addToFavorites(productId: $productId)
+  }
+`;
+
+export const REMOVE_FROM_FAVORITES = gql`
+  mutation RemoveFromFavorites($productId: ID!) {
+    removeFromFavorites(productId: $productId)
+  }
+`;
 // Gastos / Historial
 export const CREATE_BILL_FROM_LIST = gql`
   mutation CreateBillFromList($listId: ID!, $billName: String!) {

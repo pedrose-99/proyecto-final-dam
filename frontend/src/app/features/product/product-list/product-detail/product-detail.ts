@@ -1,13 +1,28 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProductService } from '../../../../core/services/product.service';
+import { FavoriteService } from '../../../../shared/services/favorite.service';
+import { ShoppingListService } from '../../../../shared/services/shopping-list.service';
+import { SelectShoppingListDialogComponent } from './select-shopping-list.dialog';
 import { Chart, registerables } from 'chart.js';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatSnackBarModule,
+    MatDialogModule
+  ],
   templateUrl: './product-detail.html',
   styleUrls: ['./product-detail.css']
 })
@@ -20,6 +35,9 @@ export class ProductDetailComponent implements OnInit {
   loading = true;
   stores: any[] = [];
   bestPrice: number | null = null;
+  productId: number | null = null;
+  isFavorite = false;
+  isInShoppingList = false;
   
   product: any = {
     name: 'Cargando...',
@@ -33,8 +51,12 @@ export class ProductDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
+    private favoriteService: FavoriteService,
+    private shoppingListService: ShoppingListService,
     private cdr: ChangeDetectorRef,
-    private location: Location
+    private location: Location,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {}
 
   goBack(): void {
@@ -44,7 +66,9 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      // CORRECCIÓN: Quitamos loadProduct(id) porque la lógica está aquí abajo
+      this.productId = parseInt(id);
+      
+      // Cargar datos del producto
       this.productService.getComparison(id).subscribe({
         next: (data: any) => {
           if (data) {
@@ -69,7 +93,69 @@ export class ProductDetailComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+      
+      // Comprobar si está en favoritos
+      this.favoriteService.isFavorite(this.productId).subscribe({
+        next: (isFav) => {
+          this.isFavorite = isFav;
+          console.log('❤️ isFavorite:', this.isFavorite);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error al comprobar favorito:', err);
+        }
+      });
+
+      // Comprobar si está en alguna lista de compra (después de 500ms para dar tiempo a cargar)
+      setTimeout(() => {
+        this.checkIfInShoppingList();
+      }, 500);
     }
+  }
+
+  checkIfInShoppingList(): void {
+    if (!this.productId) {
+      console.log('❌ No hay productId');
+      return;
+    }
+
+    const productIdNum = Number(this.productId);
+    console.log('🔍 Verificando si producto', productIdNum, 'está en alguna lista');
+
+    this.shoppingListService.getMyLists().subscribe({
+      next: (lists: any[]) => {
+        console.log('📦 Listas obtenidas:', lists.length, 'listas');
+        
+        // Buscar en todas las listas
+        let found = false;
+        
+        for (const list of lists) {
+          if (!list || !Array.isArray(list.items)) {
+            console.log(`⚠️ Lista ${list?.name} sin items válidos`);
+            continue;
+          }
+          
+          for (const item of list.items) {
+            const itemProductId = Number(item.productId);
+            if (itemProductId === productIdNum) {
+              console.log(`✅ ENCONTRADO en lista "${list.name}": ${item.displayName}`);
+              found = true;
+              break;
+            }
+          }
+          
+          if (found) break;
+        }
+        
+        this.isInShoppingList = found;
+        console.log('🛒 isInShoppingList =', this.isInShoppingList);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('❌ Error al verificar listas de compra:', err);
+        this.isInShoppingList = false;
+      }
+    });
   }
   toggleHistory() {
     this.showHistory = !this.showHistory;
@@ -85,7 +171,78 @@ export class ProductDetailComponent implements OnInit {
     }
   }
   toggleFavorite(): void {
-    alert('¡Añadido a favoritos!');
+    if (!this.productId) return;
+    
+    if (this.isFavorite) {
+      this.favoriteService.removeFromFavorites(this.productId).subscribe({
+        next: () => {
+          this.isFavorite = false;
+          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.snackBar.open('Error al eliminar de favoritos', 'Cerrar', { duration: 3000 });
+        }
+      });
+    } else {
+      this.favoriteService.addToFavorites(this.productId).subscribe({
+        next: () => {
+          this.isFavorite = true;
+          this.snackBar.open('Añadido a favoritos', 'Cerrar', { duration: 2000 });
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.snackBar.open('Error al añadir a favoritos', 'Cerrar', { duration: 3000 });
+        }
+      });
+    }
+  }
+
+  addToShoppingList(): void {
+    if (!this.productId) {
+      this.snackBar.open('Error: No se puede añadir el producto', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    // Obtener listas frescas del servidor (network-only para evitar caché)
+    this.shoppingListService.getMyLists().subscribe({
+      next: (lists: any[]) => {
+        // Filtrar listas válidas (que no sean null)
+        const validLists = lists.filter(list => list && list.listId && list.name);
+        
+        if (validLists.length === 0) {
+          this.snackBar.open('No tienes listas de compra. Crea una primera.', 'Cerrar', { duration: 3000 });
+          return;
+        }
+
+        console.log('Listas disponibles:', validLists);
+
+        // Abrir diálogo para seleccionar lista
+        this.dialog.open(SelectShoppingListDialogComponent, {
+          width: '400px',
+          data: { lists: validLists, productId: this.productId, productName: this.product.name }
+        }).afterClosed().subscribe(result => {
+          if (result && result.success) {
+            console.log('✅ Producto añadido exitosamente a', result.addedCount, 'listas');
+            
+            // Actualizar inmediatamente
+            this.isInShoppingList = true;
+            this.cdr.detectChanges();
+            this.snackBar.open(`Añadido a ${result.addedCount} lista(s)`, 'Cerrar', { duration: 2000 });
+            
+            // Refrescar después de 1 segundo para confirmar
+            setTimeout(() => {
+              console.log('🔄 Refrescando verificación...');
+              this.checkIfInShoppingList();
+            }, 1000);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error al obtener listas:', err);
+        this.snackBar.open('Error al obtener tus listas de compra', 'Cerrar', { duration: 3000 });
+      }
+    });
   }
   loadHistoryData() {
   const id = this.route.snapshot.paramMap.get('id');

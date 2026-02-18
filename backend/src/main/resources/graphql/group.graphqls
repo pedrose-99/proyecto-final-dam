@@ -13,6 +13,10 @@ extend type Mutation {
     inviteToGroup(groupId: ID!, target: String!): Boolean
     joinGroupByCode(code: String!): GroupDTO
     respondToInvite(notificationId: ID!, accept: Boolean!): Boolean
+    deleteNotification(notificationId: ID!): Boolean
+    deleteGroup(groupId: ID!): Boolean
+    leaveGroup(groupId: ID!): Boolean
+    removeGroupMember(groupId: ID!, userId: Int!): Boolean
 }
 
 # ==================== TYPES ====================

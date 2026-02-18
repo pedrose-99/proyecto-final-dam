@@ -35,7 +35,7 @@ public class UserService {
 
         if (request.username() != null && !request.username().isBlank())
         {
-            if (userRepository.existsByUsername(request.username()) && !user.getUsername().equals(request.username()))
+            if (userRepository.existsByUsername(request.username()) && !user.getRealUsername().equals(request.username()))
             {
                 throw new RuntimeException("El username ya está en uso");
             }
@@ -57,7 +57,7 @@ public class UserService {
         return new UserDTO(
             user.getIdUser(),
             user.getEmail(),
-            user.getUsername(),
+            user.getRealUsername(),
             user.getRole().getName(),
             user.getCreatedAt()
         );

@@ -5,7 +5,7 @@ import com.smartcart.smartcart.modules.product.entity.Product;
 
 public class ProductMapper {
 
-    public static ProductDTO toDTO(Product entity) {
+    public static ProductDTO toDTO(Product entity, boolean isFavorite) {
         return new ProductDTO(
             entity.getProductId(),
             entity.getName(),
@@ -16,7 +16,8 @@ public class ProductMapper {
             entity.getQuantity(),
             entity.getUnit(),
             entity.getCategoryId() != null ? entity.getCategoryId().getName() : null,
-            entity.getCategoryId() != null ? entity.getCategoryId().getCategoryId() : null
+            entity.getCategoryId() != null ? entity.getCategoryId().getCategoryId() : null,
+            isFavorite
         );
     }
 
