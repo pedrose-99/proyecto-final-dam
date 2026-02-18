@@ -165,13 +165,7 @@
       </div>
     </div>
 
-    <!-- Botón Optimizar y Simular Compra -->
-    <div class="optimize-section">
-      <button mat-raised-button color="accent"
-              (click)="optimize()"
-              [disabled]="isOptimizing || selectedStoreIds.size === 0 || !selectedList.items?.length"
-              class="optimize-button">
-    <!-- Botones Optimizar y Ver por tienda -->
+    <!-- Botones Optimizar, Simular Compra y Ver por tienda -->
     <div class="optimize-section">
       <button (click)="optimize()"
               [disabled]="isOptimizing || isLoadingByStore || !selectedList.items?.length"
@@ -180,12 +174,12 @@
         <mat-spinner *ngIf="isOptimizing" diameter="20" class="inline-spinner"></mat-spinner>
         <span>{{ isOptimizing ? 'Optimizando...' : 'Optimizar Compra' }}</span>
       </button>
-      <button mat-raised-button color="primary"
-              (click)="simulatePurchase()"
+      <button (click)="simulatePurchase()"
               [disabled]="!selectedList.items?.length"
-              class="simulate-button">
+              class="pill-button pill-outlined">
         <mat-icon>receipt_long</mat-icon>
         <span>Simular Compra</span>
+      </button>
       <button (click)="optimizeByStore()"
               [disabled]="isOptimizing || isLoadingByStore || !selectedList.items?.length"
               class="pill-button pill-outlined">

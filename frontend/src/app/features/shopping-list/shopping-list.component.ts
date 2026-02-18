@@ -22,7 +22,6 @@ import { ShoppingListService } from '../../shared/services/shopping-list.service
 import { ProductService } from '../../shared/services/product.service';
 import { ExpenseService } from '../../shared/services/expense.service';
 import { SimulatePurchaseDialogComponent, SimulatePurchaseDialogResult } from '../../shared/components/simulate-purchase-dialog/simulate-purchase-dialog.component';
-import { ShoppingList, ListItem, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
 import { ShoppingList, ListItem, OptimizedList, OptimizedStore, OptimizedItem, SublistInput } from '../../core/models/shopping-list.model';
 import { Store } from '../../core/models/store.model';
 import { ProductSearchResult } from '../../core/models/product.model';
