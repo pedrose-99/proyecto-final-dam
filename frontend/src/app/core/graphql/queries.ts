@@ -217,6 +217,7 @@ export const GET_MY_SHOPPING_LISTS = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -237,6 +238,7 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -257,6 +259,7 @@ export const CREATE_SHOPPING_LIST = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -283,6 +286,7 @@ export const ADD_ITEM_TO_LIST = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -303,6 +307,7 @@ export const UPDATE_LIST_ITEM = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -323,6 +328,7 @@ export const REMOVE_LIST_ITEM = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -343,6 +349,28 @@ export const CREATE_SUBLISTS = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
+      }
+    }
+  }
+`;
+
+export const RENAME_SHOPPING_LIST = gql`
+  mutation RenameShoppingList($listId: ID!, $name: String!) {
+    renameShoppingList(listId: $listId, name: $name) {
+      listId
+      name
+      createdAt
+
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -540,6 +568,7 @@ export const CREATE_BILL_FROM_LIST = gql`
         productName
         price
         quantity
+        storeName
       }
     }
   }
@@ -557,7 +586,41 @@ export const GET_BILLS_HISTORY = gql`
         productName
         price
         quantity
+        storeName
       }
+    }
+  }
+`;
+
+export const GET_SPENDING_LIMITS = gql`
+  query GetSpendingLimits {
+    getSpendingLimits {
+      limitId
+      amount
+      type
+      isActive
+    }
+  }
+`;
+
+export const SAVE_SPENDING_LIMIT = gql`
+  mutation SaveSpendingLimit($amount: Float!, $type: String!) {
+    saveSpendingLimit(amount: $amount, type: $type) {
+      limitId
+      amount
+      type
+      isActive
+    }
+  }
+`;
+
+export const GET_EXPENSE_SUMMARY = gql`
+  query GetExpenseSummary($period: String, $offset: Int) {
+    getExpenseSummary(period: $period, offset: $offset) {
+      periodLabel
+      totalAmount
+      billCount
+      exceededCount
     }
   }
 `;

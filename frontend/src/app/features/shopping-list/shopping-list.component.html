@@ -28,6 +28,8 @@
       <mat-card *ngFor="let list of lists" class="list-card" [class.group-list]="list.groupId" (click)="selectList(list)">
         <mat-card-content>
           <div class="card-header">
+            <img *ngIf="getStoreFromListName(list.name) as store"
+                 [src]="getStoreLogo(null, store)" class="list-store-logo" [alt]="store">
             <h2>{{ list.name }}</h2>
             <button mat-icon-button color="warn" (click)="deleteList(list); $event.stopPropagation()">
               <mat-icon>delete</mat-icon>
@@ -59,7 +61,24 @@
       <button mat-icon-button (click)="backToLists()" class="back-button">
         <mat-icon>arrow_back</mat-icon>
       </button>
-      <h1>{{ selectedList.name }}</h1>
+      <h1 *ngIf="!isEditingName">{{ selectedList.name }}</h1>
+      <button *ngIf="!isEditingName" mat-icon-button (click)="startEditName()" class="edit-name-button">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <div *ngIf="isEditingName" class="edit-name-inline">
+        <input matInput [formControl]="editNameControl" class="edit-name-input"
+               (keyup.enter)="saveListName()" (keyup.escape)="cancelEditName()" />
+        <button mat-icon-button color="primary" (click)="saveListName()">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="cancelEditName()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <button class="pill-button pill-outlined pill-small" (click)="goToExpenses()">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <span>Mis Gastos</span>
+      </button>
     </div>
 
     <!-- Buscador de productos -->
@@ -108,6 +127,11 @@
           <mat-checkbox [checked]="item.checked" 
                         (change)="toggleChecked(item)">
           </mat-checkbox>
+
+          <!-- Logo de tienda más barata -->
+          <img *ngIf="item.cheapestStoreName"
+               [src]="getStoreLogo(null, item.cheapestStoreName)"
+               class="item-store-logo" [alt]="item.cheapestStoreName">
 
           <!-- Imagen o icono -->
           <div class="item-image">
@@ -175,7 +199,8 @@
         <span>{{ isOptimizing ? 'Optimizando...' : 'Optimizar Compra' }}</span>
       </button>
       <button (click)="simulatePurchase()"
-              [disabled]="!selectedList.items?.length"
+              [disabled]="!selectedList.items?.length || hasGenericItems()"
+              [matTooltip]="hasGenericItems() ? 'Todos los productos deben ser de tienda para simular la compra' : ''"
               class="pill-button pill-outlined">
         <mat-icon>receipt_long</mat-icon>
         <span>Simular Compra</span>

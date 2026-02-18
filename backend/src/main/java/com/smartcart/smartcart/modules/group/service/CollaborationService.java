@@ -309,10 +309,11 @@ public class CollaborationService {
                                             item.getProduct() != null ? item.getProduct().getImageUrl() : null,
                                             item.getQuantity(),
                                             item.getChecked(),
-                                            item.getProduct() == null
+                                            item.getProduct() == null,
+                                            (String) null
                                     ))
                                     .collect(Collectors.toList())
-                                : Collections.emptyList()
+                                : Collections.<ListItemDTO>emptyList()
                 ))
                 .collect(Collectors.toList());
 
