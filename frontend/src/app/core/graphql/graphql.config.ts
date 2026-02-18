@@ -4,6 +4,7 @@ import { InMemoryCache, ApolloLink } from '@apollo/client/core';
 import { setContext } from '@apollo/client/link/context';
 import { inject } from '@angular/core';
 import { HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 export function provideGraphQL() {
   return provideApollo(() => {
@@ -21,7 +22,7 @@ export function provideGraphQL() {
 
     const link = ApolloLink.from([
       auth,
-      httpLink.create({ uri: 'http://localhost:8081/graphql' })
+      httpLink.create({ uri: environment.graphqlUrl })
     ]);
 
     return {

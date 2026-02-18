@@ -14,10 +14,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime, filter } from 'rxjs/operators';
 import { ShoppingListService } from '../../shared/services/shopping-list.service';
 import { ProductService } from '../../shared/services/product.service';
+import { ExpenseService } from '../../shared/services/expense.service';
+import { SimulatePurchaseDialogComponent, SimulatePurchaseDialogResult } from '../../shared/components/simulate-purchase-dialog/simulate-purchase-dialog.component';
+import { ShoppingList, ListItem, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
 import { ShoppingList, ListItem, OptimizedList, OptimizedStore, OptimizedItem, SublistInput } from '../../core/models/shopping-list.model';
 import { Store } from '../../core/models/store.model';
 import { ProductSearchResult } from '../../core/models/product.model';
@@ -83,7 +88,10 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   constructor(
     private shoppingListService: ShoppingListService,
     private productService: ProductService,
-    private snackBar: MatSnackBar
+    private expenseService: ExpenseService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -406,6 +414,33 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.isCreatingSublists = false;
           this.snackBar.open('Error al crear las sublistas', 'Cerrar', { duration: 3000 });
         }
+      });
+  }
+
+  simulatePurchase(): void {
+    if (!this.selectedList) return;
+
+    const dialogRef = this.dialog.open(SimulatePurchaseDialogComponent, {
+      width: '400px',
+      data: { listId: this.selectedList.listId, listName: this.selectedList.name }
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: SimulatePurchaseDialogResult | undefined) => {
+        if (!result || !this.selectedList) return;
+
+        this.expenseService.createBillFromList(this.selectedList.listId, result.billName)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Compra registrada correctamente', 'Cerrar', { duration: 3000 });
+              this.router.navigate(['/mis-gastos']);
+            },
+            error: () => {
+              this.snackBar.open('Error al registrar la compra', 'Cerrar', { duration: 3000 });
+            }
+          });
       });
   }
 

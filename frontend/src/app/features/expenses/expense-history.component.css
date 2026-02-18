@@ -1,0 +1,261 @@
+.expense-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  color: var(--smartcart-accent);
+}
+
+/* Filtro */
+.filter-section {
+  margin-bottom: 24px;
+}
+
+.filter-field {
+  width: 100%;
+}
+
+/* Loading */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.loading-spinner p {
+  color: var(--smartcart-text-light);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--smartcart-text-light);
+}
+
+.empty-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: var(--smartcart-text-light);
+  margin: 0 auto 16px;
+}
+
+.empty-state p {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.empty-hint {
+  font-size: 13px !important;
+  color: var(--smartcart-text-light);
+}
+
+/* Bills accordion */
+.bills-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bill-panel {
+  border-radius: 8px !important;
+  background-color: var(--smartcart-card) !important;
+}
+
+/* Panel header */
+.bill-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bill-icon {
+  color: var(--smartcart-accent);
+  flex-shrink: 0;
+}
+
+.bill-name {
+  font-weight: 500;
+  color: var(--smartcart-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exceeded-badge {
+  background-color: #ef4444;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bill-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.bill-date {
+  font-size: 13px;
+  color: var(--smartcart-text-light);
+}
+
+.bill-total {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--smartcart-accent);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.bill-total.exceeded {
+  color: #ef4444;
+}
+
+/* Ticket content (desktop) */
+.ticket-content {
+  padding: 8px 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+}
+
+.ticket-header-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 80px 80px;
+  gap: 8px;
+  padding: 8px 0;
+  font-weight: 600;
+  color: var(--smartcart-text-light);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.ticket-item-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 80px 80px;
+  gap: 8px;
+  padding: 8px 0;
+  color: var(--smartcart-text);
+  border-bottom: 1px dashed var(--smartcart-border);
+}
+
+.ticket-item-row:last-child {
+  border-bottom: none;
+}
+
+.col-qty,
+.col-price,
+.col-line {
+  text-align: right;
+}
+
+.ticket-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0 4px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--smartcart-text);
+}
+
+.total-value {
+  color: var(--smartcart-accent);
+}
+
+/* Mobile cards (hidden on desktop) */
+.ticket-cards-mobile {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .expense-container {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .bill-title {
+    flex-wrap: wrap;
+  }
+
+  .bill-summary {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  /* Hide desktop ticket, show cards */
+  .ticket-content {
+    display: none;
+  }
+
+  .ticket-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .mobile-item-card {
+    background-color: var(--smartcart-background);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .mobile-item-name {
+    display: block;
+    font-weight: 500;
+    color: var(--smartcart-text);
+    margin-bottom: 4px;
+  }
+
+  .mobile-item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--smartcart-text-light);
+  }
+
+  .mobile-item-total {
+    font-weight: 600;
+    color: var(--smartcart-accent);
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  .mobile-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    border-top: 2px solid var(--smartcart-border);
+    margin-top: 4px;
+    color: var(--smartcart-text);
+  }
+
+  .mobile-total-value {
+    color: var(--smartcart-accent);
+    font-family: 'Courier New', Courier, monospace;
+  }
+}

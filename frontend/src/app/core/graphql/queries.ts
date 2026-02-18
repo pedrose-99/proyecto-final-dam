@@ -527,3 +527,38 @@ export const RESPOND_TO_INVITE = gql`
   }
 `;
 
+// Gastos / Historial
+export const CREATE_BILL_FROM_LIST = gql`
+  mutation CreateBillFromList($listId: ID!, $billName: String!) {
+    createBillFromList(listId: $listId, billName: $billName) {
+      billsHistoryId
+      name
+      recordedAt
+      totalAmount
+      exceededLimit
+      itemsSummary {
+        productName
+        price
+        quantity
+      }
+    }
+  }
+`;
+
+export const GET_BILLS_HISTORY = gql`
+  query GetBillsHistory($filter: String, $month: Int, $year: Int) {
+    getBillsHistory(filter: $filter, month: $month, year: $year) {
+      billsHistoryId
+      name
+      recordedAt
+      totalAmount
+      exceededLimit
+      itemsSummary {
+        productName
+        price
+        quantity
+      }
+    }
+  }
+`;
+
