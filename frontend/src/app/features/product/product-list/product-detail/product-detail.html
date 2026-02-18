@@ -31,54 +31,75 @@
           </button>
         </div>
       </div>
-      <br>
-      <br>
-      
+
       <div class="rating">
         <span class="price-main" *ngIf="bestPrice">{{ bestPrice }}€</span>
         <span class="price-main" *ngIf="!bestPrice && stores.length === 0">Sin precio</span>
+        <span class="price-sub" *ngIf="bestPrice">Mejor precio</span>
       </div>
-      
+
+      <div class="product-meta">
+        <p *ngIf="product.brand"><strong>Marca:</strong> {{ product.brand }}</p>
+        <p *ngIf="product.ean"><strong>EAN:</strong> {{ product.ean }}</p>
+        <p class="stores-available" *ngIf="stores.length > 0">
+          Disponible en <strong>{{ stores.length }}</strong> {{ stores.length === 1 ? 'tienda' : 'tiendas' }}
+        </p>
+      </div>
+
+      <div class="description-box" *ngIf="product.description && product.description !== 'Sin descripción disponible para este producto.'">
+        <p>{{ product.description }}</p>
+      </div>
+
       <div class="history-wrapper">
-  <button class="btn-history-trigger" (click)="toggleHistory()">
-    {{ showHistory ? '📉 Ocultar historial' : '📈 Ver historial de precios' }}
-  </button>
+        <button class="btn-history-trigger" (click)="toggleHistory()">
+          {{ showHistory ? '📉 Ocultar historial' : '📈 Ver historial de precios' }}
+        </button>
+      </div>
 
-  <div class="history-content" *ngIf="showHistory">
-    <div class="chart-container" [hidden]="priceHistory.length < 2">
-      <canvas #priceChart></canvas>
     </div>
 
-    <div class="history-table-container">
-      <table class="history-table">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Tienda</th>
-            <th>Precio</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of priceHistory">
-            <td>{{ item.recordedAt | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ item.storeName }}</td>
-            <td class="price-bold">{{ item.price }}€</td>
-          </tr>
-          
-          <tr *ngIf="priceHistory.length === 0">
-            <td colspan="3" class="no-data-cell">
-              No se han registrado cambios de precio todavía. <br>
-              <small>El sistema guardará automáticamente el historial cuando detecte variaciones.</small>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="history-content" *ngIf="showHistory">
+      <div class="history-table-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tienda</th>
+              <th>Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of paginatedHistory">
+              <td>{{ item.recordedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ item.storeName }}</td>
+              <td class="price-bold">{{ item.price }}€</td>
+            </tr>
+
+            <tr *ngIf="priceHistory.length === 0">
+              <td colspan="3" class="no-data-cell">
+                No se han registrado cambios de precio todavía. <br>
+                <small>El sistema guardará automáticamente el historial cuando detecte variaciones.</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="history-pagination" *ngIf="priceHistory.length > historyPageSize">
+          <button class="btn-page" (click)="historyPrevPage()" [disabled]="historyPage === 0">
+            ← Anterior
+          </button>
+          <span class="page-info">{{ historyPage + 1 }} / {{ totalHistoryPages }}</span>
+          <button class="btn-page" (click)="historyNextPage()" [disabled]="historyPage >= totalHistoryPages - 1">
+            Siguiente →
+          </button>
+        </div>
+      </div>
+
+      <div class="chart-container" [hidden]="priceHistory.length < 2">
+        <canvas #priceChart></canvas>
+      </div>
     </div>
-  </div>
-</div>
-      
-      
-    </div>
+
   </section>
 
   <section class="stores-section">

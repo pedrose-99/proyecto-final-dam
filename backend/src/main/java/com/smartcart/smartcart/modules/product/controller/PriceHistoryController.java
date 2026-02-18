@@ -28,6 +28,11 @@ public class PriceHistoryController {
     }
 
     @QueryMapping
+    public List<PriceHistoryDTO> getPriceHistory(@Argument Integer productId) {
+        return priceHistoryService.findByProductId(productId);
+    }
+
+    @QueryMapping
     public List<PriceHistoryDTO> priceHistoryByProductAndStore(
             @Argument Integer productId, @Argument Integer storeId) {
         return priceHistoryService.findByProductAndStore(productId, storeId);

@@ -31,7 +31,9 @@ export class ProductDetailComponent implements OnInit {
   
   priceHistory: any[] = [];
   chart: any;
-  showHistory = false;
+  showHistory = true;
+  historyPage = 0;
+  historyPageSize = 5;
   loading = true;
   stores: any[] = [];
   bestPrice: number | null = null;
@@ -110,6 +112,9 @@ export class ProductDetailComponent implements OnInit {
       setTimeout(() => {
         this.checkIfInShoppingList();
       }, 500);
+
+      // Cargar historial de precios al inicio
+      this.loadHistoryData();
     }
   }
 
@@ -159,15 +164,8 @@ export class ProductDetailComponent implements OnInit {
   }
   toggleHistory() {
     this.showHistory = !this.showHistory;
-    if (this.showHistory) {
-      // Esperamos un ciclo de renderizado para que el canvas exista en el DOM
-      setTimeout(() => {
-        if (this.priceHistory.length === 0) {
-          this.loadHistoryData();
-        } else {
-          this.renderChart();
-        }
-      }, 100);
+    if (this.showHistory && this.priceHistory.length >= 2) {
+      setTimeout(() => this.renderChart(), 100);
     }
   }
   toggleFavorite(): void {
@@ -255,8 +253,8 @@ export class ProductDetailComponent implements OnInit {
       
       if (historyArray.length > 0) {
         // Invertimos para que el gráfico vaya de pasado a futuro
-        this.priceHistory = [...historyArray].reverse(); 
-        this.renderChart();
+        this.priceHistory = [...historyArray].reverse();
+        setTimeout(() => this.renderChart(), 150);
       } else {
         this.priceHistory = [];
       }
@@ -269,6 +267,23 @@ export class ProductDetailComponent implements OnInit {
     }
   });
 }
+  get paginatedHistory(): any[] {
+    const start = this.historyPage * this.historyPageSize;
+    return this.priceHistory.slice(start, start + this.historyPageSize);
+  }
+
+  get totalHistoryPages(): number {
+    return Math.ceil(this.priceHistory.length / this.historyPageSize);
+  }
+
+  historyPrevPage(): void {
+    if (this.historyPage > 0) this.historyPage--;
+  }
+
+  historyNextPage(): void {
+    if (this.historyPage < this.totalHistoryPages - 1) this.historyPage++;
+  }
+
  renderChart() {
   // 1. Validaciones de seguridad:
   // - Comprobamos que el elemento Canvas existe en el DOM
@@ -317,7 +332,7 @@ export class ProductDetailComponent implements OnInit {
           beginAtZero: false,             // Ajusta el zoom del eje Y al rango de precios
           ticks: { 
             // Añadimos el símbolo del Euro al eje Y
-            callback: (value: string | number) => value + '€' 
+            callback: (value: string | number) => Number(value).toFixed(2) + '€'
           }
         }
       }

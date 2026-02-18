@@ -23,7 +23,7 @@ import { MonthlyExpenseSummary } from '../../core/models/expense.model';
 
     <!-- Navegación temporal -->
     <div class="nav-row">
-      <button mat-icon-button (click)="onPrev()">
+      <button mat-icon-button (click)="onPrev()" [disabled]="!hasPrevData">
         <mat-icon>chevron_left</mat-icon>
       </button>
       <span class="nav-label">{{ rangeLabel }}</span>
@@ -181,6 +181,7 @@ export class ExpenseChartsComponent implements OnChanges
   currentPeriodSpent = 0;
   activeLimit: number | null = null;
   rangeLabel = '';
+  hasPrevData = true;
 
   periods = [
     { value: 'WEEKLY', label: 'Semanal' },
@@ -222,6 +223,7 @@ export class ExpenseChartsComponent implements OnChanges
   ngOnChanges(): void
   {
     this.activeLimit = this.getLimitForPeriod();
+    this.hasPrevData = this.summary.length > 0;
     this.buildRangeLabel();
     this.buildBarChart();
     this.buildDoughnutChart();
