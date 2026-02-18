@@ -126,16 +126,19 @@
               }
             </div>
           </div>
-          @if (notif.type === 'INVITE' && !notif.isRead) {
-            <div class="notif-actions">
+          <div class="notif-actions">
+            @if (notif.type === 'INVITE' && !notif.isRead) {
               <button mat-icon-button color="primary" (click)="respondToInvite(notif, true)" matTooltip="Aceptar">
                 <mat-icon>check_circle</mat-icon>
               </button>
               <button mat-icon-button color="warn" (click)="respondToInvite(notif, false)" matTooltip="Rechazar">
                 <mat-icon>cancel</mat-icon>
               </button>
-            </div>
-          }
+            }
+            <button mat-icon-button (click)="deleteNotification(notif)" matTooltip="Eliminar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
         </div>
         <mat-divider></mat-divider>
       }

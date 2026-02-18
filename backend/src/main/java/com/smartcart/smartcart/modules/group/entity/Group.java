@@ -58,7 +58,7 @@ public class Group {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMember> members = new ArrayList<>();
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShoppingList> shoppingLists = new ArrayList<>();
 
     public static String generateGroupCode() {

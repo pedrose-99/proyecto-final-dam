@@ -19,12 +19,18 @@
 .title-row { display: flex; justify-content: space-between; align-items: start; }
 .title-row h1 { color: var(--smartcart-primary); margin: 0; }
 
-.btn-fav {
+.button-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-fav, .btn-add-list {
   color: var(--smartcart-text-light);
   transition: all 0.2s ease;
 }
 
-.btn-fav:hover {
+.btn-fav:hover, .btn-add-list:hover {
   color: var(--smartcart-accent);
   transform: scale(1.1);
 }
@@ -33,7 +39,11 @@
   color: #e74c3c;
 }
 
-.btn-fav mat-icon {
+.btn-add-list.is-in-list {
+  color: #27ae60;
+}
+
+.btn-fav mat-icon, .btn-add-list mat-icon {
   font-size: 32px;
   width: 32px;
   height: 32px;

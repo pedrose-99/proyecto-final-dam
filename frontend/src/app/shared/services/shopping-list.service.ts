@@ -59,7 +59,11 @@ export class ShoppingListService {
     return this.apollo.mutate<{ deleteShoppingList: boolean }>(
       {
         mutation: DELETE_SHOPPING_LIST,
-        variables: { listId: listId.toString() }
+        variables: { listId: listId.toString() },
+        refetchQueries: [{
+          query: GET_MY_SHOPPING_LISTS
+        }],
+        awaitRefetchQueries: true
       }
     ).pipe(
       map(result => result.data?.deleteShoppingList || false)

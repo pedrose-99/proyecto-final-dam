@@ -12,6 +12,24 @@
                 <mat-icon>arrow_back</mat-icon>
             </button>
             <h1>{{ group.name }}</h1>
+            @if (isGroupOwner()) {
+                <button mat-icon-button (click)="deleteGroup()" matTooltip="Eliminar grupo" 
+                        [disabled]="isDeleting" color="warn">
+                    @if (isDeleting) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                    } @else {
+                        <mat-icon>delete</mat-icon>
+                    }
+                </button>
+            } @else {
+                <button mat-stroked-button color="warn" (click)="leaveGroup()" [disabled]="isLeaving">
+                    @if (isLeaving) {
+                        <mat-spinner diameter="18"></mat-spinner>
+                    } @else {
+                        Salir del grupo
+                    }
+                </button>
+            }
         </div>
 
         <!-- Info del grupo -->
@@ -92,6 +110,16 @@
                             <mat-chip-set>
                                 <mat-chip class="status-accepted" highlighted>Activo</mat-chip>
                             </mat-chip-set>
+                            @if (canRemoveMember(member)) {
+                                <button mat-icon-button color="warn" matTooltip="Eliminar miembro"
+                                        (click)="removeMember(member)" [disabled]="isRemovingMember(member.id)">
+                                    @if (isRemovingMember(member.id)) {
+                                        <mat-spinner diameter="18"></mat-spinner>
+                                    } @else {
+                                        <mat-icon>person_remove</mat-icon>
+                                    }
+                                </button>
+                            }
                         </div>
                     }
                 </div>
@@ -111,6 +139,16 @@
                             <mat-chip-set>
                                 <mat-chip class="status-pending">Pendiente</mat-chip>
                             </mat-chip-set>
+                            @if (canRemoveMember(member)) {
+                                <button mat-icon-button color="warn" matTooltip="Eliminar invitacion"
+                                        (click)="removeMember(member)" [disabled]="isRemovingMember(member.id)">
+                                    @if (isRemovingMember(member.id)) {
+                                        <mat-spinner diameter="18"></mat-spinner>
+                                    } @else {
+                                        <mat-icon>person_remove</mat-icon>
+                                    }
+                                </button>
+                            }
                         </div>
                     }
                 </div>

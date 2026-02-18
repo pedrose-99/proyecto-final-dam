@@ -7,7 +7,10 @@ import {
     GET_GROUP_DETAILS,
     CREATE_GROUP,
     INVITE_TO_GROUP,
-    JOIN_GROUP_BY_CODE
+    JOIN_GROUP_BY_CODE,
+    DELETE_GROUP,
+    LEAVE_GROUP,
+    REMOVE_GROUP_MEMBER
 } from '../../core/graphql/queries';
 import { Group } from '../../core/models/group.model';
 
@@ -79,6 +82,42 @@ export class GroupService
             }
         ).pipe(
             map(result => result.data?.joinGroupByCode as Group)
+        );
+    }
+
+    deleteGroup(groupId: number): Observable<boolean>
+    {
+        return this.apollo.mutate<{ deleteGroup: boolean }>(
+            {
+                mutation: DELETE_GROUP,
+                variables: { groupId: groupId.toString() }
+            }
+        ).pipe(
+            map(result => result.data?.deleteGroup || false)
+        );
+    }
+
+    leaveGroup(groupId: number): Observable<boolean>
+    {
+        return this.apollo.mutate<{ leaveGroup: boolean }>(
+            {
+                mutation: LEAVE_GROUP,
+                variables: { groupId: groupId.toString() }
+            }
+        ).pipe(
+            map(result => result.data?.leaveGroup || false)
+        );
+    }
+
+    removeGroupMember(groupId: number, userId: number): Observable<boolean>
+    {
+        return this.apollo.mutate<{ removeGroupMember: boolean }>(
+            {
+                mutation: REMOVE_GROUP_MEMBER,
+                variables: { groupId: groupId.toString(), userId }
+            }
+        ).pipe(
+            map(result => result.data?.removeGroupMember || false)
         );
     }
 }

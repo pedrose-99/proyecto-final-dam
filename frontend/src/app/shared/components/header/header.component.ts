@@ -180,6 +180,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  deleteNotification(notification: AppNotification): void {
+    this.notificationService.deleteNotification(notification.notificationId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.loadNotifications();
+      }
+    });
+  }
+
   get isAdmin(): boolean {
     return this.authService.getCurrentUser()?.role === 'ADMIN';
   }

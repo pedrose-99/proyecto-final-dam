@@ -96,6 +96,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadInitialData();
     this.setupFilterSubscription();
     this.handleRouteParams();
+    // Sincronizar productos en listas desde el inicio
+    this.syncProductsInLists();
   }
 
   ngOnDestroy(): void {
@@ -215,6 +217,10 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.totalProducts = page.totalElements;
           this.isLoading = false;
           this.updateActiveFilters();
+          
+          // Sincronizar estado de productos en listas de compra
+          this.syncProductsInLists();
+          
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -225,6 +231,31 @@ export class HomeComponent implements OnInit, OnDestroy {
           });
         }
       });
+  }
+
+  private syncProductsInLists(): void {
+    this.shoppingListService.getMyLists().subscribe({
+      next: (lists: any[]) => {
+        // Limpiar y repoblar el Set de productos en listas
+        this.productsInList.clear();
+        
+        // Recopilar todos los IDs de productos que están en listas
+        lists.forEach(list => {
+          if (list.items && Array.isArray(list.items)) {
+            list.items.forEach((item: any) => {
+              if (item.productId) {
+                this.productsInList.add(Number(item.productId));
+              }
+            });
+          }
+        });
+        
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al sincronizar productos en listas:', err);
+      }
+    });
   }
 
   private buildFiltersFromForm(): void {
@@ -357,13 +388,60 @@ export class HomeComponent implements OnInit, OnDestroy {
     ).subscribe((result: AddToListDialogResult | undefined) => {
       if (!result) return;
 
-      this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
-        next: () => {
-          this.productsInList.add(product.id);
-          this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
+      // Refrescar las listas desde el servidor para tener datos actuales
+      this.shoppingListService.getMyLists().subscribe({
+        next: (lists: any[]) => {
+          console.log('🔍 Refrescando listas en HOME:', lists.length);
+          
+          // Encontrar la lista seleccionada
+          const selectedList = lists.find(l => l.listId === result.listId);
+          
+          if (!selectedList) {
+            console.error('❌ Lista no encontrada:', result.listId);
+            this.snackBar.open('Error: lista no encontrada', 'Cerrar', { duration: 3000 });
+            return;
+          }
+
+          // Buscar si el producto ya está en la lista (convertir a número para comparar)
+          const productId = Number(product.id);
+          const existingItem = selectedList.items?.find((item: any) => {
+            const itemProdId = Number(item.productId);
+            return itemProdId === productId;
+          });
+
+          if (existingItem) {
+            // Si ya existe, actualizar la cantidad (incrementar en 1)
+            console.log(`✅ Producto YA existe: actualizando cantidad de ${existingItem.quantity} a ${existingItem.quantity + 1}`);
+            this.shoppingListService.updateItem(
+              selectedList.listId,
+              existingItem.itemId,
+              existingItem.quantity + 1
+            ).subscribe({
+              next: () => {
+                this.productsInList.add(product.id);
+                this.snackBar.open('Cantidad aumentada en la lista', 'Cerrar', { duration: 2000 });
+              },
+              error: () => {
+                this.snackBar.open('Error al actualizar la cantidad', 'Cerrar', { duration: 3000 });
+              }
+            });
+          } else {
+            // Si no existe, añadir nuevo
+            console.log(`❌ Producto NO existe: añadiendo nuevo`);
+            this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
+              next: () => {
+                this.productsInList.add(product.id);
+                this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
+              },
+              error: () => {
+                this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
+              }
+            });
+          }
         },
-        error: () => {
-          this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
+        error: (err) => {
+          console.error('❌ Error al refrescar listas:', err);
+          this.snackBar.open('Error al obtener las listas', 'Cerrar', { duration: 3000 });
         }
       });
     });

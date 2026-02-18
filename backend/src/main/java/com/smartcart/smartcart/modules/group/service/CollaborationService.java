@@ -190,6 +190,98 @@ public class CollaborationService {
         return toGroupDTO(group);
     }
 
+    // ==================== ELIMINAR GRUPO ====================
+
+    @Transactional
+    public boolean deleteGroup(Integer groupId) {
+        User currentUser = getAuthenticatedUser();
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
+
+        // Verificar que el usuario es el propietario del grupo
+        if (!group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Solo el propietario puede eliminar el grupo");
+        }
+
+        // Eliminar todos los miembros del grupo
+        groupMemberRepository.deleteByGroup(group);
+
+        // Eliminar todas las notificaciones relacionadas con el grupo
+        notificationRepository.deleteByRelatedGroup(group);
+
+        // Eliminar el grupo
+        groupRepository.delete(group);
+
+        return true;
+    }
+
+    // ==================== GESTION DE MIEMBROS ====================
+
+    @Transactional
+    public boolean leaveGroup(Integer groupId) {
+        User currentUser = getAuthenticatedUser();
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
+
+        if (group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
+            throw new BadRequestException("El propietario no puede salir del grupo");
+        }
+
+        GroupMember membership = groupMemberRepository.findByGroupAndUser(group, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException("No eres miembro de este grupo"));
+
+        if (membership.getStatus() != MemberStatus.ACCEPTED) {
+            throw new BadRequestException("No eres miembro aceptado del grupo");
+        }
+
+        groupMemberRepository.delete(membership);
+        return true;
+    }
+
+    @Transactional
+    public boolean removeGroupMember(Integer groupId, Integer userId) {
+        User currentUser = getAuthenticatedUser();
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
+
+        if (!group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Solo el propietario puede eliminar miembros del grupo");
+        }
+
+        if (group.getOwner().getIdUser().equals(userId)) {
+            throw new BadRequestException("El propietario no puede eliminarse a si mismo");
+        }
+
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        GroupMember membership = groupMemberRepository.findByGroupAndUser(group, targetUser)
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no pertenece a este grupo"));
+
+        groupMemberRepository.delete(membership);
+        return true;
+    }
+
+    // ==================== ELIMINAR NOTIFICACIÓN ====================
+
+    @Transactional
+    public boolean deleteNotification(Integer notificationId) {
+        User currentUser = getAuthenticatedUser();
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
+
+        if (!notification.getRecipient().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Esta notificación no te pertenece");
+        }
+
+        notificationRepository.delete(notification);
+        return true;
+    }
+
     // ==================== RESPONDER A INVITACIÓN ====================
 
     @Transactional

@@ -205,6 +205,8 @@ export const GET_MY_SHOPPING_LISTS = gql`
     myShoppingLists {
       listId
       name
+      userId
+      username
       groupId
       groupName
       createdAt
@@ -227,6 +229,10 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
     shoppingListById(listId: $listId) {
       listId
       name
+      userId
+      username
+      groupId
+      groupName
       createdAt
 
       items {
@@ -481,6 +487,30 @@ export const GET_NOTIFICATIONS = gql`
 export const RESPOND_TO_INVITE = gql`
   mutation RespondToInvite($notificationId: ID!, $accept: Boolean!) {
     respondToInvite(notificationId: $notificationId, accept: $accept)
+  }
+`;
+
+export const DELETE_NOTIFICATION = gql`
+  mutation DeleteNotification($notificationId: ID!) {
+    deleteNotification(notificationId: $notificationId)
+  }
+`;
+
+export const DELETE_GROUP = gql`
+  mutation DeleteGroup($groupId: ID!) {
+    deleteGroup(groupId: $groupId)
+  }
+`;
+
+export const LEAVE_GROUP = gql`
+  mutation LeaveGroup($groupId: ID!) {
+    leaveGroup(groupId: $groupId)
+  }
+`;
+
+export const REMOVE_GROUP_MEMBER = gql`
+  mutation RemoveGroupMember($groupId: ID!, $userId: Int!) {
+    removeGroupMember(groupId: $groupId, userId: $userId)
   }
 `;
 

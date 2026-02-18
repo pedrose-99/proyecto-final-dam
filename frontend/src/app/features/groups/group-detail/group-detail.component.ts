@@ -17,6 +17,7 @@ import { MatListModule } from '@angular/material/list';
 import { Subject, takeUntil } from 'rxjs';
 import { GroupService } from '../../../shared/services/group.service';
 import { ShoppingListService } from '../../../shared/services/shopping-list.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Group, GroupMember } from '../../../core/models/group.model';
 
 @Component({
@@ -45,6 +46,7 @@ export class GroupDetailComponent implements OnInit, OnDestroy
 {
     group: Group | null = null;
     isLoading = true;
+    currentUsername: string = '';
 
     showInviteForm = false;
     isInviting = false;
@@ -54,6 +56,10 @@ export class GroupDetailComponent implements OnInit, OnDestroy
     isCreatingList = false;
     listNameControl = new FormControl('');
 
+    isDeleting = false;
+    isLeaving = false;
+    private removingMemberIds = new Set<number>();
+
     private destroy$ = new Subject<void>();
 
     constructor(
@@ -61,12 +67,19 @@ export class GroupDetailComponent implements OnInit, OnDestroy
         private router: Router,
         private groupService: GroupService,
         private shoppingListService: ShoppingListService,
+        private authService: AuthService,
         private clipboard: Clipboard,
         private snackBar: MatSnackBar
     ) {}
 
     ngOnInit(): void
     {
+        this.authService.currentUser$.pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(user => {
+            this.currentUsername = user?.username || '';
+        });
+
         const id = this.route.snapshot.paramMap.get('id');
         if (id)
         {
@@ -185,8 +198,104 @@ export class GroupDetailComponent implements OnInit, OnDestroy
         this.router.navigate(['/grupos']);
     }
 
+    deleteGroup(): void
+    {
+        if (!this.group) return;
+
+        // Confirmar eliminación
+        if (!confirm(`¿Estás seguro de que deseas eliminar el grupo "${this.group.name}"? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+
+        this.isDeleting = true;
+        this.groupService.deleteGroup(this.group.groupId).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe({
+            next: () =>
+            {
+                this.snackBar.open('Grupo eliminado correctamente', 'Cerrar', { duration: 3000 });
+                this.router.navigate(['/grupos']);
+            },
+            error: (error) =>
+            {
+                this.isDeleting = false;
+                this.snackBar.open('Error al eliminar el grupo', 'Cerrar', { duration: 3000 });
+                console.error(error);
+            }
+        });
+    }
+
+    leaveGroup(): void
+    {
+        if (!this.group) return;
+
+        if (!confirm(`¿Estás seguro de que deseas salir del grupo "${this.group.name}"?`)) {
+            return;
+        }
+
+        this.isLeaving = true;
+        this.groupService.leaveGroup(this.group.groupId).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe({
+            next: () =>
+            {
+                this.snackBar.open('Has salido del grupo', 'Cerrar', { duration: 3000 });
+                this.router.navigate(['/grupos']);
+            },
+            error: () =>
+            {
+                this.isLeaving = false;
+                this.snackBar.open('Error al salir del grupo', 'Cerrar', { duration: 3000 });
+            }
+        });
+    }
+
+    removeMember(member: GroupMember): void
+    {
+        if (!this.group) return;
+
+        if (!confirm(`¿Eliminar a ${member.username} del grupo?`)) {
+            return;
+        }
+
+        this.removingMemberIds.add(member.id);
+        this.groupService.removeGroupMember(this.group.groupId, member.userId).pipe(
+            takeUntil(this.destroy$)
+        ).subscribe({
+            next: () =>
+            {
+                this.removingMemberIds.delete(member.id);
+                this.snackBar.open('Miembro eliminado del grupo', 'Cerrar', { duration: 3000 });
+                this.loadGroup(this.group!.groupId);
+            },
+            error: () =>
+            {
+                this.removingMemberIds.delete(member.id);
+                this.snackBar.open('Error al eliminar el miembro', 'Cerrar', { duration: 3000 });
+            }
+        });
+    }
+
     goToList(listId: number): void
     {
         this.router.navigate(['/lists'], { queryParams: { listId } });
+    }
+
+    isGroupOwner(): boolean
+    {
+        return this.group?.ownerUsername === this.currentUsername;
+    }
+
+    canRemoveMember(member: GroupMember): boolean
+    {
+        return this.isGroupOwner()
+            && member.userId !== null
+            && member.userId !== undefined
+            && this.group?.ownerId !== member.userId;
+    }
+
+    isRemovingMember(memberId: number): boolean
+    {
+        return this.removingMemberIds.has(memberId);
     }
 }

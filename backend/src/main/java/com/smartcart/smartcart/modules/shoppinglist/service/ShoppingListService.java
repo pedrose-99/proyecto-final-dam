@@ -119,15 +119,15 @@ public class ShoppingListService
 
     private Optional<ShoppingList> findAccessibleList(Integer listId, User user)
     {
-        // Primero buscar como propietario
+        // Primero buscar como propietario (esta query ya tiene JOIN FETCH)
         Optional<ShoppingList> ownList = slRepository.findByListIdAndUser_IdUser(listId, user.getIdUser());
         if (ownList.isPresent())
         {
             return ownList;
         }
 
-        // Si no es propietario, buscar en listas de grupos del usuario
-        Optional<ShoppingList> listOpt = slRepository.findById(listId);
+        // Si no es propietario, buscar en listas de grupos del usuario con JOIN FETCH
+        Optional<ShoppingList> listOpt = slRepository.findByIdWithUser(listId);
         if (listOpt.isPresent() && listOpt.get().getGroup() != null)
         {
             Integer groupId = listOpt.get().getGroup().getGroupId();
@@ -171,17 +171,65 @@ public class ShoppingListService
     public boolean deleteList(Integer listId)
     {
         Optional<User> user = getCurrentUser();
+        if (user.isEmpty()) {
+            log.error("Usuario no encontrado");
+            return false;
+        }
+        
         try
         {
-            Optional<ShoppingList> list = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
-            slRepository.delete(list.get());
+            // Usar findAccessibleList para buscar tanto listas propias como de grupo
+            Optional<ShoppingList> listOpt = findAccessibleList(listId, user.get());
+            if (listOpt.isEmpty()) {
+                log.error("Lista no encontrada o no pertenece al usuario");
+                return false;
+            }
+            
+            ShoppingList list = listOpt.get();
+            
+            // Verificar permisos para eliminar
+            boolean canDelete = false;
+            
+            if (list.getGroup() != null) {
+                // Si la lista pertenece a un grupo, cualquier miembro del grupo puede eliminarla
+                Optional<GroupMember> membership = groupMemberRepository.findAcceptedMember(
+                    list.getGroup().getGroupId(), 
+                    user.get().getIdUser()
+                );
+                canDelete = membership.isPresent();
+            } else {
+                // Si la lista no pertenece a un grupo, solo el propietario puede eliminarla
+                canDelete = list.getUser().getIdUser().equals(user.get().getIdUser());
+            }
+            
+            if (!canDelete) {
+                log.error("El usuario no tiene permiso para eliminar la lista");
+                return false;
+            }
+            
+            // Desasociar la lista del grupo si tiene uno asociado
+            if (list.getGroup() != null) {
+                Group group = list.getGroup();
+                list.setGroup(null);
+                group.getShoppingLists().remove(list);
+            }
+            
+            // Limpiar los items antes de eliminar (por si acaso)
+            list.getItems().clear();
+            slRepository.flush();
+            
+            // Eliminar la lista
+            slRepository.delete(list);
+            slRepository.flush();
+            
+            log.info("Lista {} eliminada correctamente", listId);
             return true;
         }
-        catch(RuntimeException e)
+        catch(Exception e)
         {
-           log.error("No se pudo eliminar la lista", e.getMessage()); 
+           log.error("No se pudo eliminar la lista: {}", e.getMessage(), e); 
+           throw new RuntimeException("Error al eliminar la lista", e);
         }
-        return false;
     }
 
     @Transactional
