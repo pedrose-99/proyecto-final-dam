@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
 import { ProductService } from '../../shared/services/product.service';
 import { ShoppingListService } from '../../shared/services/shopping-list.service';
@@ -39,6 +40,7 @@ import { Store } from '../../core/models/store.model';
     MatAutocompleteModule,
     MatChipsModule,
     MatDialogModule,
+    MatTooltipModule,
     ProductCardComponent
   ],
   templateUrl: './home.component.html',
@@ -416,6 +418,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
+    this.loadProducts();
+  }
+
+  refreshProducts(): void {
+    this.productService.clearCache();
     this.loadProducts();
   }
 

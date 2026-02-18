@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "list_item")
+@Table(name = "list_item", indexes = {
+    @Index(name = "idx_li_checked", columnList = "checked"),
+    @Index(name = "idx_li_list_id", columnList = "list_id")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

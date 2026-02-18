@@ -9,12 +9,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "product")
+@Table(name = "product", indexes = {
+    @Index(name = "idx_product_name", columnList = "name"),
+    @Index(name = "idx_product_ean", columnList = "ean"),
+    @Index(name = "idx_product_category", columnList = "id_category")
+})
 @Data
 public class Product {
     @Id

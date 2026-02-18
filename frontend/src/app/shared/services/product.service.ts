@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
-import { Observable, map, of, forkJoin } from 'rxjs';
+import { Observable, map, of, forkJoin, tap } from 'rxjs';
 import { Product, ProductPage, ProductSearchResult, ProductFilters } from '../../core/models/product.model';
 import { Category } from '../../core/models/category.model';
 import { Store } from '../../core/models/store.model';
@@ -22,9 +22,48 @@ import {
 })
 export class ProductService {
 
+  private productCache = new Map<string, { data: Product[], timestamp: number }>();
+  private CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
   constructor(private apollo: Apollo) {}
 
+  clearCache(): void {
+    this.productCache.clear();
+  }
+
+  private getCacheKey(filters: ProductFilters): string {
+    return JSON.stringify({
+      search: filters.search,
+      storeIds: filters.storeIds,
+      categoryId: filters.categoryId,
+      categoryIds: filters.categoryIds
+    });
+  }
+
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
+    const cacheKey = this.getCacheKey(filters);
+    const cached = this.productCache.get(cacheKey);
+
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+      // Servir desde caché
+      const allProducts = cached.data;
+      const filtered = this.applySorting(allProducts, filters.sortBy);
+      const totalElements = filtered.length;
+      const start = page * size;
+      const end = start + size;
+      const paginatedContent = filtered.slice(start, end);
+
+      return of({
+        content: paginatedContent,
+        totalElements: totalElements,
+        totalPages: Math.ceil(totalElements / size),
+        size: size,
+        number: page,
+        first: page === 0,
+        last: end >= totalElements
+      });
+    }
+
     // Determinar cómo obtener los productos base
     let baseQuery$: Observable<Product[]>;
 
@@ -135,7 +174,7 @@ export class ProductService {
           variables: {
             storeId: storeId.toString(),
             page: 0,
-            size: 10000
+            size: 50000
           },
           fetchPolicy: 'network-only'
         })
@@ -167,7 +206,7 @@ export class ProductService {
         variables: {
           storeId: filters.storeIds[0].toString(),
           page: 0,
-          size: 10000
+          size: 50000
         },
         fetchPolicy: 'network-only'
       }).pipe(
@@ -214,7 +253,7 @@ export class ProductService {
         variables: {
           categoryId: filters.categoryId.toString(),
           page: 0,
-          size: 10000
+          size: 50000
         },
         fetchPolicy: 'network-only'
       }).pipe(
@@ -225,7 +264,7 @@ export class ProductService {
     else {
       baseQuery$ = this.apollo.query<any>({
         query: GET_ALL_PRODUCTS,
-        variables: { page: 0, size: 10000 },
+        variables: { page: 0, size: 50000 },
         fetchPolicy: 'network-only'
       }).pipe(
         map(result => (result.data?.allProducts?.content || []).map((p: any) => this.mapToProduct(p)))
@@ -234,6 +273,10 @@ export class ProductService {
 
     // Aplicar ordenamiento, filtrado adicional en cliente y paginación
     return baseQuery$.pipe(
+      tap(allProducts => {
+        // Guardar en caché antes de paginar
+        this.productCache.set(cacheKey, { data: allProducts, timestamp: Date.now() });
+      }),
       map(allProducts => {
         // Aplicar ordenamiento
         let filtered = this.applySorting(allProducts, filters.sortBy);
