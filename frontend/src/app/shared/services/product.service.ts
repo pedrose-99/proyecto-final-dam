@@ -11,7 +11,8 @@ import {
   GET_PRODUCTS_BY_CATEGORY,
   GET_PRODUCTS_BY_STORE,
   GET_STORES_BY_PRODUCT,
-  SEARCH_PRODUCTS
+  SEARCH_PRODUCTS,
+  SEARCH_PRODUCTS_BY_STORE
 } from '../../core/graphql/queries';
 
 @Injectable({
@@ -178,13 +179,16 @@ export class ProductService {
     }
 
     // Query general de todos los productos
+    console.log('[DEBUG] Enviando query allProducts con page:', page, 'size:', size);
     return this.apollo.query<any>({
       query: GET_ALL_PRODUCTS,
       variables: { page: page, size: size },
       fetchPolicy: 'network-only'
     }).pipe(
       map(result => {
+        console.log('[DEBUG] Respuesta allProducts:', result);
         const mapped = this.mapGraphQLPageToProductPage(result.data?.allProducts, filters);
+        console.log('[DEBUG] Productos mapeados:', mapped.content.length, 'de', mapped.totalElements);
         return mapped;
       })
     );
@@ -245,6 +249,30 @@ export class ProductService {
       categoryName: data.categoryName || '',
       isFavorite: data.isFavorite || false
     };
+  }
+
+  searchProductsByStore(query: string, storeId: number, limit: number = 10): Observable<ProductSearchResult[]> {
+    if (!query || query.length < 2) {
+      return of([]);
+    }
+
+    return this.apollo.query<any>({
+      query: SEARCH_PRODUCTS_BY_STORE,
+      variables: { query, storeId: storeId.toString(), page: 0, size: limit },
+      fetchPolicy: 'network-only'
+    }).pipe(
+      map(result => {
+        const products = result.data?.searchProductsByStore?.content || [];
+        return products.map((p: any) => ({
+          id: p.productId,
+          name: p.name || '',
+          brand: p.brand || null,
+          imageUrl: p.imageUrl || null,
+          categoryName: p.categoryName || '',
+          currentPrice: p.currentPrice ?? null
+        }));
+      })
+    );
   }
 
   searchProducts(query: string, limit: number = 5): Observable<ProductSearchResult[]> {

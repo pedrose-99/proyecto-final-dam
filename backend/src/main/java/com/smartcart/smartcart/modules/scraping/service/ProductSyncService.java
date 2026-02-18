@@ -11,6 +11,7 @@ import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository
 import com.smartcart.smartcart.modules.scraping.dto.ScrapedProduct;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class ProductSyncService {
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
     private final PriceHistoryRepository priceHistoryRepository;
+    private final EntityManager entityManager;
 
     @Transactional
     public SyncResult syncProducts(List<ScrapedProduct> scrapedProducts, String storeSlug) {
@@ -44,6 +46,10 @@ public class ProductSyncService {
             } catch (Exception e) {
                 log.error("Error syncing product {}: {}", scraped.externalId(), e.getMessage());
                 result.errors++;
+                entityManager.clear();
+                // Re-attach store after clearing the session
+                store = storeRepository.findBySlug(storeSlug)
+                        .orElseThrow(() -> new RuntimeException("Store not found: " + storeSlug));
             }
         }
 

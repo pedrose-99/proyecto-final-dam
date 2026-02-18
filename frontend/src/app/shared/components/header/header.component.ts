@@ -145,7 +145,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   goToHistory(): void {
-    this.router.navigate(['/history']);
+    this.router.navigate(['/mis-gastos']);
   }
 
   goToSettings(): void {

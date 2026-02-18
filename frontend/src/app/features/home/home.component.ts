@@ -206,11 +206,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     this.isLoading = true;
     this.buildFiltersFromForm();
+    console.log('[DEBUG] loadProducts() llamado con filtros:', this.filters, 'página:', this.pageIndex);
 
     this.productService.getProducts(this.filters, this.pageIndex, this.pageSize)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page: ProductPage) => {
+          console.log('[DEBUG] Productos recibidos:', page.content.length, 'total:', page.totalElements);
           this.products = page.content;
           this.totalProducts = page.totalElements;
           this.isLoading = false;

@@ -14,11 +14,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime, filter } from 'rxjs/operators';
 import { ShoppingListService } from '../../shared/services/shopping-list.service';
 import { ProductService } from '../../shared/services/product.service';
-import { ShoppingList, ListItem, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
+import { ExpenseService } from '../../shared/services/expense.service';
+import { SimulatePurchaseDialogComponent, SimulatePurchaseDialogResult } from '../../shared/components/simulate-purchase-dialog/simulate-purchase-dialog.component';
+import { ShoppingList, ListItem, OptimizedList, OptimizedStore, OptimizedItem, SublistInput } from '../../core/models/shopping-list.model';
 import { Store } from '../../core/models/store.model';
 import { ProductSearchResult } from '../../core/models/product.model';
 
@@ -61,13 +65,32 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   isLoading = false;
   isOptimizing = false;
   isCreatingSublists = false;
-  
+
+  // Per-store view
+  byStoreResult: OptimizedStore[] | null = null;
+  isLoadingByStore = false;
+
+  // Alternatives panel
+  showAlternatives = false;
+  alternativesStoreIdx = -1;
+  alternativesItemIdx = -1;
+  alternativesStoreId = 0;
+  alternativesStoreName = '';
+  alternativesSearchTerm = '';
+  alternativesResults: ProductSearchResult[] = [];
+  isLoadingAlternatives = false;
+  alternativesMode: 'optimize' | 'byStore' = 'optimize';
+  alternativesSearchControl = new FormControl<string>('');
+
   private destroy$ = new Subject<void>();
 
   constructor(
     private shoppingListService: ShoppingListService,
     private productService: ProductService,
-    private snackBar: MatSnackBar
+    private expenseService: ExpenseService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -282,20 +305,23 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
     }
     this.optimizedResult = null;
     this.editableResult = null;
+    this.byStoreResult = null;
   }
 
   isStoreSelected(storeId: number): boolean {
     return this.selectedStoreIds.has(storeId);
   }
 
+  private getStoreIdsForOptimization(): number[] {
+    if (this.selectedStoreIds.size > 0) {
+      return Array.from(this.selectedStoreIds);
+    }
+    return this.stores.map(s => s.id);
+  }
+
   optimize(): void {
     if (!this.selectedList) {
       this.snackBar.open('Selecciona una lista', 'Cerrar', { duration: 3000 });
-      return;
-    }
-
-    if (this.selectedStoreIds.size === 0) {
-      this.snackBar.open('Selecciona al menos una tienda', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -305,8 +331,9 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
     }
 
     this.isOptimizing = true;
-    const storeIds = Array.from(this.selectedStoreIds);
-    
+    this.byStoreResult = null;
+    const storeIds = this.getStoreIdsForOptimization();
+
     this.shoppingListService.optimize(this.selectedList.listId, storeIds)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -389,6 +416,212 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       });
   }
 
+  simulatePurchase(): void {
+    if (!this.selectedList) return;
+
+    const dialogRef = this.dialog.open(SimulatePurchaseDialogComponent, {
+      width: '400px',
+      data: { listId: this.selectedList.listId, listName: this.selectedList.name }
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((result: SimulatePurchaseDialogResult | undefined) => {
+        if (!result || !this.selectedList) return;
+
+        this.expenseService.createBillFromList(this.selectedList.listId, result.billName)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Compra registrada correctamente', 'Cerrar', { duration: 3000 });
+              this.router.navigate(['/mis-gastos']);
+            },
+            error: () => {
+              this.snackBar.open('Error al registrar la compra', 'Cerrar', { duration: 3000 });
+            }
+          });
+      });
+  }
+
+  acceptStoreList(storeIdx: number): void {
+    if (!this.byStoreResult || !this.selectedList) return;
+    const store = this.byStoreResult[storeIdx];
+    if (!store || store.items.length === 0) return;
+
+    this.isCreatingSublists = true;
+
+    const sublists: SublistInput[] = [{
+      storeName: store.storeName,
+      items: store.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }))
+    }];
+
+    this.shoppingListService.createSublists(this.selectedList.name, sublists)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isCreatingSublists = false;
+          this.snackBar.open(
+            `Lista creada para ${store.storeName}`,
+            'Cerrar',
+            { duration: 3000 }
+          );
+          this.selectedList = null;
+          this.optimizedResult = null;
+          this.editableResult = null;
+          this.byStoreResult = null;
+          this.selectedStoreIds.clear();
+          this.loadLists();
+        },
+        error: () => {
+          this.isCreatingSublists = false;
+          this.snackBar.open('Error al crear la lista', 'Cerrar', { duration: 3000 });
+        }
+      });
+  }
+
+  // ─── Per-store view ────────────────────────────────────
+
+  optimizeByStore(): void {
+    if (!this.selectedList) return;
+    if (!this.selectedList.items || this.selectedList.items.length === 0) {
+      this.snackBar.open('La lista está vacía', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.isLoadingByStore = true;
+    this.byStoreResult = null;
+    this.optimizedResult = null;
+    this.editableResult = null;
+    const storeIds = this.getStoreIdsForOptimization();
+
+    this.shoppingListService.optimizeByStore(this.selectedList.listId, storeIds)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.byStoreResult = JSON.parse(JSON.stringify(result));
+          this.isLoadingByStore = false;
+        },
+        error: () => {
+          this.snackBar.open('Error al cargar vista por tienda', 'Cerrar', { duration: 3000 });
+          this.isLoadingByStore = false;
+        }
+      });
+  }
+
+  getCheapestStoreId(): number | null {
+    if (!this.byStoreResult || this.byStoreResult.length === 0) return null;
+    let cheapest = this.byStoreResult[0];
+    for (const store of this.byStoreResult) {
+      if (store.items.length > 0 && store.subtotal < cheapest.subtotal) {
+        cheapest = store;
+      }
+    }
+    return cheapest.storeId;
+  }
+
+  // ─── Alternatives ─────────────────────────────────────
+
+  openAlternatives(storeId: number, searchTerm: string, storeIdx: number, itemIdx: number, mode: 'optimize' | 'byStore'): void {
+    this.showAlternatives = true;
+    this.alternativesStoreIdx = storeIdx;
+    this.alternativesItemIdx = itemIdx;
+    this.alternativesStoreId = storeId;
+    this.alternativesMode = mode;
+
+    const store = mode === 'byStore'
+      ? this.byStoreResult?.[storeIdx]
+      : this.editableResult?.storeGroups[storeIdx];
+    this.alternativesStoreName = store?.storeName || '';
+
+    this.alternativesSearchTerm = searchTerm;
+    this.alternativesSearchControl.setValue(searchTerm);
+
+    this.searchAlternatives(searchTerm, storeId);
+  }
+
+  searchAlternatives(query?: string, storeId?: number): void {
+    const term = (query || this.alternativesSearchControl.value || '').trim();
+    if (term.length < 2) return;
+
+    this.alternativesSearchTerm = term;
+    this.isLoadingAlternatives = true;
+    this.alternativesResults = [];
+
+    this.productService.searchProductsByStore(term, storeId || this.alternativesStoreId, 15)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (results) => {
+          this.alternativesResults = results;
+          this.isLoadingAlternatives = false;
+        },
+        error: () => {
+          this.alternativesResults = [];
+          this.isLoadingAlternatives = false;
+        }
+      });
+  }
+
+  closeAlternatives(): void {
+    this.showAlternatives = false;
+    this.alternativesResults = [];
+    this.alternativesSearchControl.setValue('');
+  }
+
+  swapProduct(newProduct: ProductSearchResult): void {
+    if (this.alternativesMode === 'optimize' && this.editableResult) {
+      const group = this.editableResult.storeGroups[this.alternativesStoreIdx];
+      if (!group) return;
+      const item = group.items[this.alternativesItemIdx];
+      if (!item) return;
+
+      item.productId = newProduct.id;
+      item.productName = newProduct.name;
+      item.imageUrl = newProduct.imageUrl;
+      if (newProduct.currentPrice != null) {
+        item.unitPrice = newProduct.currentPrice;
+        item.lineTotal = newProduct.currentPrice * item.quantity;
+      }
+
+      group.subtotal = group.items.reduce((sum, i) => sum + i.lineTotal, 0);
+      this.editableResult.totalCost = this.editableResult.storeGroups
+        .reduce((sum, g) => sum + g.subtotal, 0);
+    } else if (this.alternativesMode === 'byStore' && this.byStoreResult) {
+      const store = this.byStoreResult[this.alternativesStoreIdx];
+      if (!store) return;
+      const item = store.items[this.alternativesItemIdx];
+      if (!item) return;
+
+      item.productId = newProduct.id;
+      item.productName = newProduct.name;
+      item.imageUrl = newProduct.imageUrl;
+      if (newProduct.currentPrice != null) {
+        item.unitPrice = newProduct.currentPrice;
+        item.lineTotal = newProduct.currentPrice * item.quantity;
+      }
+
+      store.subtotal = store.items.reduce((sum, i) => sum + i.lineTotal, 0);
+    }
+
+    this.closeAlternatives();
+    this.snackBar.open('Producto cambiado', 'Cerrar', { duration: 2000 });
+  }
+
+  getStoreLogo(logoUrl: string | undefined | null, storeName: string): string {
+    // Usar logos locales; fallback si la URL de la BD no funciona
+    const slug = storeName?.toLowerCase().replace(/\s+/g, '');
+    const localLogos: Record<string, string> = {
+      'mercadona': '/assets/images/stores/mercadona.svg',
+      'dia': '/assets/images/stores/dia.svg',
+      'carrefour': '/assets/images/stores/carrefour.svg',
+      'alcampo': '/assets/images/stores/alcampo.svg',
+      'ahorramas': '/assets/images/stores/ahorramas.svg',
+    };
+    return localLogos[slug] || logoUrl || '/assets/images/stores/placeholder.svg';
+  }
+
   displayProduct(product: ProductSearchResult): string {
     return product ? product.name : '';
   }
@@ -397,8 +630,10 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
     this.selectedList = null;
     this.optimizedResult = null;
     this.editableResult = null;
+    this.byStoreResult = null;
     this.selectedStoreIds.clear();
     this.searchControl.reset();
     this.searchResults = [];
+    this.closeAlternatives();
   }
 }

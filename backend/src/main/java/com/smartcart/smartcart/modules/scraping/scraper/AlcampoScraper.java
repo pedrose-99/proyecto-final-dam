@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,33 +83,24 @@ public class AlcampoScraper extends BaseScraper
     @Override
     protected List<String> getCategoryUrls()
     {
-        // URLs con caracteres especiales URL-encoded - Ampliado para más productos
+        // URLs actualizadas de categorias de Alcampo (febrero 2026)
         return List.of(
-            // Frescos y perecederos
+            // Alimentacion general
+            "/categories/alimentaci%C3%B3n/OCC10",
+            // Frescos
             "/categories/frescos/OC2112",
-            "/categories/carnes-aves-y-caza/OC2113",
-            "/categories/pescados-y-mariscos/OC2114",
-            "/categories/frutas-y-verduras/OC2115",
-            "/categories/panader%C3%ADa-y-pasteler%C3%ADa/OC2116",
-            "/categories/embutidos-y-quesos/OC2117",
-            // Lácteos y bebidas
+            // Lacteos y bebidas
             "/categories/leche-huevos-l%C3%A1cteos-yogures-y-bebidas-vegetales/OC16",
-            "/categories/agua-refrescos-y-zumos/OC19",
-            "/categories/cervezas-vinos-y-licores/OC20",
-            "/categories/caf%C3%A9s-t%C3%A9s-e-infusiones/OC18",
+            "/categories/bebidas/OCC11",
             // Despensa
-            "/categories/arroz-legumbres-y-pasta/OC13",
-            "/categories/aceites-vinagres-y-condimentos/OC12",
-            "/categories/conservas-caldos-y-sopas/OC14",
-            "/categories/galletas-boller%C3%ADa-y-cereales/OC15",
-            "/categories/chocolates-dulces-y-frutos-secos/OC17",
-            // Congelados y preparados
-            "/categories/congelados/OC22",
-            "/categories/comida-preparada/OC20022018",
-            // Desayuno y especiales
             "/categories/desayuno-y-merienda/OC10",
+            // Congelados y preparados
+            "/categories/congelados/OC200220183",
+            "/categories/comida-preparada/OC20022018",
+            // Ecologico y especiales
             "/categories/supermercado-ecol%C3%B3gico/OC26112021",
-            "/categories/veganos/OC09112021"
+            "/categories/veganos/OC09112021",
+            "/categories/sin-gluten-sin-lactosa-nutrici%C3%B3n-deportiva-y-funcional/OCSINGSINL"
         );
     }
 
@@ -326,38 +318,60 @@ public class AlcampoScraper extends BaseScraper
     {
         List<ScrapedProduct> products = new ArrayList<>();
 
-        // Buscar productos en productEntities del HTML
-        // Formato: "productId":"uuid","retailerProductId":"num","brand":"...","available":true,...,"name":"text","price":{"current":{"amount":"3.13"
-        Pattern pattern = Pattern.compile(
-            "\"productId\":\"([a-f0-9-]{36})\",\"retailerProductId\":\"(\\d+)\".{10,3000}?\"name\":\"([^\"]+)\",\"price\":\\{\"current\":\\{\"amount\":\"([\\d.]+)\""
-        );
-
-        Matcher matcher = pattern.matcher(html);
-
         log.info("[{}] Buscando productos en HTML de {} caracteres para categoria {}", STORE_NAME, html.length(), categoryName);
 
+        // Alcampo separa los datos en dos bloques diferentes del HTML:
+        //   Bloque 1: "productId":"UUID","retailerProductId":"ID","brand":"...","image":{"src":"...","description":"NOMBRE PRODUCTO",...}
+        //   Bloque 2: "name":"NOMBRE PRODUCTO","price":{"current":{"amount":"X.XX",...}}
+        // Se unen por el nombre del producto (description en bloque 1 = name en bloque 2).
+
+        // Paso 1: Extraer retailerProductId, UUID, brand e imagen por nombre (desde description)
+        Map<String, String[]> infoByName = new LinkedHashMap<>(); // name -> [externalId, uuid, brand, imageUrl]
+        Pattern block1Pattern = Pattern.compile(
+            "\"productId\":\"([a-f0-9-]{36})\",\"retailerProductId\":\"(\\d+)\",\"brand\":\"([^\"]*)\".*?\"description\":\"([^\"]+)\""
+        );
+        Matcher block1Matcher = block1Pattern.matcher(html);
+        while (block1Matcher.find())
+        {
+            String uuid = block1Matcher.group(1);
+            String externalId = block1Matcher.group(2);
+            String brand = block1Matcher.group(3);
+            String description = decodeUnicode(block1Matcher.group(4));
+
+            if (description != null && description.length() >= 5 && !infoByName.containsKey(description))
+            {
+                String imageUrl = extractImageForProduct(html, uuid);
+                infoByName.put(description, new String[]{externalId, uuid, brand, imageUrl});
+            }
+        }
+
+        log.debug("[{}] Bloque 1: {} productos con retailerProductId", STORE_NAME, infoByName.size());
+
+        // Paso 2: Extraer nombre + precio
+        Pattern block2Pattern = Pattern.compile(
+            "\"name\":\"([^\"]{5,200})\",\"price\":\\{\"current\":\\{\"amount\":\"([\\d.]+)\""
+        );
+        Matcher block2Matcher = block2Pattern.matcher(html);
+
         int matchCount = 0;
-        while (matcher.find())
+        while (block2Matcher.find())
         {
             try
             {
-                String productUuid = matcher.group(1);
-                String externalId = matcher.group(2); // retailerProductId
-                String name = matcher.group(3);
-                String priceStr = matcher.group(4);
+                String name = decodeUnicode(block2Matcher.group(1));
+                String priceStr = block2Matcher.group(2);
 
-                // Saltar si ya lo vimos
-                if (seenIds.contains(externalId))
-                {
-                    continue;
-                }
+                // Buscar datos del bloque 1 por nombre
+                String[] info = infoByName.get(name);
+                if (info == null) continue;
+
+                String externalId = info[0];
+                String uuid = info[1];
+                String brand = info[2];
+                String imageUrl = info[3];
+
+                if (seenIds.contains(externalId)) continue;
                 seenIds.add(externalId);
-
-                // Validar datos
-                if (name == null || name.length() < 5)
-                {
-                    continue;
-                }
 
                 BigDecimal price;
                 try
@@ -373,14 +387,12 @@ public class AlcampoScraper extends BaseScraper
                     continue;
                 }
 
-                // Decodificar caracteres Unicode en el nombre
-                name = decodeUnicode(name);
+                if (brand == null || brand.isBlank())
+                {
+                    brand = extractBrandFromName(name);
+                }
 
-                String brand = extractBrandFromName(name);
-                String productUrl = baseUrl + "/products/" + slugify(name) + "/" + productUuid;
-
-                // Buscar imagen usando UUID del producto
-                String imageUrl = extractImageForProduct(html, productUuid);
+                String productUrl = baseUrl + "/products/" + slugify(name) + "/" + uuid;
 
                 ScrapedProduct product = ScrapedProduct.builder()
                     .externalId(externalId)
@@ -409,7 +421,8 @@ public class AlcampoScraper extends BaseScraper
             }
         }
 
-        log.info("[{}] Encontrados {} matches, {} productos validos en {}", STORE_NAME, matchCount, products.size(), categoryName);
+        log.info("[{}] Encontrados {} productos validos en {} (bloque1: {}, bloque2 matched: {})",
+                 STORE_NAME, products.size(), categoryName, infoByName.size(), matchCount);
         return products;
     }
 
@@ -426,7 +439,8 @@ public class AlcampoScraper extends BaseScraper
         }
 
         // Buscar la imagen dentro de un rango razonable después del productId
-        String searchArea = html.substring(productIndex, Math.min(productIndex + 2000, html.length()));
+        // La seccion de cada producto puede ser muy larga (~15000 chars) por los srcsets
+        String searchArea = html.substring(productIndex, Math.min(productIndex + 1000, html.length()));
 
         // Patrón para "image":{"src":"URL"} con posibles escapes Unicode
         Pattern imgPattern = Pattern.compile(

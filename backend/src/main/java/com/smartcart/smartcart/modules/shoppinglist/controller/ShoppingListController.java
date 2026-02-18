@@ -9,6 +9,7 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 import com.smartcart.smartcart.modules.shoppinglist.dto.OptimizedListDTO;
+import com.smartcart.smartcart.modules.shoppinglist.dto.OptimizedStoreDTO;
 import com.smartcart.smartcart.modules.shoppinglist.dto.ShoppingListDTO;
 import com.smartcart.smartcart.modules.shoppinglist.service.OptimizerService;
 import com.smartcart.smartcart.modules.shoppinglist.service.ShoppingListService;
@@ -38,6 +39,12 @@ public class ShoppingListController
     public OptimizedListDTO optimizeShoppingList(@Argument Integer listId, @Argument List<Integer> storeIds)
     {
         return optimizerService.optimize(listId, storeIds);
+    }
+
+    @QueryMapping
+    public List<OptimizedStoreDTO> optimizeByStore(@Argument Integer listId, @Argument List<Integer> storeIds)
+    {
+        return optimizerService.optimizeByStore(listId, storeIds);
     }
 
     @MutationMapping

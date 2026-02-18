@@ -118,6 +118,18 @@ export class AdminService
         return this.http.get<any>(`${this.apiUrl}/admin/scraping/${storeSlug}/status`);
     }
 
+    // --- CSV Export ---
+
+    exportCsv(storeSlug: string): Observable<Blob>
+    {
+        return this.http.get(`${this.apiUrl}/admin/export/csv/${storeSlug}`, { responseType: 'blob' });
+    }
+
+    exportAllCsv(): Observable<Blob>
+    {
+        return this.http.get(`${this.apiUrl}/admin/export/csv/all`, { responseType: 'blob' });
+    }
+
     // --- Store Management ---
 
     getStores(): Observable<StoreAdmin[]>

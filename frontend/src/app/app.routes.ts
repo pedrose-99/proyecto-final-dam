@@ -27,7 +27,8 @@ export const routes: Routes = [
       { path: 'producto/:id', loadComponent: () => import('./features/product/product-list/product-detail/product-detail').then(m => m.ProductDetailComponent) },
       { path: 'lists', loadComponent: () => import('./features/shopping-list/shopping-list.component').then(m => m.ShoppingListComponent) },
       { path: 'grupos', loadComponent: () => import('./features/groups/groups.component').then(m => m.GroupsComponent) },
-      { path: 'grupos/:id', loadComponent: () => import('./features/groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent) }
+      { path: 'grupos/:id', loadComponent: () => import('./features/groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent) },
+      { path: 'mis-gastos', loadComponent: () => import('./features/expenses/expense-history.component').then(m => m.ExpenseHistoryComponent) }
     ]
   },
   { path: '**', redirectTo: '/login' }

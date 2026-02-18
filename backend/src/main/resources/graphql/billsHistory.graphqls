@@ -16,6 +16,7 @@ type BillsHistory {
 
 extend type Mutation {
     registerBill(name: String!): BillsHistory
+    createBillFromList(listId: ID!, billName: String!): BillsHistory
 }
 
 extend type Query {
