@@ -28,6 +28,8 @@
       <mat-card *ngFor="let list of lists" class="list-card" [class.group-list]="list.groupId" (click)="selectList(list)">
         <mat-card-content>
           <div class="card-header">
+            <img *ngIf="getStoreFromListName(list.name) as store"
+                 [src]="getStoreLogo(null, store)" class="list-store-logo" [alt]="store">
             <h2>{{ list.name }}</h2>
             <button mat-icon-button color="warn" (click)="deleteList(list); $event.stopPropagation()">
               <mat-icon>delete</mat-icon>
@@ -59,7 +61,24 @@
       <button mat-icon-button (click)="backToLists()" class="back-button">
         <mat-icon>arrow_back</mat-icon>
       </button>
-      <h1>{{ selectedList.name }}</h1>
+      <h1 *ngIf="!isEditingName">{{ selectedList.name }}</h1>
+      <button *ngIf="!isEditingName" mat-icon-button (click)="startEditName()" class="edit-name-button">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <div *ngIf="isEditingName" class="edit-name-inline">
+        <input matInput [formControl]="editNameControl" class="edit-name-input"
+               (keyup.enter)="saveListName()" (keyup.escape)="cancelEditName()" />
+        <button mat-icon-button color="primary" (click)="saveListName()">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="cancelEditName()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <button class="pill-button pill-outlined pill-small" (click)="goToExpenses()">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <span>Mis Gastos</span>
+      </button>
     </div>
 
     <!-- Buscador de productos -->
@@ -108,6 +127,11 @@
           <mat-checkbox [checked]="item.checked" 
                         (change)="toggleChecked(item)">
           </mat-checkbox>
+
+          <!-- Logo de tienda más barata -->
+          <img *ngIf="item.cheapestStoreName"
+               [src]="getStoreLogo(null, item.cheapestStoreName)"
+               class="item-store-logo" [alt]="item.cheapestStoreName">
 
           <!-- Imagen o icono -->
           <div class="item-image">
@@ -158,22 +182,35 @@
                 (click)="toggleStore(store.id)"
                 class="store-chip"
                 [class.selected]="isStoreSelected(store.id)">
-          <img [src]="store.logoUrl" class="store-logo" [alt]="store.name">
+          <img [src]="getStoreLogo(store.logoUrl, store.name)" class="store-logo" [alt]="store.name">
           <span class="store-name">{{ store.name }}</span>
           <mat-icon *ngIf="isStoreSelected(store.id)" class="check-icon">check</mat-icon>
         </button>
       </div>
     </div>
 
-    <!-- Botón Optimizar -->
+    <!-- Botones Optimizar, Simular Compra y Ver por tienda -->
     <div class="optimize-section">
-      <button mat-raised-button color="accent" 
-              (click)="optimize()"
-              [disabled]="isOptimizing || selectedStoreIds.size === 0 || !selectedList.items?.length"
-              class="optimize-button">
+      <button (click)="optimize()"
+              [disabled]="isOptimizing || isLoadingByStore || !selectedList.items?.length"
+              class="pill-button pill-filled">
         <mat-icon *ngIf="!isOptimizing">savings</mat-icon>
         <mat-spinner *ngIf="isOptimizing" diameter="20" class="inline-spinner"></mat-spinner>
         <span>{{ isOptimizing ? 'Optimizando...' : 'Optimizar Compra' }}</span>
+      </button>
+      <button (click)="simulatePurchase()"
+              [disabled]="!selectedList.items?.length || hasGenericItems()"
+              [matTooltip]="hasGenericItems() ? 'Todos los productos deben ser de tienda para simular la compra' : ''"
+              class="pill-button pill-outlined">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Simular Compra</span>
+      </button>
+      <button (click)="optimizeByStore()"
+              [disabled]="isOptimizing || isLoadingByStore || !selectedList.items?.length"
+              class="pill-button pill-outlined">
+        <mat-icon *ngIf="!isLoadingByStore">store</mat-icon>
+        <mat-spinner *ngIf="isLoadingByStore" diameter="20" class="inline-spinner"></mat-spinner>
+        <span>{{ isLoadingByStore ? 'Cargando...' : 'Ver por tienda' }}</span>
       </button>
     </div>
 
@@ -190,14 +227,14 @@
       <!-- Tiendas optimizadas -->
       <div *ngFor="let storeGroup of editableResult.storeGroups; let si = index" class="store-group">
         <mat-card class="store-card">
-          <mat-card-header>
-            <img [src]="storeGroup.storeLogo" class="store-avatar">
-            <mat-card-title>{{ storeGroup.storeName }}</mat-card-title>
-            <mat-card-subtitle>
-              {{ storeGroup.items.length }} producto{{ storeGroup.items.length !== 1 ? 's' : '' }} •
-              {{ storeGroup.subtotal | number: '1.2-2' }} EUR
-            </mat-card-subtitle>
-          </mat-card-header>
+          <div class="store-card-header">
+            <img [src]="getStoreLogo(storeGroup.storeLogo, storeGroup.storeName)" class="store-avatar" [alt]="storeGroup.storeName">
+            <div class="store-header-info">
+              <span class="store-header-name">{{ storeGroup.storeName }}</span>
+              <span class="store-header-meta">{{ storeGroup.items.length }} producto{{ storeGroup.items.length !== 1 ? 's' : '' }}</span>
+            </div>
+            <span class="store-header-total">{{ storeGroup.subtotal | number: '1.2-2' }} EUR</span>
+          </div>
 
           <mat-card-content>
             <div class="store-items">
@@ -226,6 +263,12 @@
                 </div>
 
                 <span class="line-total">{{ item.lineTotal | number: '1.2-2' }} EUR</span>
+
+                <!-- Botón cambiar alternativa -->
+                <button mat-icon-button (click)="openAlternatives(storeGroup.storeId, item.searchTerm || item.productName, si, ii, 'optimize')"
+                        matTooltip="Ver alternativas en esta tienda" class="swap-button">
+                  <mat-icon>swap_horiz</mat-icon>
+                </button>
 
                 <!-- Botón eliminar item -->
                 <button mat-icon-button color="warn" (click)="removeOptimizedItem(si, ii)"
@@ -265,6 +308,112 @@
           <mat-icon *ngIf="!isCreatingSublists">check_circle</mat-icon>
           <span>{{ isCreatingSublists ? 'Creando...' : 'Aceptar' }}</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Sección de resultado por tienda -->
+    <div *ngIf="byStoreResult" class="by-store-result">
+      <h2>Compra completa por supermercado</h2>
+
+      <div *ngFor="let store of byStoreResult; let si = index" class="store-group"
+           [class.cheapest-store]="store.storeId === getCheapestStoreId()">
+        <mat-card class="store-card">
+          <div class="store-card-header">
+            <img [src]="getStoreLogo(store.storeLogo, store.storeName)" class="store-avatar" [alt]="store.storeName">
+            <div class="store-header-info">
+              <span class="store-header-name">{{ store.storeName }}</span>
+              <span class="store-header-meta">
+                {{ store.items.length }} producto{{ store.items.length !== 1 ? 's' : '' }} encontrado{{ store.items.length !== 1 ? 's' : '' }}
+                <span *ngIf="store.storeId === getCheapestStoreId()" class="cheapest-badge">Mas barato</span>
+              </span>
+            </div>
+            <span class="store-header-total">{{ store.subtotal | number: '1.2-2' }} EUR</span>
+          </div>
+
+          <mat-card-content>
+            <div class="store-items">
+              <div *ngFor="let item of store.items; let ii = index" class="optimized-item-row">
+                <div class="item-image">
+                  <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.productName }}">
+                  <mat-icon *ngIf="!item.imageUrl" class="placeholder-icon">shopping_basket</mat-icon>
+                </div>
+                <div class="item-details">
+                  <span class="product-name">{{ item.productName }}</span>
+                  <span class="price-info">
+                    {{ item.unitPrice | number: '1.2-2' }} EUR x {{ item.quantity }}
+                  </span>
+                </div>
+                <span class="line-total">{{ item.lineTotal | number: '1.2-2' }} EUR</span>
+                <button mat-icon-button (click)="openAlternatives(store.storeId, item.searchTerm || item.productName, si, ii, 'byStore')"
+                        matTooltip="Ver alternativas en esta tienda" class="swap-button">
+                  <mat-icon>swap_horiz</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- No encontrados en esta tienda -->
+            <div *ngIf="store.notFound && store.notFound.length > 0" class="not-found-store">
+              <span class="not-found-label">No encontrados:</span>
+              <span *ngFor="let nf of store.notFound" class="not-found-tag">{{ nf }}</span>
+            </div>
+
+            <div class="store-card-actions">
+              <button mat-raised-button color="primary"
+                      (click)="acceptStoreList(si)"
+                      [disabled]="isCreatingSublists || store.items.length === 0">
+                <mat-icon>shopping_cart_checkout</mat-icon>
+                Elegir esta tienda
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Panel de alternativas -->
+    <div *ngIf="showAlternatives" class="alternatives-overlay" (click)="closeAlternatives()">
+      <div class="alternatives-panel" (click)="$event.stopPropagation()">
+        <div class="alternatives-header">
+          <h3>Alternativas en {{ alternativesStoreName }}</h3>
+          <button mat-icon-button (click)="closeAlternatives()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Buscador editable -->
+        <div class="alternatives-search">
+          <mat-form-field appearance="outline" class="alternatives-search-field" subscriptSizing="dynamic">
+            <mat-label>Buscar producto</mat-label>
+            <input matInput [formControl]="alternativesSearchControl"
+                   (keyup.enter)="searchAlternatives()" />
+            <button matSuffix mat-icon-button (click)="searchAlternatives()">
+              <mat-icon>search</mat-icon>
+            </button>
+          </mat-form-field>
+        </div>
+
+        <div *ngIf="isLoadingAlternatives" class="alternatives-loading">
+          <mat-spinner diameter="30"></mat-spinner>
+        </div>
+
+        <div *ngIf="!isLoadingAlternatives && alternativesResults.length === 0" class="alternatives-empty">
+          <p>No se encontraron alternativas. Prueba otro término.</p>
+        </div>
+
+        <div *ngIf="!isLoadingAlternatives" class="alternatives-list">
+          <div *ngFor="let alt of alternativesResults" class="alternative-item" (click)="swapProduct(alt)">
+            <div class="item-image">
+              <img *ngIf="alt.imageUrl" [src]="alt.imageUrl" alt="{{ alt.name }}">
+              <mat-icon *ngIf="!alt.imageUrl" class="placeholder-icon">shopping_basket</mat-icon>
+            </div>
+            <div class="item-details">
+              <span class="product-name">{{ alt.name }}</span>
+              <span class="product-brand" *ngIf="alt.brand">{{ alt.brand }}</span>
+            </div>
+            <span class="alternative-price" *ngIf="alt.currentPrice != null">{{ alt.currentPrice | number:'1.2-2' }} &euro;</span>
+            <mat-icon class="select-icon">chevron_right</mat-icon>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -141,6 +141,31 @@ public class ProductService {
         );
     }
 
+    public ProductPageDTO searchProductsByStore(String query, Integer storeId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.searchByTextAndStore(query, storeId, pageable);
+
+        List<ProductDTO> content = productPage.getContent().stream()
+                .map(product -> {
+                    Double price = productStoreRepository
+                            .findByProductId_ProductIdAndStoreId_StoreId(product.getProductId(), storeId)
+                            .map(ps -> ps.getCurrentPrice())
+                            .orElse(null);
+                    return ProductMapper.toDTOWithPrice(product, price);
+                })
+                .toList();
+
+        return new ProductPageDTO(
+                content,
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.isFirst(),
+                productPage.isLast()
+        );
+    }
+
     public ProductPageDTO searchProducts(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productRepository.searchByText(query, pageable);

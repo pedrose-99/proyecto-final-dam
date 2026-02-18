@@ -11,6 +11,7 @@ import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository
 import com.smartcart.smartcart.modules.scraping.dto.ScrapedProduct;
 import com.smartcart.smartcart.modules.store.entity.Store;
 import com.smartcart.smartcart.modules.store.repository.StoreRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,6 +33,9 @@ public class ProductSyncService {
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
     private final PriceHistoryRepository priceHistoryRepository;
+    private final EntityManager entityManager;
+
+    private static final int FLUSH_BATCH_SIZE = 500;
 
     @Transactional
     public SyncResult syncProducts(List<ScrapedProduct> scrapedProducts, String storeSlug) {
@@ -38,12 +44,37 @@ public class ProductSyncService {
 
         SyncResult result = new SyncResult();
 
+        // Pre-cargar caches en memoria para evitar queries repetidas
+        Map<String, Category> categoryCache = loadCategoryCache();
+        Map<String, ProductStore> psCache = loadProductStoreCache(store.getStoreId());
+        Map<String, Product> productByNameCache = loadProductByNameCache();
+        Map<String, Product> productByEanCache = loadProductByEanCache();
+
+        log.info("[{}] Sync starting: {} products to process (caches loaded: {} categories, {} productStores, {} products)",
+                storeSlug, scrapedProducts.size(), categoryCache.size(), psCache.size(), productByNameCache.size());
+
+        int count = 0;
         for (ScrapedProduct scraped : scrapedProducts) {
             try {
-                syncProduct(scraped, store, result);
+                syncProductCached(scraped, store, result, categoryCache, psCache, productByNameCache, productByEanCache);
             } catch (Exception e) {
                 log.error("Error syncing product {}: {}", scraped.externalId(), e.getMessage());
                 result.errors++;
+            }
+
+            count++;
+            if (count % FLUSH_BATCH_SIZE == 0) {
+                entityManager.flush();
+                entityManager.clear();
+                // Re-attach store y recargar caches tras clear
+                store = storeRepository.findBySlug(storeSlug)
+                        .orElseThrow(() -> new RuntimeException("Store not found: " + storeSlug));
+                categoryCache = loadCategoryCache();
+                psCache = loadProductStoreCache(store.getStoreId());
+                productByNameCache = loadProductByNameCache();
+                productByEanCache = loadProductByEanCache();
+                log.info("[{}] Progress: {}/{} products processed ({} created, {} updated, {} errors)",
+                        storeSlug, count, scrapedProducts.size(), result.created, result.updated, result.errors);
             }
         }
 
@@ -53,15 +84,42 @@ public class ProductSyncService {
         return result;
     }
 
-    private void syncProduct(ScrapedProduct scraped, Store store, SyncResult result) {
+    private Map<String, Category> loadCategoryCache() {
+        return categoryRepository.findAll().stream()
+                .collect(Collectors.toMap(c -> c.getName().toLowerCase(), c -> c, (a, b) -> a));
+    }
+
+    private Map<String, ProductStore> loadProductStoreCache(Integer storeId) {
+        return productStoreRepository.findAllByStoreWithProductAndCategory(storeId).stream()
+                .filter(ps -> ps.getExternaId() != null && !ps.getExternaId().isBlank())
+                .collect(Collectors.toMap(ProductStore::getExternaId, ps -> ps, (a, b) -> a));
+    }
+
+    private Map<String, Product> loadProductByNameCache() {
+        return productRepository.findAll().stream()
+                .filter(p -> p.getName() != null)
+                .collect(Collectors.toMap(p -> p.getName().toLowerCase(), p -> p, (a, b) -> a));
+    }
+
+    private Map<String, Product> loadProductByEanCache() {
+        return productRepository.findAll().stream()
+                .filter(p -> p.getEan() != null && !p.getEan().isBlank())
+                .collect(Collectors.toMap(Product::getEan, p -> p, (a, b) -> a));
+    }
+
+    private void syncProductCached(ScrapedProduct scraped, Store store, SyncResult result,
+                                   Map<String, Category> categoryCache,
+                                   Map<String, ProductStore> psCache,
+                                   Map<String, Product> productByNameCache,
+                                   Map<String, Product> productByEanCache) {
         if (scraped.price() == null) {
             result.errors++;
             return;
         }
 
-        Category category = findOrCreateCategory(scraped.categoryName());
-        Product product = findOrCreateProduct(scraped, category);
-        ProductStore productStore = findOrCreateProductStore(scraped, product, store);
+        Category category = findOrCreateCategoryCached(scraped.categoryName(), categoryCache);
+        Product product = findOrCreateProductCached(scraped, category, productByNameCache, productByEanCache);
+        ProductStore productStore = findOrCreateProductStoreCached(scraped, product, store, psCache);
 
         boolean isNew = productStore.getStoreProductId() == null;
         boolean priceChanged = updateProductStorePrice(productStore, scraped);
@@ -69,9 +127,12 @@ public class ProductSyncService {
         productStoreRepository.save(productStore);
 
         if (isNew) {
-            // Producto nuevo: crear registro inicial en price_history
             createInitialPriceHistory(productStore, store, scraped);
             result.created++;
+            // Añadir al cache para futuros lookups dentro del mismo batch
+            if (scraped.externalId() != null && !scraped.externalId().isBlank()) {
+                psCache.put(scraped.externalId(), productStore);
+            }
         } else if (priceChanged) {
             createPriceHistory(productStore, store, scraped);
             result.updated++;
@@ -80,35 +141,41 @@ public class ProductSyncService {
         }
     }
 
-    private Category findOrCreateCategory(String categoryName) {
+    private Category findOrCreateCategoryCached(String categoryName, Map<String, Category> cache) {
         String finalCategoryName = (categoryName == null || categoryName.isBlank())
                 ? "Sin categoría"
                 : categoryName;
 
-        return categoryRepository.findByName(finalCategoryName)
-                .orElseGet(() -> {
-                    Category newCategory = new Category();
-                    newCategory.setName(finalCategoryName);
-                    log.debug("Creating new category: {}", finalCategoryName);
-                    return categoryRepository.save(newCategory);
-                });
+        String key = finalCategoryName.toLowerCase();
+        Category cached = cache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+
+        Category newCategory = new Category();
+        newCategory.setName(finalCategoryName);
+        log.debug("Creating new category: {}", finalCategoryName);
+        newCategory = categoryRepository.save(newCategory);
+        cache.put(key, newCategory);
+        return newCategory;
     }
 
-    private Product findOrCreateProduct(ScrapedProduct scraped, Category category) {
-        Optional<Product> existing = Optional.empty();
+    private Product findOrCreateProductCached(ScrapedProduct scraped, Category category,
+                                              Map<String, Product> byNameCache,
+                                              Map<String, Product> byEanCache) {
+        Product existing = null;
 
         if (scraped.ean() != null && !scraped.ean().isBlank()) {
-            existing = productRepository.findByEan(scraped.ean());
+            existing = byEanCache.get(scraped.ean());
         }
 
-        if (existing.isEmpty() && scraped.name() != null) {
-            existing = productRepository.findByNameIgnoreCase(scraped.name());
+        if (existing == null && scraped.name() != null) {
+            existing = byNameCache.get(scraped.name().toLowerCase());
         }
 
-        if (existing.isPresent()) {
-            Product product = existing.get();
-            updateProductIfNeeded(product, scraped, category);
-            return productRepository.save(product);
+        if (existing != null) {
+            updateProductIfNeeded(existing, scraped, category);
+            return productRepository.save(existing);
         }
 
         Product newProduct = new Product();
@@ -119,7 +186,6 @@ public class ProductSyncService {
         newProduct.setCategoryId(category);
         parseAndSetUnit(newProduct, scraped.unit());
 
-        // Descripcion: usar la del scraping o generar una automatica
         String description = scraped.description();
         if (description == null || description.isBlank()) {
             description = generateDescription(scraped.name(), scraped.brand(), category.getName(), scraped.unit());
@@ -127,7 +193,48 @@ public class ProductSyncService {
         newProduct.setDescription(description);
 
         log.debug("Creating new product: {}", scraped.name());
-        return productRepository.save(newProduct);
+        newProduct = productRepository.save(newProduct);
+
+        // Añadir al cache
+        if (scraped.name() != null) {
+            byNameCache.put(scraped.name().toLowerCase(), newProduct);
+        }
+        if (scraped.ean() != null && !scraped.ean().isBlank()) {
+            byEanCache.put(scraped.ean(), newProduct);
+        }
+        return newProduct;
+    }
+
+    private ProductStore findOrCreateProductStoreCached(ScrapedProduct scraped, Product product, Store store,
+                                                       Map<String, ProductStore> psCache) {
+        // Buscar por externalId en cache
+        if (scraped.externalId() != null && !scraped.externalId().isBlank()) {
+            ProductStore cached = psCache.get(scraped.externalId());
+            if (cached != null) {
+                return cached;
+            }
+        }
+
+        // Fallback: buscar por productId + storeId en BD (no cacheado por externalId)
+        Optional<ProductStore> existing = productStoreRepository
+                .findByProductId_ProductIdAndStoreId_StoreId(product.getProductId(), store.getStoreId());
+
+        if (existing.isPresent()) {
+            ProductStore ps = existing.get();
+            if (ps.getExternaId() == null) {
+                ps.setExternaId(scraped.externalId());
+            }
+            return ps;
+        }
+
+        ProductStore newPs = new ProductStore();
+        newPs.setProductId(product);
+        newPs.setStoreId(store);
+        newPs.setExternaId(scraped.externalId());
+        newPs.setUrl(scraped.productUrl());
+        newPs.setAvailable(true);
+
+        return newPs;
     }
 
     private void updateProductIfNeeded(Product product, ScrapedProduct scraped, Category category) {
@@ -196,35 +303,6 @@ public class ProductSyncService {
         }
 
         return sb.toString().trim();
-    }
-
-    private ProductStore findOrCreateProductStore(ScrapedProduct scraped, Product product, Store store) {
-        Optional<ProductStore> existing = productStoreRepository
-                .findByExternaIdAndStoreId_StoreId(scraped.externalId(), store.getStoreId());
-
-        if (existing.isPresent()) {
-            return existing.get();
-        }
-
-        existing = productStoreRepository
-                .findByProductId_ProductIdAndStoreId_StoreId(product.getProductId(), store.getStoreId());
-
-        if (existing.isPresent()) {
-            ProductStore ps = existing.get();
-            if (ps.getExternaId() == null) {
-                ps.setExternaId(scraped.externalId());
-            }
-            return ps;
-        }
-
-        ProductStore newPs = new ProductStore();
-        newPs.setProductId(product);
-        newPs.setStoreId(store);
-        newPs.setExternaId(scraped.externalId());
-        newPs.setUrl(scraped.productUrl());
-        newPs.setAvailable(true);
-
-        return newPs;
     }
 
     private boolean updateProductStorePrice(ProductStore productStore, ScrapedProduct scraped) {

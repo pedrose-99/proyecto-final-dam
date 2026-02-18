@@ -20,4 +20,20 @@ public class ProductMapper {
             isFavorite
         );
     }
+
+    public static ProductDTO toDTOWithPrice(Product entity, Double currentPrice) {
+        return new ProductDTO(
+            entity.getProductId(),
+            entity.getName(),
+            entity.getBrand(),
+            entity.getEan(),
+            entity.getDescription(),
+            entity.getImageUrl(),
+            entity.getQuantity(),
+            entity.getUnit(),
+            entity.getCategoryId() != null ? entity.getCategoryId().getName() : null,
+            entity.getCategoryId() != null ? entity.getCategoryId().getCategoryId() : null,
+            currentPrice
+        );
+    }
 }

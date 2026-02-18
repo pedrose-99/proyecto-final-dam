@@ -94,6 +94,11 @@
       <mat-icon>groups</mat-icon>
     </button>
 
+    <!-- Mis Gastos -->
+    <button mat-icon-button (click)="goToHistory()" aria-label="Mis Gastos" matTooltip="Mis Gastos">
+      <mat-icon>account_balance_wallet</mat-icon>
+    </button>
+
     <!-- Notificaciones -->
     <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notificaciones" matTooltip="Notificaciones">
       <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn" matBadgeSize="small">
@@ -117,7 +122,7 @@
         <div class="notif-item" (click)="$event.stopPropagation()">
           <div class="notif-item-content">
             <mat-icon class="notif-icon" [class.notif-unread]="!notif.isRead">
-              {{ notif.type === 'INVITE' ? 'group_add' : notif.type === 'UPDATE' ? 'update' : 'info' }}
+              {{ notif.type === 'INVITE' ? 'group_add' : notif.type === 'UPDATE' ? 'update' : notif.type === 'BUDGET_ALERT' ? 'account_balance_wallet' : 'info' }}
             </mat-icon>
             <div class="notif-text">
               <span class="notif-message" [class.notif-unread-text]="!notif.isRead">{{ notif.message }}</span>

@@ -23,6 +23,7 @@ export interface ProductSearchResult {
   brand: string | null;
   imageUrl: string | null;
   categoryName: string;
+  currentPrice?: number | null;
 }
 
 export interface ProductFilters {

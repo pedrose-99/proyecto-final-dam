@@ -219,6 +219,7 @@ export const GET_MY_SHOPPING_LISTS = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -243,6 +244,7 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -263,6 +265,7 @@ export const CREATE_SHOPPING_LIST = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -289,6 +292,7 @@ export const ADD_ITEM_TO_LIST = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -309,6 +313,7 @@ export const UPDATE_LIST_ITEM = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -329,6 +334,7 @@ export const REMOVE_LIST_ITEM = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -349,6 +355,28 @@ export const CREATE_SUBLISTS = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
+      }
+    }
+  }
+`;
+
+export const RENAME_SHOPPING_LIST = gql`
+  mutation RenameShoppingList($listId: ID!, $name: String!) {
+    renameShoppingList(listId: $listId, name: $name) {
+      listId
+      name
+      createdAt
+
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -370,9 +398,52 @@ export const OPTIMIZE_SHOPPING_LIST = gql`
           unitPrice
           quantity
           lineTotal
+          searchTerm
         }
       }
       notFound
+    }
+  }
+`;
+
+export const OPTIMIZE_BY_STORE = gql`
+  query OptimizeByStore($listId: ID!, $storeIds: [ID!]!) {
+    optimizeByStore(listId: $listId, storeIds: $storeIds) {
+      storeId
+      storeName
+      storeLogo
+      subtotal
+      items {
+        productId
+        productName
+        imageUrl
+        unitPrice
+        quantity
+        lineTotal
+        searchTerm
+      }
+      notFound
+    }
+  }
+`;
+
+export const SEARCH_PRODUCTS_BY_STORE = gql`
+  query SearchProductsByStore($query: String!, $storeId: ID!, $page: Int, $size: Int) {
+    searchProductsByStore(query: $query, storeId: $storeId, page: $page, size: $size) {
+      content {
+        productId
+        name
+        brand
+        categoryName
+        imageUrl
+        currentPrice
+      }
+      totalElements
+      totalPages
+      number
+      size
+      first
+      last
     }
   }
 `;
@@ -545,3 +616,73 @@ export const REMOVE_FROM_FAVORITES = gql`
     removeFromFavorites(productId: $productId)
   }
 `;
+// Gastos / Historial
+export const CREATE_BILL_FROM_LIST = gql`
+  mutation CreateBillFromList($listId: ID!, $billName: String!) {
+    createBillFromList(listId: $listId, billName: $billName) {
+      billsHistoryId
+      name
+      recordedAt
+      totalAmount
+      exceededLimit
+      itemsSummary {
+        productName
+        price
+        quantity
+        storeName
+      }
+    }
+  }
+`;
+
+export const GET_BILLS_HISTORY = gql`
+  query GetBillsHistory($filter: String, $month: Int, $year: Int) {
+    getBillsHistory(filter: $filter, month: $month, year: $year) {
+      billsHistoryId
+      name
+      recordedAt
+      totalAmount
+      exceededLimit
+      itemsSummary {
+        productName
+        price
+        quantity
+        storeName
+      }
+    }
+  }
+`;
+
+export const GET_SPENDING_LIMITS = gql`
+  query GetSpendingLimits {
+    getSpendingLimits {
+      limitId
+      amount
+      type
+      isActive
+    }
+  }
+`;
+
+export const SAVE_SPENDING_LIMIT = gql`
+  mutation SaveSpendingLimit($amount: Float!, $type: String!) {
+    saveSpendingLimit(amount: $amount, type: $type) {
+      limitId
+      amount
+      type
+      isActive
+    }
+  }
+`;
+
+export const GET_EXPENSE_SUMMARY = gql`
+  query GetExpenseSummary($period: String, $offset: Int) {
+    getExpenseSummary(period: $period, offset: $offset) {
+      periodLabel
+      totalAmount
+      billCount
+      exceededCount
+    }
+  }
+`;
+

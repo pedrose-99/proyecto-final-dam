@@ -144,10 +144,11 @@ export class GroupDetailComponent implements OnInit, OnDestroy
                 this.snackBar.open('Invitacion enviada correctamente', 'Cerrar', { duration: 3000 });
                 this.loadGroup(this.group!.groupId);
             },
-            error: () =>
+            error: (err) =>
             {
                 this.isInviting = false;
-                this.snackBar.open('Error al enviar la invitacion', 'Cerrar', { duration: 3000 });
+                const message = err?.graphQLErrors?.[0]?.message || 'Error al enviar la invitacion';
+                this.snackBar.open(message, 'Cerrar', { duration: 3000 });
             }
         });
     }

@@ -11,9 +11,11 @@ import {
   UPDATE_LIST_ITEM,
   REMOVE_LIST_ITEM,
   OPTIMIZE_SHOPPING_LIST,
-  CREATE_SUBLISTS
+  OPTIMIZE_BY_STORE,
+  CREATE_SUBLISTS,
+  RENAME_SHOPPING_LIST
 } from '../../core/graphql/queries';
-import { ShoppingList, OptimizedList, SublistInput } from '../../core/models/shopping-list.model';
+import { ShoppingList, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
 
 @Injectable({
   providedIn: 'root'
@@ -131,6 +133,21 @@ export class ShoppingListService {
     );
   }
 
+  optimizeByStore(listId: number, storeIds: number[]): Observable<OptimizedStore[]> {
+    return this.apollo.query<{ optimizeByStore: OptimizedStore[] }>(
+      {
+        query: OPTIMIZE_BY_STORE,
+        variables: {
+          listId: listId.toString(),
+          storeIds: storeIds.map(id => id.toString())
+        },
+        fetchPolicy: 'network-only'
+      }
+    ).pipe(
+      map(result => result.data?.optimizeByStore as OptimizedStore[])
+    );
+  }
+
   createSublists(originalListName: string, sublists: SublistInput[]): Observable<ShoppingList[]> {
     return this.apollo.mutate<{ createSublists: ShoppingList[] }>(
       {
@@ -148,6 +165,20 @@ export class ShoppingListService {
       }
     ).pipe(
       map(result => result.data?.createSublists as ShoppingList[])
+    );
+  }
+
+  renameList(listId: number, newName: string): Observable<ShoppingList> {
+    return this.apollo.mutate<{ renameShoppingList: ShoppingList }>(
+      {
+        mutation: RENAME_SHOPPING_LIST,
+        variables: {
+          listId: listId.toString(),
+          name: newName
+        }
+      }
+    ).pipe(
+      map(result => result.data?.renameShoppingList as ShoppingList)
     );
   }
 }

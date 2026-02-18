@@ -4,6 +4,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.smartcart.smartcart.modules.product.repository.ProductRepository;
+import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
 import com.smartcart.smartcart.modules.shoppinglist.dto.ShoppingListDTO;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ListItem;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ShoppingList;
@@ -34,6 +35,7 @@ public class ShoppingListService
 {
     private final ShoppingListRepository slRepository;
     private final ProductRepository productRepository;
+    private final ProductStoreRepository productStoreRepository;
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
@@ -85,14 +87,14 @@ public class ShoppingListService
             {
                 if (seenIds.add(sl.getListId()))
                 {
-                    result.add(ShoppingListMapper.toDTO(sl));
+                    result.add(ShoppingListMapper.toDTO(sl, productStoreRepository));
                 }
             }
             for (ShoppingList sl : groupLists)
             {
                 if (seenIds.add(sl.getListId()))
                 {
-                    result.add(ShoppingListMapper.toDTO(sl));
+                    result.add(ShoppingListMapper.toDTO(sl, productStoreRepository));
                 }
             }
 
@@ -113,7 +115,7 @@ public class ShoppingListService
             return null;
         }
         return findAccessibleList(listId, user.get())
-                .map(ShoppingListMapper::toDTO)
+                .map(sl -> ShoppingListMapper.toDTO(sl, productStoreRepository))
                 .orElse(null);
     }
 
@@ -158,7 +160,7 @@ public class ShoppingListService
                 group.ifPresent(shoppinglist::setGroup);
             }
 
-            return ShoppingListMapper.toDTO(slRepository.save(shoppinglist));
+            return ShoppingListMapper.toDTO(slRepository.save(shoppinglist), productStoreRepository);
         }
         catch(RuntimeException e)
         {
@@ -272,7 +274,7 @@ public class ShoppingListService
         }
 
         list.getItems().add(newItem);
-        return ShoppingListMapper.toDTO(slRepository.save(list));
+        return ShoppingListMapper.toDTO(slRepository.save(list), productStoreRepository);
     }
 
     @Transactional
@@ -311,7 +313,7 @@ public class ShoppingListService
         }
 
         slRepository.save(list);
-        return ShoppingListMapper.toDTO(list);
+        return ShoppingListMapper.toDTO(list, productStoreRepository);
     }
 
     @Transactional
@@ -333,7 +335,7 @@ public class ShoppingListService
         list.getItems().removeIf(i -> i.getItemId().equals(itemId));
 
         slRepository.save(list);
-        return ShoppingListMapper.toDTO(list);
+        return ShoppingListMapper.toDTO(list, productStoreRepository);
     }
 
     @SuppressWarnings("unchecked")
@@ -378,10 +380,30 @@ public class ShoppingListService
                 shoppingList.getItems().add(listItem);
             }
 
-            result.add(ShoppingListMapper.toDTO(slRepository.save(shoppingList)));
+            result.add(ShoppingListMapper.toDTO(slRepository.save(shoppingList), productStoreRepository));
         }
 
         return result;
+    }
+
+    @Transactional
+    public ShoppingListDTO renameList(Integer listId, String newName)
+    {
+        Optional<User> user = getCurrentUser();
+        if (user.isEmpty())
+        {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+
+        Optional<ShoppingList> listOpt = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
+        if (listOpt.isEmpty())
+        {
+            throw new RuntimeException("Lista no encontrada");
+        }
+
+        ShoppingList list = listOpt.get();
+        list.setName(newName);
+        return ShoppingListMapper.toDTO(slRepository.save(list), productStoreRepository);
     }
 
 }

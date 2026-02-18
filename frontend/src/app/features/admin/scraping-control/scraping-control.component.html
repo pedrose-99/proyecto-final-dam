@@ -15,6 +15,12 @@
                     [disabled]="loading">
                 Lanzar Todos
             </button>
+            <button mat-stroked-button
+                    (click)="exportAllCsv()"
+                    [disabled]="loading || exportingAll">
+                <mat-icon>archive</mat-icon>
+                Exportar Todos
+            </button>
         }
     </div>
 </div>
@@ -78,12 +84,21 @@
                             </button>
                         </div>
                     } @else {
-                        <button mat-flat-button
-                                class="primary-btn scrape-btn"
-                                (click)="triggerScraping(store)"
-                                [disabled]="!store.active || scrapingAll">
-                            Lanzar Scraping
-                        </button>
+                        <div class="card-actions-row">
+                            <button mat-flat-button
+                                    class="primary-btn scrape-btn"
+                                    (click)="triggerScraping(store)"
+                                    [disabled]="!store.active || scrapingAll">
+                                Lanzar Scraping
+                            </button>
+                            <button mat-stroked-button
+                                    class="export-btn"
+                                    (click)="exportCsv(store)"
+                                    [disabled]="store.productCount === 0">
+                                <mat-icon>download</mat-icon>
+                                Exportar CSV
+                            </button>
+                        </div>
                     }
                 </mat-card-actions>
             </mat-card>

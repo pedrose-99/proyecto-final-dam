@@ -6,6 +6,7 @@ extend type Query {
     productsByCategoryPaginated(categoryId: ID!, page: Int = 0, size: Int = 24): ProductPage
     productsByStore(storeId: ID!, page: Int = 0, size: Int = 24): ProductPage
     searchProducts(query: String!, page: Int = 0, size: Int = 10): ProductPage
+    searchProductsByStore(query: String!, storeId: ID!, page: Int = 0, size: Int = 10): ProductPage
 }
 
 type ProductPage {
@@ -36,6 +37,7 @@ type ProductDTO {
     categoryName: String
     categoryId: Int
     isFavorite: Boolean
+    currentPrice: Float
 }
 
 # ─── Comparador ─────────────────────────────────────────
