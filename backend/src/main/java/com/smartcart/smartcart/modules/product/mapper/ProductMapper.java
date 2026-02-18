@@ -17,7 +17,8 @@ public class ProductMapper {
             entity.getUnit(),
             entity.getCategoryId() != null ? entity.getCategoryId().getName() : null,
             entity.getCategoryId() != null ? entity.getCategoryId().getCategoryId() : null,
-            isFavorite
+            isFavorite,
+            null
         );
     }
 
@@ -33,6 +34,7 @@ public class ProductMapper {
             entity.getUnit(),
             entity.getCategoryId() != null ? entity.getCategoryId().getName() : null,
             entity.getCategoryId() != null ? entity.getCategoryId().getCategoryId() : null,
+            false,
             currentPrice
         );
     }

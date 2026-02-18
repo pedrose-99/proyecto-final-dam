@@ -91,6 +91,14 @@ public class FavoriteService
                 return false;
             }
 
+            Integer userId = user.get().getIdUser();
+            
+            // Verificar si ya existe el favorito
+            if (favRepository.existsByUser_IdUserAndProduct_ProductId(userId, productId))
+            {
+                return true;
+            }
+            
             Favorite favorite = new Favorite();
             favorite.setUser(user.get());
             favorite.setProduct(product.get());
