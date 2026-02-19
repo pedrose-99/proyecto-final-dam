@@ -99,7 +99,6 @@ export class ProductDetailComponent implements OnInit {
       this.chart = null;
     }
 
-    // Cargar datos del producto
     this.productService.getComparison(id).subscribe({
         next: (data: any) => {
           if (data) {
@@ -115,7 +114,6 @@ export class ProductDetailComponent implements OnInit {
             this.stores = data.storePrices || [];
             this.bestPrice = data.bestPrice?.currentPrice || null;
 
-            // Cargar productos relacionados por categoría
             if (data.categoryId) {
               this.productService.getRelatedProducts(data.categoryId, data.productId).subscribe({
                 next: (products) => {
@@ -142,7 +140,6 @@ export class ProductDetailComponent implements OnInit {
         }
       });
       
-      // Comprobar si está en favoritos
       this.favoriteService.isFavorite(this.productId).subscribe({
         next: (isFav) => {
           this.isFavorite = isFav;
@@ -154,12 +151,10 @@ export class ProductDetailComponent implements OnInit {
         }
       });
 
-      // Comprobar si está en alguna lista de compra (después de 500ms para dar tiempo a cargar)
       setTimeout(() => {
         this.checkIfInShoppingList();
       }, 500);
 
-      // Cargar historial de precios al inicio
       this.loadHistoryData();
   }
 
@@ -176,7 +171,6 @@ export class ProductDetailComponent implements OnInit {
       next: (lists: any[]) => {
         console.log('📦 Listas obtenidas:', lists.length, 'listas');
         
-        // Buscar en todas las listas
         let found = false;
         
         for (const list of lists) {
@@ -242,10 +236,8 @@ export class ProductDetailComponent implements OnInit {
       return;
     }
 
-    // Obtener listas frescas del servidor (network-only para evitar caché)
     this.shoppingListService.getMyLists().subscribe({
       next: (lists: any[]) => {
-        // Filtrar listas válidas (que no sean null)
         const validLists = lists.filter(list => list && list.listId && list.name);
         
         if (validLists.length === 0) {
@@ -254,7 +246,6 @@ export class ProductDetailComponent implements OnInit {
 
         console.log('Listas disponibles:', validLists);
 
-        // Abrir diálogo para seleccionar lista
         this.dialog.open(SelectShoppingListDialogComponent, {
           width: '400px',
           data: { lists: validLists, productId: this.productId, productName: this.product.name }
@@ -262,11 +253,9 @@ export class ProductDetailComponent implements OnInit {
           if (result && result.success) {
             console.log('✅ Producto añadido exitosamente a', result.addedCount, 'listas');
             
-            // Actualizar inmediatamente
             this.isInShoppingList = true;
             this.cdr.detectChanges();
             
-            // Refrescar después de 1 segundo para confirmar
             setTimeout(() => {
               console.log('🔄 Refrescando verificación...');
               this.checkIfInShoppingList();
@@ -285,11 +274,9 @@ export class ProductDetailComponent implements OnInit {
 
   this.productService.getPriceHistory(id).subscribe({
     next: (data: any) => {
-      // Si data viene como null, undefined o no es array, forzamos array vacío
       const historyArray = Array.isArray(data) ? data : [];
       
       if (historyArray.length > 0) {
-        // Invertimos para que el gráfico vaya de pasado a futuro
         this.priceHistory = [...historyArray].reverse();
         setTimeout(() => this.renderChart(), 150);
       } else {
@@ -346,9 +333,6 @@ export class ProductDetailComponent implements OnInit {
   }
 
  renderChart() {
-  // 1. Validaciones de seguridad:
-  // - Comprobamos que el elemento Canvas existe en el DOM
-  // - Comprobamos que hay al menos 2 puntos (si no, una línea no se puede dibujar)
   if (!this.priceChartCanvas || this.priceHistory.length < 2) {
     if (this.chart) {
       this.chart.destroy();
@@ -357,42 +341,37 @@ export class ProductDetailComponent implements OnInit {
     return;
   }
 
-  // 2. Obtención del contexto del Canvas
   const ctx = this.priceChartCanvas.nativeElement.getContext('2d');
-  
-  // 3. Limpieza: Si ya existía un gráfico, lo destruimos antes de crear el nuevo
+
   if (this.chart) {
     this.chart.destroy();
   }
 
-  // 4. Creación del gráfico con Chart.js
   this.chart = new Chart(ctx, {
     type: 'line',
     data: {
-      // Eje X: Convertimos las fechas ISO a formato local (dd/mm/aaaa)
       labels: this.priceHistory.map(h => new Date(h.recordedAt).toLocaleDateString()),
       datasets: [{
         label: 'Evolución del Precio (€)',
         data: this.priceHistory.map(h => h.price),
-        borderColor: '#1a237e',           // Azul oscuro profesional
-        backgroundColor: 'rgba(26, 35, 126, 0.1)', // Sombreado bajo la línea
-        fill: true,                       // Rellenar el área inferior
-        tension: 0.3,                     // Suavizado de la línea (curva)
-        pointRadius: 4,                   // Tamaño de los puntos
+        borderColor: '#1a237e',
+        backgroundColor: 'rgba(26, 35, 126, 0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
         pointBackgroundColor: '#1a237e'
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,         // Permite que el CSS controle la altura
+      maintainAspectRatio: false,
       plugins: {
-        legend: { display: false }        // Ocultamos la leyenda para un look más limpio
+        legend: { display: false }
       },
       scales: {
         y: { 
-          beginAtZero: false,             // Ajusta el zoom del eje Y al rango de precios
+          beginAtZero: false,
           ticks: { 
-            // Añadimos el símbolo del Euro al eje Y
             callback: (value: string | number) => Number(value).toFixed(2) + '€'
           }
         }

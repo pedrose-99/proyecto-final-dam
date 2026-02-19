@@ -18,7 +18,7 @@ import lombok.Data;
 
 @Entity
 @Table(name = "spending_limit", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"id_user", "type"}) // Restricción de unicidad
+    @UniqueConstraint(columnNames = {"id_user", "type"})
 })
 @Data
 public class SpendingLimit {

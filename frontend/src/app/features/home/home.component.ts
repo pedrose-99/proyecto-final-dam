@@ -48,37 +48,30 @@ import { Store } from '../../core/models/store.model';
 })
 export class HomeComponent implements OnInit, OnDestroy {
 
-  // Data
   products: Product[] = [];
   categories: Category[] = [];
   stores: Store[] = [];
   productsInList: Set<number> = new Set();
 
-  // Pagination
   totalProducts = 0;
   pageSize = 24;
   pageIndex = 0;
   pageSizeOptions = [12, 24, 48];
 
-  // Loading
   isLoading = false;
 
-  // Filters
   filters: ProductFilters = {};
   activeFilters: { key: string; label: string }[] = [];
   searchTerms: string[] = [];  // Array de términos de búsqueda para OR
 
-  // Form
   filterForm = new FormGroup({
     sortBy: new FormControl<string>('relevance')
   });
 
-  // Categorías
   categorySearchControl = new FormControl<string>('');
   filteredCategories: Category[] = [];
   selectedCategories: Category[] = [];
 
-  // Tiendas
   storeSearchControl = new FormControl<string>('');
   filteredStores: Store[] = [];
   selectedStores: Store[] = [];
@@ -95,7 +88,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Cargar datos iniciales y luego procesar los parámetros de ruta
     this.productService.getCategories().subscribe({
       next: (categories) => {
         this.categories = categories;
@@ -143,18 +135,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private parseIdArray(value: any): number[] {
-    // Maneja string, array, o un solo valor
     if (typeof value === 'string') {
-      // "1,2,3" -> [1,2,3]
       return value.split(',').map(s => {
         const num = Number(s.trim());
         return isNaN(num) ? 0 : num;
       }).filter(n => n > 0);
     } else if (Array.isArray(value)) {
-      // ["1", "2", "3"] o ["1,2,3"] -> [1,2,3]
       return value.flatMap(v => {
         if (typeof v === 'string') {
-          // Puede ser "1" o "1,2,3"
           return v.split(',').map(s => {
             const num = Number(s.trim());
             return isNaN(num) ? 0 : num;
@@ -163,7 +151,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         return isNaN(Number(v)) ? [] : [Number(v)];
       }).filter(n => n > 0);
     } else if (typeof value === 'number') {
-      // 1 -> [1]
       return [value];
     }
     return [];
@@ -180,7 +167,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private filterCategories(searchTerm: string): void {
     if (!searchTerm) {
-      // Mostrar categorías no seleccionadas
       this.filteredCategories = this.categories.filter(
         c => !this.selectedCategories.some(sc => sc.id === c.id)
       );
@@ -239,19 +225,16 @@ export class HomeComponent implements OnInit, OnDestroy {
       
       if (newSearchTerms.length > 0) {
         this.searchTerms = newSearchTerms;
-        // Mantener solo el primer término en filters.search para compatibilidad
         this.filters.search = newSearchTerms[0];
       } else {
         this.searchTerms = [];
         this.filters.search = undefined;
       }
       
-      // Resetear página cuando cambia la búsqueda
       if (searchChanged) {
         this.pageIndex = 0;
       }
       
-      // Restaurar filtros de categoría
       if (params['categoryIds']) {
         const categoryIds = this.parseIdArray(params['categoryIds']);
         this.selectedCategories = categoryIds.length > 0 
@@ -261,7 +244,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.selectedCategories = [];
       }
       
-      // Restaurar filtros de tienda
       if (params['storeIds']) {
         const storeIds = this.parseIdArray(params['storeIds']);
         this.selectedStores = storeIds.length > 0 
@@ -280,7 +262,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.buildFiltersFromForm();
     console.log('[DEBUG] loadProducts() llamado con filtros:', this.filters, 'página:', this.pageIndex);
 
-    // Si hay múltiples términos de búsqueda, hacer búsquedas separadas y combinar
     if (this.searchTerms.length > 1) {
       this.loadProductsWithMultipleSearchTerms();
     } else {
@@ -294,7 +275,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (page: ProductPage) => {
           console.log('[DEBUG] Productos recibidos:', page.content.length, 'total:', page.totalElements);
-          // Backend ya filtra por search, no aplicar filtro adicional cliente
           this.products = page.content;
           this.totalProducts = page.totalElements;
           this.isLoading = false;
@@ -310,7 +290,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private loadProductsWithMultipleSearchTerms(): void {
-    // Hacer búsquedas para cada término y combinar resultados
     const allProducts: Product[] = [];
     const productIds = new Set<number>();
     let completedRequests = 0;
@@ -321,8 +300,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (page: ProductPage) => {
-            // Backend ya filtra por search, no aplicar filtro adicional cliente
-            // Agregar productos únicos por ID
             page.content.forEach(product => {
               if (!productIds.has(product.id)) {
                 productIds.add(product.id);
@@ -332,8 +309,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
             completedRequests++;
             if (completedRequests === this.searchTerms.length) {
-              // Todas las búsquedas completadas
-              // Aplicar paginación manualmente
               const startIndex = this.pageIndex * this.pageSize;
               const endIndex = startIndex + this.pageSize;
               this.products = allProducts.slice(startIndex, endIndex);
@@ -358,10 +333,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private syncProductsInLists(): void {
     this.shoppingListService.getMyLists().subscribe({
       next: (lists: any[]) => {
-        // Limpiar y repoblar el Set de productos en listas
         this.productsInList.clear();
-        
-        // Recopilar todos los IDs de productos que están en listas
+
         lists.forEach(list => {
           if (list.items && Array.isArray(list.items)) {
             list.items.forEach((item: any) => {
@@ -384,7 +357,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     const formValue = this.filterForm.value;
     this.filters.sortBy = formValue.sortBy as ProductFilters['sortBy'];
 
-    // Usar múltiples categorías por ID
     if (this.selectedCategories.length > 0) {
       this.filters.categoryIds = this.getExpandedCategoryIds(this.selectedCategories);
       this.filters.categoryId = undefined;
@@ -395,7 +367,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.filters.categoryNames = undefined;
     }
 
-    // Usar múltiples tiendas por ID
     if (this.selectedStores.length > 0) {
       this.filters.storeIds = this.selectedStores.map(s => s.id);
     } else {
@@ -442,7 +413,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   private updateActiveFilters(): void {
     this.activeFilters = [];
 
-    // Mostrar cada término de búsqueda como un filtro activo separado
     if (this.searchTerms.length > 0) {
       this.searchTerms.forEach(term => {
         this.activeFilters.push({ key: `search-${term}`, label: `"${term}"` });
@@ -460,23 +430,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onCategoryInputFocus(): void {
-    // Mostrar todas las categorías disponibles cuando el usuario hace focus
     this.filterCategories(this.categorySearchControl.value || '');
   }
 
   onCategorySelected(event: MatAutocompleteSelectedEvent): void {
     const category = event.option.value as Category;
 
-    // Añadir a seleccionadas si no está ya
     if (!this.selectedCategories.some(c => c.id === category.id)) {
       this.selectedCategories.push(category);
     }
 
-    // Limpiar el input
     this.categorySearchControl.setValue('');
     this.filterCategories('');
 
-    // Recargar productos
     this.pageIndex = 0;
     this.updateQueryParams();
     this.loadProducts();
@@ -519,22 +485,19 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private updateQueryParams(): void {
     const queryParams: any = {};
-    
-    // Actualizar parámetro de búsqueda (null para eliminar de la URL)
+
     if (this.searchTerms.length > 0) {
       queryParams['search'] = this.searchTerms.join(',');
     } else {
       queryParams['search'] = null;
     }
     
-    // Actualizar parámetro de tiendas (null para eliminar de la URL)
     if (this.selectedStores.length > 0) {
       queryParams['storeIds'] = this.selectedStores.map(s => s.id).join(',');
     } else {
       queryParams['storeIds'] = null;
     }
     
-    // Actualizar parámetro de categorías (null para eliminar de la URL)
     if (this.selectedCategories.length > 0) {
       queryParams['categoryIds'] = this.selectedCategories.map(c => c.id).join(',');
     } else {
@@ -546,7 +509,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   removeFilter(filterKey: string): void {
     if (filterKey.startsWith('search-')) {
-      // Remover un término de búsqueda específico
       const term = filterKey.substring(7); // "search-".length = 7
       
       this.searchTerms = this.searchTerms.filter(t => t !== term);
@@ -597,12 +559,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     ).subscribe((result: AddToListDialogResult | undefined) => {
       if (!result) return;
 
-      // Refrescar las listas desde el servidor para tener datos actuales
       this.shoppingListService.getMyLists().subscribe({
         next: (lists: any[]) => {
           console.log('🔍 Refrescando listas en HOME:', lists.length);
-          
-          // Encontrar la lista seleccionada
+
           const selectedList = lists.find(l => l.listId === result.listId);
           
           if (!selectedList) {
@@ -610,7 +570,6 @@ export class HomeComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // Buscar si el producto ya está en la lista (convertir a número para comparar)
           const productId = Number(product.id);
           const existingItem = selectedList.items?.find((item: any) => {
             const itemProdId = Number(item.productId);
@@ -618,7 +577,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           });
 
           if (existingItem) {
-            // Si ya existe, actualizar la cantidad (incrementar en 1)
             console.log(`✅ Producto YA existe: actualizando cantidad de ${existingItem.quantity} a ${existingItem.quantity + 1}`);
             this.shoppingListService.updateItem(
               selectedList.listId,
@@ -632,7 +590,6 @@ export class HomeComponent implements OnInit, OnDestroy {
               }
             });
           } else {
-            // Si no existe, añadir nuevo
             console.log(`❌ Producto NO existe: añadiendo nuevo`);
             this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
               next: () => {

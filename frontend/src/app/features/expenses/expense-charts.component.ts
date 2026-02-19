@@ -257,7 +257,6 @@ export class ExpenseChartsComponent implements OnChanges
     'YEARLY': 'anual'
   };
 
-  // Gráfica de líneas - evolución del gasto
   lineChartData: ChartData<'line'> = { labels: [], datasets: [] };
   lineChartOptions: ChartConfiguration<'line'>['options'] = {
     responsive: true,
@@ -277,7 +276,6 @@ export class ExpenseChartsComponent implements OnChanges
     }
   };
 
-  // Gráfica donut por supermercado
   storeDoughnutData: ChartData<'doughnut'> = { labels: [], datasets: [] };
   storeDoughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
@@ -287,7 +285,6 @@ export class ExpenseChartsComponent implements OnChanges
     }
   };
 
-  // Gráfica donut de presupuesto
   budgetDoughnutData: ChartData<'doughnut'> = { labels: [], datasets: [] };
   budgetDoughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
@@ -371,7 +368,6 @@ export class ExpenseChartsComponent implements OnChanges
       ]
     };
 
-    // Añadir línea del límite si existe
     if (this.activeLimit) {
       this.lineChartData.datasets.push({
         data: Array(labels.length).fill(this.activeLimit),

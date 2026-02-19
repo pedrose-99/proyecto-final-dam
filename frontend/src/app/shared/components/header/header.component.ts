@@ -50,7 +50,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   searchResults: ProductSearchResult[] = [];
   isSearching = false;
   
-  // Multi-search terms
   searchTerms: string[] = [];
 
   currentUser$: Observable<AuthResponse | null>;
@@ -77,7 +76,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Cargar los términos de búsqueda de los query params si existen
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
@@ -127,7 +125,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onProductSelected(product: ProductSearchResult): void {
-    // Agregar término de búsqueda en lugar de navegar al producto
     this.addSearchTerm(product.name);
   }
 

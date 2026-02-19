@@ -37,7 +37,6 @@ public class NotificationConsumer {
             return;
         }
 
-        // Obtener miembros ACCEPTED del grupo, excepto el autor del cambio
         List<GroupMember> members = groupMemberRepository.findAcceptedMembersByGroupId(event.groupId());
 
         String message = buildNotificationMessage(event);

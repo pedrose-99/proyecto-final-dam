@@ -48,11 +48,9 @@ public class ScrapeLogService {
         scrapeLog.setProductsUpdated(syncResult.updated);
         scrapeLog.setProductsUnchanged(syncResult.unchanged);
 
-        // Sumar errores de sync a los errores de scraping ya registrados
         int scrapingErrors = scrapeLog.getErrorCount() != null ? scrapeLog.getErrorCount() : 0;
         scrapeLog.setErrorCount(scrapingErrors + syncResult.errors);
 
-        // FAILED si no se encontró ningún producto o si todo falló
         boolean nothingFound = productsFound == 0;
         boolean allFailed = syncResult.created + syncResult.updated == 0 && syncResult.errors > 0;
         scrapeLog.setStatus(nothingFound || allFailed ? ScrapeStatus.FAILED : ScrapeStatus.COMPLETED);

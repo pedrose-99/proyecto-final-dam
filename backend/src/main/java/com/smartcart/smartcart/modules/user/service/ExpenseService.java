@@ -42,12 +42,10 @@ public class ExpenseService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
-    // --- MUTATION: saveSpendingLimit ---
     @Transactional
     public SpendingLimit saveSpendingLimit(Long userId, BigDecimal amount, String typeStr) {
         LimitType type = LimitType.valueOf(typeStr.toUpperCase());
-        
-        // Buscamos si ya existe para actualizar, si no creamos
+
         SpendingLimit limit = limitRepository.findByIdUserAndType(userId, type)
                 .orElse(new SpendingLimit());
         
@@ -62,13 +60,8 @@ public class ExpenseService {
         return limitRepository.save(limit);
     }
 
-    // --- MUTATION: registerBill (Simulación) ---
     @Transactional
     public BillsHistory registerBill(Long userId, String name) {
-        // 1. Obtener items de la lista activa (Simulado)
-        // List<CartItem> cartItems = shoppingListService.getCart(userId);
-        
-        // MOCK DATA para el ejemplo
         List<BillItem> mockItems = List.of(
             new BillItem("Aceite Oliva", 5.50, 1, null),
             new BillItem("Leche Entera", 1.20, 6, null)
@@ -78,12 +71,9 @@ public class ExpenseService {
             .mapToDouble(i -> i.price() * i.quantity())
             .sum();
 
-        // 2. Comprobar si excede algún límite en el momento del registro
-        // (Esto es aparte de Kafka, es para persistir el flag en el historial)
         boolean exceeded = limitRepository.findByIdUserAndIsActiveTrue(userId).stream()
                 .anyMatch(l -> BigDecimal.valueOf(totalAmount).compareTo(l.getAmount()) > 0);
 
-        // 3. Crear el registro histórico
         BillsHistory history = new BillsHistory();
         history.setIdUser(userId);
         history.setName(name);
@@ -92,20 +82,16 @@ public class ExpenseService {
         history.setExceededLimit(exceeded);
         history.setItemsSummary(mockItems); // JPA convierte esto a JSONB automáticamente
 
-        // 4. Disparar evento Kafka (Opcional, ya que se disparó al añadir al carrito, pero útil confirmar)
         budgetProducer.checkLimitsAndNotify(userId, totalAmount);
 
         return historyRepository.save(history);
     }
 
-    // --- MUTATION: createBillFromList (desde lista real) ---
     @Transactional
     public BillsHistory createBillFromList(Long userId, Integer listId, String billName) {
-        // 1. Buscar la lista de la compra
         ShoppingList shoppingList = shoppingListRepository.findById(listId)
                 .orElseThrow(() -> new RuntimeException("Lista no encontrada con id: " + listId));
 
-        // 2. Convertir cada ListItem a BillItem
         List<BillItem> billItems = new ArrayList<>();
         for (ListItem item : shoppingList.getItems()) {
             String productName;
@@ -115,7 +101,6 @@ public class ExpenseService {
 
             if (item.getProduct() != null) {
                 productName = item.getProduct().getName();
-                // Buscar el precio más barato disponible y capturar la tienda
                 List<ProductStore> stores = productStoreRepository
                         .findByProductId_ProductId(item.getProduct().getProductId());
                 Optional<ProductStore> cheapest = stores.stream()
@@ -132,16 +117,13 @@ public class ExpenseService {
             billItems.add(new BillItem(productName, price, item.getQuantity(), storeName));
         }
 
-        // 3. Calcular total
         Double totalAmount = billItems.stream()
                 .mapToDouble(i -> i.price() * i.quantity())
                 .sum();
 
-        // 4. Comprobar límites
         boolean exceeded = limitRepository.findByIdUserAndIsActiveTrue(userId).stream()
                 .anyMatch(l -> BigDecimal.valueOf(totalAmount).compareTo(l.getAmount()) > 0);
 
-        // 5. Crear registro histórico
         BillsHistory history = new BillsHistory();
         history.setIdUser(userId);
         history.setName(billName);
@@ -150,12 +132,10 @@ public class ExpenseService {
         history.setExceededLimit(exceeded);
         history.setItemsSummary(billItems);
 
-        // 6. Disparar evento Kafka
         budgetProducer.checkLimitsAndNotify(userId, totalAmount);
 
         BillsHistory saved = historyRepository.save(history);
 
-        // 7. Crear notificación de compra
         User user = userRepository.findById(Math.toIntExact(userId)).orElse(null);
         if (user != null) {
             Notification notification = new Notification();
@@ -168,18 +148,15 @@ public class ExpenseService {
         return saved;
     }
 
-    // --- QUERY: getBillsHistory ---
     public List<BillsHistory> getHistory(Long userId, String filter, Integer month, Integer year) {
         return historyRepository.findAdvancedHistory(userId, filter, month, year);
     }
 
-    // --- QUERY: getActiveLimits ---
     public List<SpendingLimit> getActiveLimits(Long userId)
     {
         return limitRepository.findByIdUserAndIsActiveTrue(userId);
     }
 
-    // --- QUERY: getExpenseSummary ---
     private static final String[] MONTH_NAMES = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
     private static final int WEEKLY_WINDOW = 8;
     private static final int MONTHLY_WINDOW = 6;

@@ -37,7 +37,6 @@ public class SecurityConfig
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    // Swagger
                     .requestMatchers(
                         "/swagger-ui/**",
                         "/swagger-ui.html",
@@ -46,14 +45,10 @@ public class SecurityConfig
                         "/swagger-resources/**",
                         "/webjars/**"
                     ).permitAll()
-                    // GraphQL
                     .requestMatchers("/graphql", "/graphiql").permitAll()
-                    // Rutas públicas (incluyendo OPTIONS para CORS preflight)
                     .requestMatchers("OPTIONS", "/api/auth/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
-                    // Rutas de admin (requieren ROLE_ADMIN)
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                    // Todo lo demás requiere autenticación
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

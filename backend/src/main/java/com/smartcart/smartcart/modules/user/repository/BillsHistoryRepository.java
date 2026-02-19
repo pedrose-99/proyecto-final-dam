@@ -33,7 +33,6 @@ public interface BillsHistoryRepository extends JpaRepository<BillsHistory, Long
             @Param("year") Integer year
     );
 
-    // --- Resumen MENSUAL (rango) ---
     @Query(value = """
         SELECT
             CAST(EXTRACT(MONTH FROM bh.recorded_at) AS INTEGER) AS period1,
@@ -53,7 +52,6 @@ public interface BillsHistoryRepository extends JpaRepository<BillsHistory, Long
             @Param("until") LocalDateTime until
     );
 
-    // --- Resumen SEMANAL (rango) ---
     @Query(value = """
         SELECT
             CAST(EXTRACT(WEEK FROM bh.recorded_at) AS INTEGER) AS period1,
@@ -73,7 +71,6 @@ public interface BillsHistoryRepository extends JpaRepository<BillsHistory, Long
             @Param("until") LocalDateTime until
     );
 
-    // --- Resumen ANUAL (rango) ---
     @Query(value = """
         SELECT
             CAST(EXTRACT(YEAR FROM bh.recorded_at) AS INTEGER) AS period1,

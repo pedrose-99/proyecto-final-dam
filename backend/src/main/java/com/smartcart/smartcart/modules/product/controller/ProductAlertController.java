@@ -19,8 +19,6 @@ public class ProductAlertController {
         this.productAlertService = productAlertService;
     }
 
-    // ─── ALERTAS: Queries ──────────────────────────────────
-
     @QueryMapping
     public List<ProductAlertDTO> activeAlerts() {
         return productAlertService.getActiveAlerts();
@@ -30,8 +28,6 @@ public class ProductAlertController {
     public List<ProductAlertDTO> alertsByProduct(@Argument Integer productId) {
         return productAlertService.getAlertsByProduct(productId);
     }
-
-    // ─── ALERTAS: Mutations ────────────────────────────────
 
     @MutationMapping
     public ProductAlertDTO createAlert(@Argument Integer productId, @Argument Double targetPrice) {
