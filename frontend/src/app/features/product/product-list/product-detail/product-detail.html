@@ -103,7 +103,7 @@
   </section>
 
   <section class="stores-section">
-    <h2 class="section-title">Comparador de precios</h2>
+    <h2 class="section-title">Tiendas oficiales</h2>
     <div class="table-container">
       <table class="prices-table">
         <thead>
@@ -157,6 +157,32 @@
   </tr>
 </tbody>
       </table>
+    </div>
+  </section>
+
+  <section class="related-section" *ngIf="relatedProducts.length > 0">
+    <h2 class="section-title">Productos relacionados</h2>
+    <div class="carousel-wrapper">
+      <button class="carousel-arrow carousel-arrow-left"
+              (click)="scrollCarousel(-1)"
+              [disabled]="!canScrollLeft">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <div class="carousel-track">
+        <app-product-card
+          *ngFor="let rp of visibleRelated"
+          [product]="rp"
+          (viewProduct)="goToProduct($event)"
+          class="carousel-card"
+        ></app-product-card>
+      </div>
+
+      <button class="carousel-arrow carousel-arrow-right"
+              (click)="scrollCarousel(1)"
+              [disabled]="!canScrollRight">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
     </div>
   </section>
 </main>

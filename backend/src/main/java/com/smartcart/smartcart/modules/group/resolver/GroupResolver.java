@@ -1,6 +1,7 @@
 package com.smartcart.smartcart.modules.group.resolver;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -34,6 +35,14 @@ public class GroupResolver {
     @QueryMapping
     public GroupDTO getGroupDetails(@Argument Integer groupId) {
         return collaborationService.getGroupDetails(groupId);
+    }
+
+    @QueryMapping
+    public Map<String, Object> getNotificationsPaginated(@Argument Integer page, @Argument Integer size) {
+        return collaborationService.getNotificationsPaginated(
+                page != null ? page : 0,
+                size != null ? size : 10
+        );
     }
 
     // ==================== MUTATIONS ====================
@@ -76,5 +85,15 @@ public class GroupResolver {
     @MutationMapping
     public Boolean removeGroupMember(@Argument Integer groupId, @Argument Integer userId) {
         return collaborationService.removeGroupMember(groupId, userId);
+    }
+
+    @MutationMapping
+    public Boolean markNotificationAsRead(@Argument Integer notificationId) {
+        return collaborationService.markNotificationAsRead(notificationId);
+    }
+
+    @MutationMapping
+    public Boolean markAllNotificationsAsRead() {
+        return collaborationService.markAllNotificationsAsRead();
     }
 }

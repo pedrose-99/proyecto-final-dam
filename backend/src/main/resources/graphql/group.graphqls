@@ -6,6 +6,7 @@ extend type Query {
     getMyGroups: [GroupDTO]
     getNotifications: [NotificationDTO]
     getGroupDetails(groupId: ID!): GroupDTO
+    getNotificationsPaginated(page: Int, size: Int): NotificationPageDTO
 }
 
 extend type Mutation {
@@ -17,6 +18,8 @@ extend type Mutation {
     deleteGroup(groupId: ID!): Boolean
     leaveGroup(groupId: ID!): Boolean
     removeGroupMember(groupId: ID!, userId: Int!): Boolean
+    markNotificationAsRead(notificationId: ID!): Boolean
+    markAllNotificationsAsRead: Boolean
 }
 
 # ==================== TYPES ====================
@@ -48,4 +51,12 @@ type NotificationDTO {
     relatedGroupId: Int
     relatedGroupName: String
     createdAt: String
+}
+
+type NotificationPageDTO {
+    content: [NotificationDTO]
+    totalElements: Int
+    totalPages: Int
+    number: Int
+    size: Int
 }

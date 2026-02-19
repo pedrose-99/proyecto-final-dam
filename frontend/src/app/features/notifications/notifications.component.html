@@ -1,0 +1,96 @@
+<div class="notifications-container">
+  <div class="notifications-header">
+    <h1>Notificaciones</h1>
+    <button mat-stroked-button (click)="markAllAsRead()" class="mark-all-btn">
+      <mat-icon>done_all</mat-icon>
+      Marcar todas como leidas
+    </button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filters">
+      <span class="filter-label">Tipo:</span>
+      @for (filter of filters; track filter.value) {
+        <button
+          mat-stroked-button
+          [class.active-filter]="activeFilter === filter.value"
+          (click)="setFilter(filter.value)"
+        >
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+    <div class="filters">
+      <span class="filter-label">Estado:</span>
+      @for (filter of readFilters; track filter.value) {
+        <button
+          mat-stroked-button
+          [class.active-filter]="activeReadFilter === filter.value"
+          (click)="setReadFilter(filter.value)"
+        >
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (filteredNotifications.length === 0) {
+    <mat-card class="empty-state">
+      <mat-icon>notifications_off</mat-icon>
+      <p>No hay notificaciones</p>
+    </mat-card>
+  }
+
+  <div class="notifications-list">
+    @for (notif of filteredNotifications; track notif.notificationId) {
+      <mat-card class="notification-card" [class.unread]="!notif.isRead">
+        <div class="notification-content">
+          <div class="notification-icon-wrapper" [class.unread-icon]="!notif.isRead">
+            <mat-icon>{{ getNotificationIcon(notif.type) }}</mat-icon>
+          </div>
+          <div class="notification-body">
+            <div class="notification-top">
+              <span class="notification-type-badge" [attr.data-type]="notif.type">
+                {{ getTypeLabel(notif.type) }}
+              </span>
+              <span class="notification-date">{{ notif.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <p class="notification-message" [class.unread-text]="!notif.isRead">{{ notif.message }}</p>
+            @if (notif.relatedGroupName) {
+              <span class="notification-group">{{ notif.relatedGroupName }}</span>
+            }
+          </div>
+          <div class="notification-actions">
+            @if (notif.type === 'INVITE' && !notif.isRead) {
+              <button mat-icon-button color="primary" (click)="respondToInvite(notif, true)" matTooltip="Aceptar invitacion">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="respondToInvite(notif, false)" matTooltip="Rechazar invitacion">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            }
+            @if (!notif.isRead && notif.type !== 'INVITE') {
+              <button mat-icon-button (click)="markAsRead(notif)" matTooltip="Marcar como leida">
+                <mat-icon>mark_email_read</mat-icon>
+              </button>
+            }
+            <button mat-icon-button color="warn" (click)="deleteNotification(notif)" matTooltip="Eliminar">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-card>
+    }
+  </div>
+
+  @if (totalElements > 0) {
+    <mat-paginator
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="currentPage"
+      [pageSizeOptions]="[5, 10, 20]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    ></mat-paginator>
+  }
+</div>

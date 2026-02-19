@@ -50,6 +50,7 @@ type ProductComparisonDTO {
     imageUrl: String
     description: String
     categoryName: String
+    categoryId: ID
     storePrices: [StorePriceDTO]
     bestPrice: StorePriceDTO
 }

@@ -1,0 +1,15 @@
+<button class="btn-backing" (click)="goBack()">← Volver</button>
+<div class="support-page">
+  <h1>Preguntas Frecuentes</h1>
+  <p class="subtitle">Encuentra respuestas a las dudas mas habituales.</p>
+
+  <div *ngFor="let faq of faqs; let i = index" class="faq-item" (click)="toggle(i)">
+    <div class="faq-question">
+      <span>{{ faq.question }}</span>
+      <mat-icon [class.open]="openIndex === i">expand_more</mat-icon>
+    </div>
+    <div class="faq-answer" *ngIf="openIndex === i">
+      {{ faq.answer }}
+    </div>
+  </div>
+</div>

@@ -6,9 +6,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { ProductService } from '../../../../core/services/product.service';
 import { FavoriteService } from '../../../../shared/services/favorite.service';
 import { ShoppingListService } from '../../../../shared/services/shopping-list.service';
+import { ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
 import { SelectShoppingListDialogComponent } from './select-shopping-list.dialog';
 import { Chart, registerables } from 'chart.js';
 
@@ -21,7 +23,8 @@ import { Chart, registerables } from 'chart.js';
     MatButtonModule,
     MatTooltipModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    ProductCardComponent
   ],
   templateUrl: './product-detail.html',
   styleUrls: ['./product-detail.css']
@@ -41,6 +44,10 @@ export class ProductDetailComponent implements OnInit {
   isFavorite = false;
   isInShoppingList = false;
   
+  relatedProducts: any[] = [];
+  carouselIndex = 0;
+  carouselVisible = 3;
+
   product: any = {
     name: 'Cargando...',
     ean: '',
@@ -58,7 +65,8 @@ export class ProductDetailComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private location: Location,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {}
 
   goBack(): void {
@@ -66,12 +74,32 @@ export class ProductDetailComponent implements OnInit {
 }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.productId = parseInt(id);
-      
-      // Cargar datos del producto
-      this.productService.getComparison(id).subscribe({
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.loadProduct(id);
+      }
+    });
+  }
+
+  private loadProduct(id: string): void {
+    window.scrollTo(0, 0);
+    this.loading = true;
+    this.productId = parseInt(id);
+    this.relatedProducts = [];
+    this.carouselIndex = 0;
+    this.priceHistory = [];
+    this.stores = [];
+    this.bestPrice = null;
+    this.isFavorite = false;
+    this.isInShoppingList = false;
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+
+    // Cargar datos del producto
+    this.productService.getComparison(id).subscribe({
         next: (data: any) => {
           if (data) {
             this.product = {
@@ -85,6 +113,23 @@ export class ProductDetailComponent implements OnInit {
             };
             this.stores = data.storePrices || [];
             this.bestPrice = data.bestPrice?.currentPrice || null;
+
+            // Cargar productos relacionados por categoría
+            if (data.categoryId) {
+              this.productService.getRelatedProducts(data.categoryId, data.productId).subscribe({
+                next: (products) => {
+                  this.relatedProducts = products.map((p: any) => ({
+                    id: p.productId,
+                    name: p.name,
+                    brand: p.brand,
+                    imageUrl: p.imageUrl,
+                    categoryName: p.categoryName,
+                    isFavorite: false
+                  }));
+                  this.cdr.detectChanges();
+                }
+              });
+            }
           }
           this.loading = false;
           this.cdr.detectChanges();
@@ -115,7 +160,6 @@ export class ProductDetailComponent implements OnInit {
 
       // Cargar historial de precios al inicio
       this.loadHistoryData();
-    }
   }
 
   checkIfInShoppingList(): void {
@@ -282,6 +326,30 @@ export class ProductDetailComponent implements OnInit {
 
   historyNextPage(): void {
     if (this.historyPage < this.totalHistoryPages - 1) this.historyPage++;
+  }
+
+  get visibleRelated(): any[] {
+    return this.relatedProducts.slice(this.carouselIndex, this.carouselIndex + this.carouselVisible);
+  }
+
+  get canScrollLeft(): boolean {
+    return this.carouselIndex > 0;
+  }
+
+  get canScrollRight(): boolean {
+    return this.carouselIndex + this.carouselVisible < this.relatedProducts.length;
+  }
+
+  scrollCarousel(direction: number): void {
+    this.carouselIndex += direction;
+    if (this.carouselIndex < 0) this.carouselIndex = 0;
+    if (this.carouselIndex + this.carouselVisible > this.relatedProducts.length) {
+      this.carouselIndex = this.relatedProducts.length - this.carouselVisible;
+    }
+  }
+
+  goToProduct(product: any): void {
+    this.router.navigate(['/producto', product.id]);
   }
 
  renderChart() {

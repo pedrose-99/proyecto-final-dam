@@ -26,7 +26,6 @@ public class MockPriceHistoryGenerator
 
     public void generateIfNeeded()
     {
-        long historyCount = priceHistoryRepository.count();
         long productStoreCount = productStoreRepository.count();
 
         if (productStoreCount == 0)
@@ -35,15 +34,19 @@ public class MockPriceHistoryGenerator
             return;
         }
 
-        if (historyCount > productStoreCount)
+        // Comprobar si ya existen registros con fechas anteriores a hoy (mock data)
+        LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
+        long mockCount = priceHistoryRepository.countByRecordedAtBefore(todayStart);
+
+        if (mockCount > 0)
         {
-            log.info("Ya existen {} registros de historico (vs {} product_store), saltando generacion",
-                    historyCount, productStoreCount);
+            log.info("Ya existen {} registros de historico ficticio (anteriores a hoy), saltando generacion",
+                    mockCount);
             return;
         }
 
-        log.info("Generando historico ficticio de precios ({} registros de historico para {} product_store)...",
-                historyCount, productStoreCount);
+        log.info("Generando historico ficticio de precios para {} product_store...",
+                productStoreCount);
 
         List<ProductStore> allProductStores = productStoreRepository.findAll();
         List<PriceHistory> batch = new ArrayList<>(BATCH_SIZE);
