@@ -22,7 +22,23 @@ import {
 })
 export class ProductService {
 
+  private productCache = new Map<string, { data: Product[], timestamp: number }>();
+  private CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
   constructor(private apollo: Apollo) {}
+
+  clearCache(): void {
+    this.productCache.clear();
+  }
+
+  private getCacheKey(filters: ProductFilters): string {
+    return JSON.stringify({
+      search: filters.search,
+      storeIds: filters.storeIds,
+      categoryId: filters.categoryId,
+      categoryIds: filters.categoryIds
+    });
+  }
 
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
     let baseQuery$: Observable<Product[]>;
@@ -264,7 +280,7 @@ export class ProductService {
           variables: {
             storeId: storeId.toString(),
             page: 0,
-            size: 10000
+            size: 50000
           },
           fetchPolicy: 'network-only'
         })
@@ -296,7 +312,7 @@ export class ProductService {
         variables: {
           storeId: filters.storeIds[0].toString(),
           page: 0,
-          size: 10000
+          size: 50000
         },
         fetchPolicy: 'network-only'
       }).pipe(
@@ -332,7 +348,7 @@ export class ProductService {
         variables: {
           categoryId: filters.categoryId.toString(),
           page: 0,
-          size: 10000
+          size: 50000
         },
         fetchPolicy: 'network-only'
       }).pipe(
@@ -343,7 +359,7 @@ export class ProductService {
     else {
       baseQuery$ = this.apollo.query<any>({
         query: GET_ALL_PRODUCTS,
-        variables: { page: 0, size: 10000 },
+        variables: { page: 0, size: 50000 },
         fetchPolicy: 'network-only'
       }).pipe(
         map(result => (result.data?.allProducts?.content || []).map((p: any) => this.mapToProduct(p)))
@@ -352,6 +368,10 @@ export class ProductService {
 
     // Aplicar ordenamiento, filtrado y paginación
     return baseQuery$.pipe(
+      tap(allProducts => {
+        // Guardar en caché antes de paginar
+        this.productCache.set(cacheKey, { data: allProducts, timestamp: Date.now() });
+      }),
       map(allProducts => {
         console.log('[DEBUG-SERVICE] Raw products from backend:', allProducts.length, 'productos');
         
