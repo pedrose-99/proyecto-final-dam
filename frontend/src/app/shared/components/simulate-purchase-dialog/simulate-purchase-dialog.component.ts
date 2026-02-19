@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 
 export interface SimulatePurchaseDialogData {
   listId: number;
@@ -14,6 +15,7 @@ export interface SimulatePurchaseDialogData {
 
 export interface SimulatePurchaseDialogResult {
   billName: string;
+  purchaseDate: string;
 }
 
 @Component({
@@ -26,7 +28,8 @@ export interface SimulatePurchaseDialogResult {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatIconModule
+    MatIconModule,
+    MatDatepickerModule
   ],
   template: `
     <h2 mat-dialog-title>
@@ -44,11 +47,20 @@ export interface SimulatePurchaseDialogResult {
           <mat-error>El nombre es obligatorio</mat-error>
         }
       </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Fecha de la compra</mat-label>
+        <input matInput [matDatepicker]="picker" [formControl]="dateControl">
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        @if (dateControl.hasError('required') && dateControl.touched) {
+          <mat-error>La fecha es obligatoria</mat-error>
+        }
+      </mat-form-field>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancelar</button>
       <button mat-flat-button color="primary" (click)="confirm()"
-              [disabled]="billNameControl.invalid">
+              [disabled]="billNameControl.invalid || dateControl.invalid">
         Confirmar
       </button>
     </mat-dialog-actions>
@@ -71,6 +83,7 @@ export interface SimulatePurchaseDialogResult {
 })
 export class SimulatePurchaseDialogComponent {
   billNameControl = new FormControl('', Validators.required);
+  dateControl = new FormControl<Date | null>(new Date(), Validators.required);
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: SimulatePurchaseDialogData,
@@ -78,7 +91,11 @@ export class SimulatePurchaseDialogComponent {
   ) {}
 
   confirm(): void {
-    if (this.billNameControl.invalid) return;
-    this.dialogRef.close({ billName: this.billNameControl.value!.trim() } as SimulatePurchaseDialogResult);
+    if (this.billNameControl.invalid || this.dateControl.invalid) return;
+    const date = this.dateControl.value!;
+    this.dialogRef.close({
+      billName: this.billNameControl.value!.trim(),
+      purchaseDate: date.toISOString()
+    } as SimulatePurchaseDialogResult);
   }
 }

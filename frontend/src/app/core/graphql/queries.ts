@@ -656,8 +656,8 @@ export const REMOVE_FROM_FAVORITES = gql`
 `;
 // Gastos / Historial
 export const CREATE_BILL_FROM_LIST = gql`
-  mutation CreateBillFromList($listId: ID!, $billName: String!) {
-    createBillFromList(listId: $listId, billName: $billName) {
+  mutation CreateBillFromList($listId: ID!, $billName: String!, $purchaseDate: String) {
+    createBillFromList(listId: $listId, billName: $billName, purchaseDate: $purchaseDate) {
       billsHistoryId
       name
       recordedAt

@@ -21,8 +21,10 @@ import com.smartcart.smartcart.modules.user.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExpenseService {
@@ -100,7 +103,7 @@ public class ExpenseService {
 
     // --- MUTATION: createBillFromList (desde lista real) ---
     @Transactional
-    public BillsHistory createBillFromList(Long userId, Integer listId, String billName) {
+    public BillsHistory createBillFromList(Long userId, Integer listId, String billName, String purchaseDate) {
         // 1. Buscar la lista de la compra
         ShoppingList shoppingList = shoppingListRepository.findById(listId)
                 .orElseThrow(() -> new RuntimeException("Lista no encontrada con id: " + listId));
@@ -145,24 +148,53 @@ public class ExpenseService {
         BillsHistory history = new BillsHistory();
         history.setIdUser(userId);
         history.setName(billName);
-        history.setRecordedAt(LocalDateTime.now());
+        LocalDateTime recordDate = LocalDateTime.now();
+        if (purchaseDate != null && !purchaseDate.isBlank())
+        {
+            try
+            {
+                // Extraer solo la parte de fecha (YYYY-MM-DD) del ISO string
+                LocalDate date = LocalDate.parse(purchaseDate.substring(0, 10));
+                recordDate = date.atStartOfDay();
+            }
+            catch (Exception e)
+            {
+                log.warn("No se pudo parsear purchaseDate '{}', usando fecha actual", purchaseDate, e);
+            }
+        }
+        history.setRecordedAt(recordDate);
         history.setTotalAmount(totalAmount);
         history.setExceededLimit(exceeded);
         history.setItemsSummary(billItems);
 
-        // 6. Disparar evento Kafka
-        budgetProducer.checkLimitsAndNotify(userId, totalAmount);
+        // 6. Disparar evento Kafka (no bloqueante)
+        try
+        {
+            budgetProducer.checkLimitsAndNotify(userId, totalAmount);
+        }
+        catch (Exception e)
+        {
+            log.warn("Error al enviar alerta Kafka para usuario {}: {}", userId, e.getMessage());
+        }
 
         BillsHistory saved = historyRepository.save(history);
 
         // 7. Crear notificación de compra
-        User user = userRepository.findById(Math.toIntExact(userId)).orElse(null);
-        if (user != null) {
-            Notification notification = new Notification();
-            notification.setRecipient(user);
-            notification.setMessage("Compra '" + billName + "' registrada por " + String.format("%.2f", totalAmount) + "€");
-            notification.setType(NotificationType.PURCHASE);
-            notificationRepository.save(notification);
+        try
+        {
+            User user = userRepository.findById(Math.toIntExact(userId)).orElse(null);
+            if (user != null)
+            {
+                Notification notification = new Notification();
+                notification.setRecipient(user);
+                notification.setMessage("Compra '" + billName + "' registrada por " + String.format("%.2f", totalAmount) + "€");
+                notification.setType(NotificationType.PURCHASE);
+                notificationRepository.save(notification);
+            }
+        }
+        catch (Exception e)
+        {
+            log.warn("Error al crear notificación de compra para usuario {}: {}", userId, e.getMessage());
         }
 
         return saved;
