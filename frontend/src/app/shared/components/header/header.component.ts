@@ -229,6 +229,47 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  markAllAsRead(): void {
+    this.notificationService.markAllAsRead().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.loadNotifications();
+      }
+    });
+  }
+
+  onNotificationClick(notification: AppNotification): void {
+    if (!notification.isRead && notification.type !== 'INVITE') {
+      this.notificationService.markAsRead(notification.notificationId).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: () => {
+          this.loadNotifications();
+        }
+      });
+    }
+  }
+
+  goToNotifications(): void {
+    this.router.navigate(['/notifications']);
+  }
+
+  get recentNotifications(): AppNotification[] {
+    return this.notifications.slice(0, 5);
+  }
+
+  getNotificationIcon(type: string): string {
+    switch (type) {
+      case 'INVITE': return 'group_add';
+      case 'UPDATE': return 'update';
+      case 'BUDGET_ALERT': return 'account_balance_wallet';
+      case 'PURCHASE': return 'shopping_cart';
+      case 'SYSTEM': return 'info';
+      default: return 'notifications';
+    }
+  }
+
   get isAdmin(): boolean {
     return this.authService.getCurrentUser()?.role === 'ADMIN';
   }

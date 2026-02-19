@@ -10,6 +10,7 @@ public record ProductComparisonDTO(
     String imageUrl,
     String description,
     String categoryName,
+    Integer categoryId,
     List<StorePriceDTO> storePrices,
     StorePriceDTO bestPrice
 ) {}

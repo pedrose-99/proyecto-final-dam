@@ -1,5 +1,6 @@
 package com.smartcart.smartcart.modules.product.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,8 @@ import com.smartcart.smartcart.modules.product.entity.PriceHistory;
 
 @Repository
 public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Integer> {
+
+    long countByRecordedAtBefore(LocalDateTime dateTime);
 
     // Historial por relación ProductStore
     List<PriceHistory> findByProductStoreId_StoreProductId(Integer storeProductId);

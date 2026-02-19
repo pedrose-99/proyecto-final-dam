@@ -1,10 +1,12 @@
 package com.smartcart.smartcart.modules.product.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,34 +52,33 @@ public class ProductService {
         this.userRepository = userRepository;
     }
 
-    private boolean isFavorite(Integer productId) {
+    private Set<Integer> getFavoriteProductIds() {
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
             var user = userRepository.findByEmail(email);
-            if (user.isEmpty()) return false;
-            return favoriteRepository.existsByUser_IdUserAndProduct_ProductId(
-                user.get().getIdUser(), 
-                productId
-            );
+            if (user.isEmpty()) return Collections.emptySet();
+            return favoriteRepository.findProductIdsByUserId(user.get().getIdUser());
         } catch (RuntimeException e) {
-            return false;
+            return Collections.emptySet();
         }
     }
 
     // ─── CRUD ──────────────────────────────────────────────
 
     public List<ProductDTO> findAll() {
+        Set<Integer> favoriteIds = getFavoriteProductIds();
         return productRepository.findAll().stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
     }
 
     public ProductPageDTO findAllPaginated(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productRepository.findAll(pageable);
+        Set<Integer> favoriteIds = getFavoriteProductIds();
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -94,21 +95,24 @@ public class ProductService {
     public ProductDTO findByEan(String ean) {
         Product p = productRepository.findByEan(ean)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con EAN: " + ean));
-        return ProductMapper.toDTO(p, isFavorite(p.getProductId()));
+        Set<Integer> favoriteIds = getFavoriteProductIds();
+        return ProductMapper.toDTO(p, favoriteIds.contains(p.getProductId()));
     }
 
     public List<ProductDTO> findByCategoryId(Integer categoryId) {
+        Set<Integer> favoriteIds = getFavoriteProductIds();
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
     }
 
     public ProductPageDTO findByCategoryIdPaginated(Integer categoryId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productRepository.findByCategoryId_CategoryId(categoryId, pageable);
+        Set<Integer> favoriteIds = getFavoriteProductIds();
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -125,9 +129,10 @@ public class ProductService {
     public ProductPageDTO findByStoreIdPaginated(Integer storeId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productRepository.findByStoreId(storeId, pageable);
+        Set<Integer> favoriteIds = getFavoriteProductIds();
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -169,9 +174,10 @@ public class ProductService {
     public ProductPageDTO searchProducts(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productRepository.searchByText(query, pageable);
+        Set<Integer> favoriteIds = getFavoriteProductIds();
 
         List<ProductDTO> content = productPage.getContent().stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
 
         return new ProductPageDTO(
@@ -195,7 +201,8 @@ public class ProductService {
         p.setBrand(brand);
         p.setCategoryId(cat);
         Product saved = productRepository.save(p);
-        return ProductMapper.toDTO(saved, isFavorite(saved.getProductId()));
+        Set<Integer> favoriteIds = getFavoriteProductIds();
+        return ProductMapper.toDTO(saved, favoriteIds.contains(saved.getProductId()));
     }
 
     public ProductDTO update(Integer id, String name, String brand, String imageUrl) {
@@ -205,7 +212,8 @@ public class ProductService {
         if (brand != null) p.setBrand(brand);
         if (imageUrl != null) p.setImageUrl(imageUrl);
         Product saved = productRepository.save(p);
-        return ProductMapper.toDTO(saved, isFavorite(saved.getProductId()));
+        Set<Integer> favoriteIds = getFavoriteProductIds();
+        return ProductMapper.toDTO(saved, favoriteIds.contains(saved.getProductId()));
     }
 
     public Boolean delete(Integer id) {
@@ -216,8 +224,9 @@ public class ProductService {
     // ─── NAVEGACIÓN: Filtrar productos por categoría ───────
 
     public List<ProductDTO> findByCategory(Integer categoryId) {
+        Set<Integer> favoriteIds = getFavoriteProductIds();
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
-                .map(product -> ProductMapper.toDTO(product, isFavorite(product.getProductId())))
+                .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
     }
 
@@ -249,6 +258,7 @@ public class ProductService {
                 .orElse(null);
 
         String categoryName = product.getCategoryId() != null ? product.getCategoryId().getName() : null;
+        Integer categoryId = product.getCategoryId() != null ? product.getCategoryId().getCategoryId() : null;
 
         return new ProductComparisonDTO(
                 product.getProductId(),
@@ -258,6 +268,7 @@ public class ProductService {
                 product.getImageUrl(),
                 product.getDescription(),
                 categoryName,
+                categoryId,
                 storePrices,
                 bestPrice
         );

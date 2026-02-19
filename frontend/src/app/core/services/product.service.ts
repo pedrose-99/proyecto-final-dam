@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { GET_STORES_BY_PRODUCT, GET_PRODUCT_COMPARISON, GET_PRICE_HISTORY } from '../graphql/queries';
+import { GET_STORES_BY_PRODUCT, GET_PRODUCT_COMPARISON, GET_PRICE_HISTORY, GET_PRODUCTS_BY_CATEGORY } from '../graphql/queries';
 
 @Injectable({
   providedIn: 'root'
@@ -35,10 +35,31 @@ export class ProductService {
     );
   }
   getPriceHistory(productId: string) {
-  return this.apollo.query({
-    query: GET_PRICE_HISTORY,
-    variables: { productId },
-    fetchPolicy: 'network-only'
-  }).pipe(map((result: any) => result.data.getPriceHistory));
-}
+    return this.apollo.query({
+      query: GET_PRICE_HISTORY,
+      variables: { productId },
+      fetchPolicy: 'network-only'
+    }).pipe(map((result: any) => result.data.getPriceHistory));
+  }
+
+  getRelatedProducts(categoryId: string, excludeProductId: number): Observable<any[]> {
+    // Página aleatoria para variar los resultados
+    const randomPage = Math.floor(Math.random() * 5);
+    return this.apollo.query<any>({
+      query: GET_PRODUCTS_BY_CATEGORY,
+      variables: { categoryId, page: randomPage, size: 30 },
+      fetchPolicy: 'network-only'
+    }).pipe(
+      map(result => {
+        const products = (result.data?.productsByCategoryPaginated?.content || [])
+          .filter((p: any) => p.productId !== excludeProductId);
+        // Barajar y tomar 6
+        for (let i = products.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [products[i], products[j]] = [products[j], products[i]];
+        }
+        return products.slice(0, 6);
+      })
+    );
+  }
 }

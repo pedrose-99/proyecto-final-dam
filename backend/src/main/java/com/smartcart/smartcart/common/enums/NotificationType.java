@@ -4,5 +4,6 @@ public enum NotificationType {
     INVITE,
     UPDATE,
     SYSTEM,
-    BUDGET_ALERT
+    BUDGET_ALERT,
+    PURCHASE
 }
