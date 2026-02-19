@@ -287,6 +287,29 @@ export class ProductService {
     return sorted;
   }
 
+  private normalizeText(value: string): string {
+    return (value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private filterByCategoryNames(products: Product[], categoryNames: string[]): Product[] {
+    const normalizedNames = categoryNames
+      .map(name => this.normalizeText(name))
+      .filter(name => name.length > 0);
+
+    if (normalizedNames.length === 0) {
+      return products;
+    }
+
+    return products.filter(product => {
+      const category = this.normalizeText(product.categoryName || '');
+      // Coincidencia exacta del nombre completo de la categoría
+      return normalizedNames.some(name => category.includes(name));
+    });
+  }
+
   private mapToProduct(data: any): Product {
     return {
       id: data.productId,
