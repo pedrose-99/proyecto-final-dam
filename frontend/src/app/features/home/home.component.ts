@@ -9,10 +9,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
 import { ProductService } from '../../shared/services/product.service';
 import { ShoppingListService } from '../../shared/services/shopping-list.service';
@@ -35,10 +36,11 @@ import { Store } from '../../core/models/store.model';
     MatIconModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
+
     MatAutocompleteModule,
     MatChipsModule,
     MatDialogModule,
+    MatTooltipModule,
     ProductCardComponent
   ],
   templateUrl: './home.component.html',
@@ -64,6 +66,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Filters
   filters: ProductFilters = {};
   activeFilters: { key: string; label: string }[] = [];
+  searchTerms: string[] = [];  // Array de términos de búsqueda para OR
 
   // Form
   filterForm = new FormGroup({
@@ -88,14 +91,50 @@ export class HomeComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.loadInitialData();
+    // Cargar datos iniciales y luego procesar los parámetros de ruta
+    this.productService.getCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+        this.filteredCategories = categories;
+        this.setupCategorySearch();
+        this.checkDataLoaded();
+      },
+      error: (err) => {
+        console.error('Error al cargar categorías:', err);
+        this.checkDataLoaded();
+      }
+    });
+
+    this.productService.getStores().subscribe({
+      next: (stores) => {
+        this.stores = stores.filter(s => s.productCount && s.productCount > 0);
+        this.filteredStores = this.stores;
+        this.setupStoreSearch();
+        this.checkDataLoaded();
+      },
+      error: (err) => {
+        console.error('Error al cargar tiendas:', err);
+        this.checkDataLoaded();
+      }
+    });
+
     this.setupFilterSubscription();
-    this.handleRouteParams();
+    this.syncProductsInLists();
+  }
+
+  private dataLoadedFlags = { categories: false, stores: false };
+
+  private checkDataLoaded(): void {
+    this.dataLoadedFlags.categories = this.categories.length > 0;
+    this.dataLoadedFlags.stores = this.stores.length > 0;
+
+    if (this.dataLoadedFlags.categories && this.dataLoadedFlags.stores) {
+      this.handleRouteParams();
+    }
   }
 
   ngOnDestroy(): void {
@@ -103,29 +142,31 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private loadInitialData(): void {
-    this.productService.getCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-        this.filteredCategories = categories;
-        this.setupCategorySearch();
-      },
-      error: (err) => {
-        console.error('Error al cargar categorías:', err);
-      }
-    });
-
-    this.productService.getStores().subscribe({
-      next: (stores) => {
-        // Solo mostrar tiendas activas (con productos)
-        this.stores = stores.filter(s => s.productCount && s.productCount > 0);
-        this.filteredStores = this.stores;
-        this.setupStoreSearch();
-      },
-      error: (err) => {
-        console.error('Error al cargar tiendas:', err);
-      }
-    });
+  private parseIdArray(value: any): number[] {
+    // Maneja string, array, o un solo valor
+    if (typeof value === 'string') {
+      // "1,2,3" -> [1,2,3]
+      return value.split(',').map(s => {
+        const num = Number(s.trim());
+        return isNaN(num) ? 0 : num;
+      }).filter(n => n > 0);
+    } else if (Array.isArray(value)) {
+      // ["1", "2", "3"] o ["1,2,3"] -> [1,2,3]
+      return value.flatMap(v => {
+        if (typeof v === 'string') {
+          // Puede ser "1" o "1,2,3"
+          return v.split(',').map(s => {
+            const num = Number(s.trim());
+            return isNaN(num) ? 0 : num;
+          });
+        }
+        return isNaN(Number(v)) ? [] : [Number(v)];
+      }).filter(n => n > 0);
+    } else if (typeof value === 'number') {
+      // 1 -> [1]
+      return [value];
+    }
+    return [];
   }
 
   private setupCategorySearch(): void {
@@ -189,16 +230,47 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
-      if (params['search']) {
-        this.filters.search = params['search'];
+      const newSearch = params['search'];
+      const newSearchTerms = newSearch 
+        ? newSearch.split(',').map((t: string) => t.trim()).filter((t: string) => t)
+        : [];
+      
+      const searchChanged = newSearch !== this.filters.search;
+      
+      if (newSearchTerms.length > 0) {
+        this.searchTerms = newSearchTerms;
+        // Mantener solo el primer término en filters.search para compatibilidad
+        this.filters.search = newSearchTerms[0];
+      } else {
+        this.searchTerms = [];
+        this.filters.search = undefined;
       }
-      if (params['categoryId']) {
-        const categoryId = +params['categoryId'];
-        const category = this.categories.find(c => c.id === categoryId);
-        if (category && !this.selectedCategories.some(sc => sc.id === categoryId)) {
-          this.selectedCategories.push(category);
-        }
+      
+      // Resetear página cuando cambia la búsqueda
+      if (searchChanged) {
+        this.pageIndex = 0;
       }
+      
+      // Restaurar filtros de categoría
+      if (params['categoryIds']) {
+        const categoryIds = this.parseIdArray(params['categoryIds']);
+        this.selectedCategories = categoryIds.length > 0 
+          ? this.categories.filter(category => categoryIds.includes(category.id))
+          : [];
+      } else {
+        this.selectedCategories = [];
+      }
+      
+      // Restaurar filtros de tienda
+      if (params['storeIds']) {
+        const storeIds = this.parseIdArray(params['storeIds']);
+        this.selectedStores = storeIds.length > 0 
+          ? this.stores.filter(store => storeIds.includes(store.id))
+          : [];
+      } else {
+        this.selectedStores = [];
+      }
+      
       this.loadProducts();
     });
   }
@@ -208,25 +280,104 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.buildFiltersFromForm();
     console.log('[DEBUG] loadProducts() llamado con filtros:', this.filters, 'página:', this.pageIndex);
 
+    // Si hay múltiples términos de búsqueda, hacer búsquedas separadas y combinar
+    if (this.searchTerms.length > 1) {
+      this.loadProductsWithMultipleSearchTerms();
+    } else {
+      this.loadProductsSingleSearch();
+    }
+  }
+
+  private loadProductsSingleSearch(): void {
     this.productService.getProducts(this.filters, this.pageIndex, this.pageSize)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page: ProductPage) => {
           console.log('[DEBUG] Productos recibidos:', page.content.length, 'total:', page.totalElements);
+          // Backend ya filtra por search, no aplicar filtro adicional cliente
           this.products = page.content;
           this.totalProducts = page.totalElements;
           this.isLoading = false;
           this.updateActiveFilters();
+          this.syncProductsInLists();
           this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Error al cargar productos:', err);
           this.isLoading = false;
-          this.snackBar.open('Error al cargar los productos', 'Cerrar', {
-            duration: 3000
-          });
         }
       });
+  }
+
+  private loadProductsWithMultipleSearchTerms(): void {
+    // Hacer búsquedas para cada término y combinar resultados
+    const allProducts: Product[] = [];
+    const productIds = new Set<number>();
+    let completedRequests = 0;
+
+    this.searchTerms.forEach(term => {
+      const filtersCopy = { ...this.filters, search: term };
+      this.productService.getProducts(filtersCopy, 0, 1000) // Obtener más productos para combinar
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (page: ProductPage) => {
+            // Backend ya filtra por search, no aplicar filtro adicional cliente
+            // Agregar productos únicos por ID
+            page.content.forEach(product => {
+              if (!productIds.has(product.id)) {
+                productIds.add(product.id);
+                allProducts.push(product);
+              }
+            });
+
+            completedRequests++;
+            if (completedRequests === this.searchTerms.length) {
+              // Todas las búsquedas completadas
+              // Aplicar paginación manualmente
+              const startIndex = this.pageIndex * this.pageSize;
+              const endIndex = startIndex + this.pageSize;
+              this.products = allProducts.slice(startIndex, endIndex);
+              this.totalProducts = allProducts.length;
+              this.isLoading = false;
+              this.updateActiveFilters();
+              this.syncProductsInLists();
+              this.cdr.detectChanges();
+            }
+          },
+          error: (err) => {
+            console.error('Error al cargar productos para término:', term, err);
+            completedRequests++;
+            if (completedRequests === this.searchTerms.length) {
+              this.isLoading = false;
+            }
+          }
+        });
+    });
+  }
+
+  private syncProductsInLists(): void {
+    this.shoppingListService.getMyLists().subscribe({
+      next: (lists: any[]) => {
+        // Limpiar y repoblar el Set de productos en listas
+        this.productsInList.clear();
+        
+        // Recopilar todos los IDs de productos que están en listas
+        lists.forEach(list => {
+          if (list.items && Array.isArray(list.items)) {
+            list.items.forEach((item: any) => {
+              if (item.productId) {
+                this.productsInList.add(Number(item.productId));
+              }
+            });
+          }
+        });
+        
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al sincronizar productos en listas:', err);
+      }
+    });
   }
 
   private buildFiltersFromForm(): void {
@@ -235,9 +386,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // Usar múltiples categorías por ID
     if (this.selectedCategories.length > 0) {
-      this.filters.categoryIds = this.selectedCategories.map(c => c.id);
+      this.filters.categoryIds = this.getExpandedCategoryIds(this.selectedCategories);
       this.filters.categoryId = undefined;
-      this.filters.categoryNames = undefined;
+      this.filters.categoryNames = this.selectedCategories.map(c => c.name);
     } else {
       this.filters.categoryIds = undefined;
       this.filters.categoryId = undefined;
@@ -252,15 +403,59 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  private getExpandedCategoryIds(selected: Category[]): number[] {
+    const selectedIds = selected.map(c => c.id);
+    if (this.categories.length === 0) {
+      return selectedIds;
+    }
+
+    const childrenByParent = new Map<number, number[]>();
+    this.categories.forEach(category => {
+      if (category.parentId !== null) {
+        const parentId = category.parentId;
+        const siblings = childrenByParent.get(parentId) || [];
+        siblings.push(category.id);
+        childrenByParent.set(parentId, siblings);
+      }
+    });
+
+    const expanded = new Set<number>(selectedIds);
+    const queue: number[] = [...selectedIds];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (currentId === undefined) {
+        continue;
+      }
+      const children = childrenByParent.get(currentId) || [];
+      children.forEach(childId => {
+        if (!expanded.has(childId)) {
+          expanded.add(childId);
+          queue.push(childId);
+        }
+      });
+    }
+
+    return Array.from(expanded);
+  }
+
   private updateActiveFilters(): void {
     this.activeFilters = [];
 
-    if (this.filters.search) {
-      this.activeFilters.push({ key: 'search', label: `"${this.filters.search}"` });
+    // Mostrar cada término de búsqueda como un filtro activo separado
+    if (this.searchTerms.length > 0) {
+      this.searchTerms.forEach(term => {
+        this.activeFilters.push({ key: `search-${term}`, label: `"${term}"` });
+      });
     }
   }
 
   applyFilters(): void {
+    this.loadProducts();
+  }
+
+  refreshProducts(): void {
+    this.productService.clearCache();
     this.loadProducts();
   }
 
@@ -283,6 +478,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // Recargar productos
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
@@ -290,6 +486,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.selectedCategories = this.selectedCategories.filter(c => c.id !== category.id);
     this.filterCategories(this.categorySearchControl.value || '');
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
@@ -302,32 +499,73 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     if (!this.selectedStores.some(s => s.id === store.id)) {
       this.selectedStores.push(store);
+      
+      this.storeSearchControl.setValue('');
+      this.filterStores('');
+
+      this.pageIndex = 0;
+      this.updateQueryParams();
+      this.loadProducts();
     }
-
-    this.storeSearchControl.setValue('');
-    this.filterStores('');
-
-    this.pageIndex = 0;
-    this.loadProducts();
   }
 
   removeStore(store: Store): void {
     this.selectedStores = this.selectedStores.filter(s => s.id !== store.id);
     this.filterStores(this.storeSearchControl.value || '');
     this.pageIndex = 0;
+    this.updateQueryParams();
     this.loadProducts();
   }
 
+  private updateQueryParams(): void {
+    const queryParams: any = {};
+    
+    // Actualizar parámetro de búsqueda (null para eliminar de la URL)
+    if (this.searchTerms.length > 0) {
+      queryParams['search'] = this.searchTerms.join(',');
+    } else {
+      queryParams['search'] = null;
+    }
+    
+    // Actualizar parámetro de tiendas (null para eliminar de la URL)
+    if (this.selectedStores.length > 0) {
+      queryParams['storeIds'] = this.selectedStores.map(s => s.id).join(',');
+    } else {
+      queryParams['storeIds'] = null;
+    }
+    
+    // Actualizar parámetro de categorías (null para eliminar de la URL)
+    if (this.selectedCategories.length > 0) {
+      queryParams['categoryIds'] = this.selectedCategories.map(c => c.id).join(',');
+    } else {
+      queryParams['categoryIds'] = null;
+    }
+    
+    this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
+  }
+
   removeFilter(filterKey: string): void {
-    if (filterKey === 'search') {
-      this.filters.search = undefined;
-      this.router.navigate([], { queryParams: { search: null }, queryParamsHandling: 'merge' });
+    if (filterKey.startsWith('search-')) {
+      // Remover un término de búsqueda específico
+      const term = filterKey.substring(7); // "search-".length = 7
+      
+      this.searchTerms = this.searchTerms.filter(t => t !== term);
+      
+      if (this.searchTerms.length > 0) {
+        const newSearchQuery = this.searchTerms.join(',');
+        this.filters.search = this.searchTerms[0];
+        this.router.navigate([], { queryParams: { search: newSearchQuery }, queryParamsHandling: 'merge' });
+      } else {
+        this.filters.search = undefined;
+        this.router.navigate([], { queryParams: { search: null }, queryParamsHandling: 'merge' });
+      }
     }
     this.loadProducts();
   }
 
   clearAllFilters(): void {
     this.filters = {};
+    this.searchTerms = [];
     this.selectedCategories = [];
     this.selectedStores = [];
     this.categorySearchControl.setValue('');
@@ -359,13 +597,54 @@ export class HomeComponent implements OnInit, OnDestroy {
     ).subscribe((result: AddToListDialogResult | undefined) => {
       if (!result) return;
 
-      this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
-        next: () => {
-          this.productsInList.add(product.id);
-          this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
+      // Refrescar las listas desde el servidor para tener datos actuales
+      this.shoppingListService.getMyLists().subscribe({
+        next: (lists: any[]) => {
+          console.log('🔍 Refrescando listas en HOME:', lists.length);
+          
+          // Encontrar la lista seleccionada
+          const selectedList = lists.find(l => l.listId === result.listId);
+          
+          if (!selectedList) {
+            console.error('❌ Lista no encontrada:', result.listId);
+            return;
+          }
+
+          // Buscar si el producto ya está en la lista (convertir a número para comparar)
+          const productId = Number(product.id);
+          const existingItem = selectedList.items?.find((item: any) => {
+            const itemProdId = Number(item.productId);
+            return itemProdId === productId;
+          });
+
+          if (existingItem) {
+            // Si ya existe, actualizar la cantidad (incrementar en 1)
+            console.log(`✅ Producto YA existe: actualizando cantidad de ${existingItem.quantity} a ${existingItem.quantity + 1}`);
+            this.shoppingListService.updateItem(
+              selectedList.listId,
+              existingItem.itemId,
+              existingItem.quantity + 1
+            ).subscribe({
+              next: () => {
+                this.productsInList.add(product.id);
+              },
+              error: () => {
+              }
+            });
+          } else {
+            // Si no existe, añadir nuevo
+            console.log(`❌ Producto NO existe: añadiendo nuevo`);
+            this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
+              next: () => {
+                this.productsInList.add(product.id);
+              },
+              error: () => {
+              }
+            });
+          }
         },
-        error: () => {
-          this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
+        error: (err) => {
+          console.error('❌ Error al refrescar listas:', err);
         }
       });
     });
@@ -376,21 +655,19 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.productService.removeFromFavorites(product.id).subscribe({
         next: () => {
           product.isFavorite = false;
-          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
         }
       });
     } else {
       this.productService.addToFavorites(product.id).subscribe({
         next: () => {
           product.isFavorite = true;
-          this.snackBar.open('Añadido a favoritos', 'Cerrar', { duration: 2000 });
         }
       });
     }
   }
 
   onViewProduct(product: Product): void {
-    this.router.navigate(['/producto', product.id]);
+    this.router.navigate(['/producto', product.id], { queryParamsHandling: 'preserve' });
   }
 
   isProductInList(productId: number): boolean {

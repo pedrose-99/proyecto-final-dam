@@ -4,6 +4,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.smartcart.smartcart.modules.product.repository.ProductRepository;
+import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
 import com.smartcart.smartcart.modules.shoppinglist.dto.ShoppingListDTO;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ListItem;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ShoppingList;
@@ -34,6 +35,7 @@ public class ShoppingListService
 {
     private final ShoppingListRepository slRepository;
     private final ProductRepository productRepository;
+    private final ProductStoreRepository productStoreRepository;
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
@@ -85,14 +87,14 @@ public class ShoppingListService
             {
                 if (seenIds.add(sl.getListId()))
                 {
-                    result.add(ShoppingListMapper.toDTO(sl));
+                    result.add(ShoppingListMapper.toDTO(sl, productStoreRepository));
                 }
             }
             for (ShoppingList sl : groupLists)
             {
                 if (seenIds.add(sl.getListId()))
                 {
-                    result.add(ShoppingListMapper.toDTO(sl));
+                    result.add(ShoppingListMapper.toDTO(sl, productStoreRepository));
                 }
             }
 
@@ -113,24 +115,21 @@ public class ShoppingListService
             return null;
         }
         return findAccessibleList(listId, user.get())
-                .map(ShoppingListMapper::toDTO)
+                .map(sl -> ShoppingListMapper.toDTO(sl, productStoreRepository))
                 .orElse(null);
     }
 
-    /**
-     * Busca una lista accesible: propia del usuario O perteneciente a un grupo del usuario.
-     */
     private Optional<ShoppingList> findAccessibleList(Integer listId, User user)
     {
-        // Primero buscar como propietario
+        // Primero buscar como propietario (esta query ya tiene JOIN FETCH)
         Optional<ShoppingList> ownList = slRepository.findByListIdAndUser_IdUser(listId, user.getIdUser());
         if (ownList.isPresent())
         {
             return ownList;
         }
 
-        // Si no es propietario, buscar en listas de grupos del usuario
-        Optional<ShoppingList> listOpt = slRepository.findById(listId);
+        // Si no es propietario, buscar en listas de grupos del usuario con JOIN FETCH
+        Optional<ShoppingList> listOpt = slRepository.findByIdWithUser(listId);
         if (listOpt.isPresent() && listOpt.get().getGroup() != null)
         {
             Integer groupId = listOpt.get().getGroup().getGroupId();
@@ -161,7 +160,7 @@ public class ShoppingListService
                 group.ifPresent(shoppinglist::setGroup);
             }
 
-            return ShoppingListMapper.toDTO(slRepository.save(shoppinglist));
+            return ShoppingListMapper.toDTO(slRepository.save(shoppinglist), productStoreRepository);
         }
         catch(RuntimeException e)
         {
@@ -174,17 +173,65 @@ public class ShoppingListService
     public boolean deleteList(Integer listId)
     {
         Optional<User> user = getCurrentUser();
+        if (user.isEmpty()) {
+            log.error("Usuario no encontrado");
+            return false;
+        }
+        
         try
         {
-            Optional<ShoppingList> list = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
-            slRepository.delete(list.get());
+            // Usar findAccessibleList para buscar tanto listas propias como de grupo
+            Optional<ShoppingList> listOpt = findAccessibleList(listId, user.get());
+            if (listOpt.isEmpty()) {
+                log.error("Lista no encontrada o no pertenece al usuario");
+                return false;
+            }
+            
+            ShoppingList list = listOpt.get();
+            
+            // Verificar permisos para eliminar
+            boolean canDelete = false;
+            
+            if (list.getGroup() != null) {
+                // Si la lista pertenece a un grupo, cualquier miembro del grupo puede eliminarla
+                Optional<GroupMember> membership = groupMemberRepository.findAcceptedMember(
+                    list.getGroup().getGroupId(), 
+                    user.get().getIdUser()
+                );
+                canDelete = membership.isPresent();
+            } else {
+                // Si la lista no pertenece a un grupo, solo el propietario puede eliminarla
+                canDelete = list.getUser().getIdUser().equals(user.get().getIdUser());
+            }
+            
+            if (!canDelete) {
+                log.error("El usuario no tiene permiso para eliminar la lista");
+                return false;
+            }
+            
+            // Desasociar la lista del grupo si tiene uno asociado
+            if (list.getGroup() != null) {
+                Group group = list.getGroup();
+                list.setGroup(null);
+                group.getShoppingLists().remove(list);
+            }
+            
+            // Limpiar los items antes de eliminar (por si acaso)
+            list.getItems().clear();
+            slRepository.flush();
+            
+            // Eliminar la lista
+            slRepository.delete(list);
+            slRepository.flush();
+            
+            log.info("Lista {} eliminada correctamente", listId);
             return true;
         }
-        catch(RuntimeException e)
+        catch(Exception e)
         {
-           log.error("No se pudo eliminar la lista", e.getMessage()); 
+           log.error("No se pudo eliminar la lista: {}", e.getMessage(), e); 
+           throw new RuntimeException("Error al eliminar la lista", e);
         }
-        return false;
     }
 
     @Transactional
@@ -227,7 +274,7 @@ public class ShoppingListService
         }
 
         list.getItems().add(newItem);
-        return ShoppingListMapper.toDTO(slRepository.save(list));
+        return ShoppingListMapper.toDTO(slRepository.save(list), productStoreRepository);
     }
 
     @Transactional
@@ -266,7 +313,7 @@ public class ShoppingListService
         }
 
         slRepository.save(list);
-        return ShoppingListMapper.toDTO(list);
+        return ShoppingListMapper.toDTO(list, productStoreRepository);
     }
 
     @Transactional
@@ -288,7 +335,7 @@ public class ShoppingListService
         list.getItems().removeIf(i -> i.getItemId().equals(itemId));
 
         slRepository.save(list);
-        return ShoppingListMapper.toDTO(list);
+        return ShoppingListMapper.toDTO(list, productStoreRepository);
     }
 
     @SuppressWarnings("unchecked")
@@ -333,10 +380,30 @@ public class ShoppingListService
                 shoppingList.getItems().add(listItem);
             }
 
-            result.add(ShoppingListMapper.toDTO(slRepository.save(shoppingList)));
+            result.add(ShoppingListMapper.toDTO(slRepository.save(shoppingList), productStoreRepository));
         }
 
         return result;
+    }
+
+    @Transactional
+    public ShoppingListDTO renameList(Integer listId, String newName)
+    {
+        Optional<User> user = getCurrentUser();
+        if (user.isEmpty())
+        {
+            throw new RuntimeException("Usuario no encontrado");
+        }
+
+        Optional<ShoppingList> listOpt = slRepository.findByListIdAndUser_IdUser(listId, user.get().getIdUser());
+        if (listOpt.isEmpty())
+        {
+            throw new RuntimeException("Lista no encontrada");
+        }
+
+        ShoppingList list = listOpt.get();
+        list.setName(newName);
+        return ShoppingListMapper.toDTO(slRepository.save(list), productStoreRepository);
     }
 
 }

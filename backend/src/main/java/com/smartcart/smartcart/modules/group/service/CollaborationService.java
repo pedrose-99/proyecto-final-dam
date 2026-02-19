@@ -1,9 +1,13 @@
 package com.smartcart.smartcart.modules.group.service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -178,6 +182,107 @@ public class CollaborationService {
         return toGroupDTO(group);
     }
 
+    // ==================== ELIMINAR GRUPO ====================
+
+    @Transactional
+    public boolean deleteGroup(Integer groupId) {
+        User currentUser = getAuthenticatedUser();
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
+
+        // Verificar que el usuario es el propietario del grupo
+        if (!group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Solo el propietario puede eliminar el grupo");
+        }
+
+        // Eliminar todos los miembros del grupo
+        groupMemberRepository.deleteByGroup(group);
+
+        // Eliminar todas las notificaciones relacionadas con el grupo
+        notificationRepository.deleteByRelatedGroup(group);
+
+        // Eliminar el grupo
+        groupRepository.delete(group);
+
+        return true;
+    }
+
+    // ==================== GESTION DE MIEMBROS ====================
+
+    @Transactional
+    public boolean leaveGroup(Integer groupId) {
+        User currentUser = getAuthenticatedUser();
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
+
+        if (group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
+            throw new BadRequestException("El propietario no puede salir del grupo");
+        }
+
+        GroupMember membership = groupMemberRepository.findByGroupAndUser(group, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException("No eres miembro de este grupo"));
+
+        if (membership.getStatus() != MemberStatus.ACCEPTED) {
+            throw new BadRequestException("No eres miembro aceptado del grupo");
+        }
+
+        groupMemberRepository.delete(membership);
+        return true;
+    }
+
+    @Transactional
+    public boolean removeGroupMember(Integer groupId, Integer userId) {
+        User currentUser = getAuthenticatedUser();
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
+
+        if (!group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Solo el propietario puede eliminar miembros del grupo");
+        }
+
+        if (group.getOwner().getIdUser().equals(userId)) {
+            throw new BadRequestException("El propietario no puede eliminarse a si mismo");
+        }
+
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        GroupMember membership = groupMemberRepository.findByGroupAndUser(group, targetUser)
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no pertenece a este grupo"));
+
+        groupMemberRepository.delete(membership);
+
+        // Notificar al usuario expulsado
+        Notification notification = new Notification();
+        notification.setRecipient(targetUser);
+        notification.setMessage("Has sido eliminado del grupo '" + group.getName() + "'");
+        notification.setType(NotificationType.SYSTEM);
+        notification.setRelatedGroup(group);
+        notificationRepository.save(notification);
+
+        return true;
+    }
+
+    // ==================== ELIMINAR NOTIFICACIÓN ====================
+
+    @Transactional
+    public boolean deleteNotification(Integer notificationId) {
+        User currentUser = getAuthenticatedUser();
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
+
+        if (!notification.getRecipient().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Esta notificación no te pertenece");
+        }
+
+        notificationRepository.delete(notification);
+        return true;
+    }
+
     // ==================== RESPONDER A INVITACIÓN ====================
 
     @Transactional
@@ -225,6 +330,31 @@ public class CollaborationService {
         return true;
     }
 
+    // ==================== MARK AS READ ====================
+
+    @Transactional
+    public boolean markNotificationAsRead(Integer notificationId) {
+        User currentUser = getAuthenticatedUser();
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
+
+        if (!notification.getRecipient().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Esta notificación no te pertenece");
+        }
+
+        notification.setIsRead(true);
+        notificationRepository.save(notification);
+        return true;
+    }
+
+    @Transactional
+    public boolean markAllNotificationsAsRead() {
+        User currentUser = getAuthenticatedUser();
+        notificationRepository.markAllAsReadByRecipient(currentUser);
+        return true;
+    }
+
     // ==================== QUERIES ====================
 
     public List<GroupDTO> getMyGroups() {
@@ -243,6 +373,24 @@ public class CollaborationService {
         return notifications.stream()
                 .map(this::toNotificationDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Map<String, Object> getNotificationsPaginated(int page, int size) {
+        User currentUser = getAuthenticatedUser();
+        Page<Notification> notifPage = notificationRepository.findByRecipientOrderByCreatedAtDesc(
+                currentUser, PageRequest.of(page, size));
+
+        List<NotificationDTO> content = notifPage.getContent().stream()
+                .map(this::toNotificationDTO)
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", content);
+        result.put("totalElements", notifPage.getTotalElements());
+        result.put("totalPages", notifPage.getTotalPages());
+        result.put("number", notifPage.getNumber());
+        result.put("size", notifPage.getSize());
+        return result;
     }
 
     public GroupDTO getGroupDetails(Integer groupId) {
@@ -309,10 +457,11 @@ public class CollaborationService {
                                             item.getProduct() != null ? item.getProduct().getImageUrl() : null,
                                             item.getQuantity(),
                                             item.getChecked(),
-                                            item.getProduct() == null
+                                            item.getProduct() == null,
+                                            (String) null
                                     ))
                                     .collect(Collectors.toList())
-                                : Collections.emptyList()
+                                : Collections.<ListItemDTO>emptyList()
                 ))
                 .collect(Collectors.toList());
 

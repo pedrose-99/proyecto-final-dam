@@ -93,4 +93,10 @@ public class ShoppingListController
         return slService.createSublists(originalListName, sublists);
     }
 
+    @MutationMapping
+    public ShoppingListDTO renameShoppingList(@Argument Integer listId, @Argument String name)
+    {
+        return slService.renameList(listId, name);
+    }
+
 }

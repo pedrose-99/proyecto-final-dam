@@ -12,7 +12,8 @@ import {
   REMOVE_LIST_ITEM,
   OPTIMIZE_SHOPPING_LIST,
   OPTIMIZE_BY_STORE,
-  CREATE_SUBLISTS
+  CREATE_SUBLISTS,
+  RENAME_SHOPPING_LIST
 } from '../../core/graphql/queries';
 import { ShoppingList, OptimizedList, OptimizedStore, SublistInput } from '../../core/models/shopping-list.model';
 
@@ -60,7 +61,11 @@ export class ShoppingListService {
     return this.apollo.mutate<{ deleteShoppingList: boolean }>(
       {
         mutation: DELETE_SHOPPING_LIST,
-        variables: { listId: listId.toString() }
+        variables: { listId: listId.toString() },
+        refetchQueries: [{
+          query: GET_MY_SHOPPING_LISTS
+        }],
+        awaitRefetchQueries: true
       }
     ).pipe(
       map(result => result.data?.deleteShoppingList || false)
@@ -160,6 +165,20 @@ export class ShoppingListService {
       }
     ).pipe(
       map(result => result.data?.createSublists as ShoppingList[])
+    );
+  }
+
+  renameList(listId: number, newName: string): Observable<ShoppingList> {
+    return this.apollo.mutate<{ renameShoppingList: ShoppingList }>(
+      {
+        mutation: RENAME_SHOPPING_LIST,
+        variables: {
+          listId: listId.toString(),
+          name: newName
+        }
+      }
+    ).pipe(
+      map(result => result.data?.renameShoppingList as ShoppingList)
     );
   }
 }

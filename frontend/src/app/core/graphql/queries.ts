@@ -10,6 +10,7 @@ export const GET_ALL_PRODUCTS = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -39,9 +40,10 @@ export const GET_PRODUCT_COMPARISON = gql`
       name
       brand
       ean
-      description  # <--- HE AÑADIDO ESTA LÍNEA
+      description
       imageUrl
       categoryName
+      categoryId
       storePrices {
         storeId
         storeName
@@ -69,6 +71,7 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -89,6 +92,7 @@ export const GET_PRODUCTS_BY_STORE = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -110,6 +114,7 @@ export const SEARCH_PRODUCTS = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -205,6 +210,8 @@ export const GET_MY_SHOPPING_LISTS = gql`
     myShoppingLists {
       listId
       name
+      userId
+      username
       groupId
       groupName
       createdAt
@@ -217,6 +224,7 @@ export const GET_MY_SHOPPING_LISTS = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -227,6 +235,10 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
     shoppingListById(listId: $listId) {
       listId
       name
+      userId
+      username
+      groupId
+      groupName
       createdAt
 
       items {
@@ -237,6 +249,7 @@ export const GET_SHOPPING_LIST_BY_ID = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -257,6 +270,7 @@ export const CREATE_SHOPPING_LIST = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -283,6 +297,7 @@ export const ADD_ITEM_TO_LIST = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -303,6 +318,7 @@ export const UPDATE_LIST_ITEM = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -323,6 +339,7 @@ export const REMOVE_LIST_ITEM = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -343,6 +360,28 @@ export const CREATE_SUBLISTS = gql`
         quantity
         checked
         isGeneric
+        cheapestStoreName
+      }
+    }
+  }
+`;
+
+export const RENAME_SHOPPING_LIST = gql`
+  mutation RenameShoppingList($listId: ID!, $name: String!) {
+    renameShoppingList(listId: $listId, name: $name) {
+      listId
+      name
+      createdAt
+
+      items {
+        itemId
+        productId
+        displayName
+        imageUrl
+        quantity
+        checked
+        isGeneric
+        cheapestStoreName
       }
     }
   }
@@ -403,6 +442,7 @@ export const SEARCH_PRODUCTS_BY_STORE = gql`
         categoryName
         imageUrl
         currentPrice
+        isFavorite
       }
       totalElements
       totalPages
@@ -527,6 +567,93 @@ export const RESPOND_TO_INVITE = gql`
   }
 `;
 
+export const DELETE_NOTIFICATION = gql`
+  mutation DeleteNotification($notificationId: ID!) {
+    deleteNotification(notificationId: $notificationId)
+  }
+`;
+
+export const MARK_NOTIFICATION_AS_READ = gql`
+  mutation MarkNotificationAsRead($notificationId: ID!) {
+    markNotificationAsRead(notificationId: $notificationId)
+  }
+`;
+
+export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
+  mutation MarkAllNotificationsAsRead {
+    markAllNotificationsAsRead
+  }
+`;
+
+export const GET_NOTIFICATIONS_PAGINATED = gql`
+  query GetNotificationsPaginated($page: Int, $size: Int) {
+    getNotificationsPaginated(page: $page, size: $size) {
+      content {
+        notificationId
+        message
+        type
+        isRead
+        relatedGroupId
+        relatedGroupName
+        createdAt
+      }
+      totalElements
+      totalPages
+      number
+      size
+    }
+  }
+`;
+
+export const DELETE_GROUP = gql`
+  mutation DeleteGroup($groupId: ID!) {
+    deleteGroup(groupId: $groupId)
+  }
+`;
+
+export const LEAVE_GROUP = gql`
+  mutation LeaveGroup($groupId: ID!) {
+    leaveGroup(groupId: $groupId)
+  }
+`;
+
+export const REMOVE_GROUP_MEMBER = gql`
+  mutation RemoveGroupMember($groupId: ID!, $userId: Int!) {
+    removeGroupMember(groupId: $groupId, userId: $userId)
+  }
+`;
+
+// Favoritos
+export const GET_MY_FAVORITES = gql`
+  query MyFavorites {
+    myFavorites {
+      productId
+      name
+      brand
+      imageUrl
+      categoryName
+      isFavorite
+    }
+  }
+`;
+
+export const IS_FAVORITE = gql`
+  query IsFavorite($productId: ID!) {
+    isFavorite(productId: $productId)
+  }
+`;
+
+export const ADD_TO_FAVORITES = gql`
+  mutation AddToFavorites($productId: ID!) {
+    addToFavorites(productId: $productId)
+  }
+`;
+
+export const REMOVE_FROM_FAVORITES = gql`
+  mutation RemoveFromFavorites($productId: ID!) {
+    removeFromFavorites(productId: $productId)
+  }
+`;
 // Gastos / Historial
 export const CREATE_BILL_FROM_LIST = gql`
   mutation CreateBillFromList($listId: ID!, $billName: String!) {
@@ -540,6 +667,7 @@ export const CREATE_BILL_FROM_LIST = gql`
         productName
         price
         quantity
+        storeName
       }
     }
   }
@@ -557,7 +685,41 @@ export const GET_BILLS_HISTORY = gql`
         productName
         price
         quantity
+        storeName
       }
+    }
+  }
+`;
+
+export const GET_SPENDING_LIMITS = gql`
+  query GetSpendingLimits {
+    getSpendingLimits {
+      limitId
+      amount
+      type
+      isActive
+    }
+  }
+`;
+
+export const SAVE_SPENDING_LIMIT = gql`
+  mutation SaveSpendingLimit($amount: Float!, $type: String!) {
+    saveSpendingLimit(amount: $amount, type: $type) {
+      limitId
+      amount
+      type
+      isActive
+    }
+  }
+`;
+
+export const GET_EXPENSE_SUMMARY = gql`
+  query GetExpenseSummary($period: String, $offset: Int) {
+    getExpenseSummary(period: $period, offset: $offset) {
+      periodLabel
+      totalAmount
+      billCount
+      exceededCount
     }
   }
 `;

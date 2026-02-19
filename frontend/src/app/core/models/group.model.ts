@@ -23,7 +23,7 @@ export interface AppNotification
 {
     notificationId: number;
     message: string;
-    type: 'INVITE' | 'UPDATE' | 'SYSTEM';
+    type: 'INVITE' | 'UPDATE' | 'SYSTEM' | 'BUDGET_ALERT' | 'PURCHASE';
     isRead: boolean;
     relatedGroupId: number | null;
     relatedGroupName: string | null;

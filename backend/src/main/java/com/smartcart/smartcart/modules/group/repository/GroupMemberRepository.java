@@ -30,4 +30,6 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Intege
 
     @Query("SELECT gm FROM GroupMember gm WHERE gm.group.groupId = :groupId AND gm.user.idUser = :userId AND gm.status = 'ACCEPTED'")
     Optional<GroupMember> findAcceptedMember(@Param("groupId") Integer groupId, @Param("userId") Integer userId);
+
+    void deleteByGroup(Group group);
 }

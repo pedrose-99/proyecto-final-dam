@@ -9,7 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -40,7 +40,7 @@ import { ProductSearchResult } from '../../core/models/product.model';
     MatCheckboxModule,
     MatChipsModule,
     MatAutocompleteModule,
-    MatSnackBarModule,
+
     MatProgressSpinnerModule,
     MatDividerModule,
     MatDialogModule,
@@ -82,13 +82,16 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   alternativesMode: 'optimize' | 'byStore' = 'optimize';
   alternativesSearchControl = new FormControl<string>('');
 
+  // Edit list name
+  isEditingName = false;
+  editNameControl = new FormControl<string>('');
+
   private destroy$ = new Subject<void>();
 
   constructor(
     private shoppingListService: ShoppingListService,
     private productService: ProductService,
     private expenseService: ExpenseService,
-    private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router
   ) {}
@@ -114,7 +117,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: () => {
-          this.snackBar.open('Error al cargar las listas', 'Cerrar', { duration: 3000 });
+
           this.isLoading = false;
         }
       });
@@ -128,7 +131,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.stores = stores.filter(s => s.productCount && s.productCount > 0);
         },
         error: () => {
-          this.snackBar.open('Error al cargar las tiendas', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -161,7 +164,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   createList(): void {
     const name = (this.newListNameControl.value || '').trim();
     if (!name) {
-      this.snackBar.open('Escribe un nombre para la lista', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -173,10 +175,9 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.lists.unshift(list);
           this.selectedList = list;
           this.newListNameControl.reset();
-          this.snackBar.open('Lista creada', 'Cerrar', { duration: 3000 });
         },
         error: () => {
-          this.snackBar.open('Error al crear la lista', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -191,7 +192,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.selectedList = fullList;
         },
         error: () => {
-          this.snackBar.open('Error al cargar la lista', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -201,14 +202,14 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.lists = this.lists.filter(l => l.listId !== list.listId);
           if (this.selectedList?.listId === list.listId) {
             this.selectedList = null;
           }
-          this.snackBar.open('Lista eliminada', 'Cerrar', { duration: 3000 });
+          // La lista se actualizará automáticamente con refetchQueries
+          this.loadLists();
         },
         error: () => {
-          this.snackBar.open('Error al eliminar la lista', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -226,7 +227,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.searchResults = [];
         },
         error: () => {
-          this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -246,7 +247,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.searchResults = [];
         },
         error: () => {
-          this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -262,7 +263,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.selectedList = updatedList;
         },
         error: () => {
-          this.snackBar.open('Error al actualizar la cantidad', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -277,7 +278,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.selectedList = updatedList;
         },
         error: () => {
-          this.snackBar.open('Error al actualizar el estado', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -292,7 +293,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.selectedList = updatedList;
         },
         error: () => {
-          this.snackBar.open('Error al eliminar el producto', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -321,12 +322,10 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
 
   optimize(): void {
     if (!this.selectedList) {
-      this.snackBar.open('Selecciona una lista', 'Cerrar', { duration: 3000 });
       return;
     }
 
     if (!this.selectedList.items || this.selectedList.items.length === 0) {
-      this.snackBar.open('La lista está vacía', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -343,7 +342,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.isOptimizing = false;
         },
         error: () => {
-          this.snackBar.open('Error al optimizar la compra', 'Cerrar', { duration: 3000 });
+
           this.isOptimizing = false;
         }
       });
@@ -398,11 +397,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (newLists) => {
           this.isCreatingSublists = false;
-          this.snackBar.open(
-            `Se crearon ${newLists.length} sublista${newLists.length !== 1 ? 's' : ''}`,
-            'Cerrar',
-            { duration: 3000 }
-          );
           this.selectedList = null;
           this.optimizedResult = null;
           this.editableResult = null;
@@ -411,7 +405,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.isCreatingSublists = false;
-          this.snackBar.open('Error al crear las sublistas', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -433,11 +427,10 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           .pipe(takeUntil(this.destroy$))
           .subscribe({
             next: () => {
-              this.snackBar.open('Compra registrada correctamente', 'Cerrar', { duration: 3000 });
               this.router.navigate(['/mis-gastos']);
             },
             error: () => {
-              this.snackBar.open('Error al registrar la compra', 'Cerrar', { duration: 3000 });
+
             }
           });
       });
@@ -463,11 +456,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.isCreatingSublists = false;
-          this.snackBar.open(
-            `Lista creada para ${store.storeName}`,
-            'Cerrar',
-            { duration: 3000 }
-          );
           this.selectedList = null;
           this.optimizedResult = null;
           this.editableResult = null;
@@ -477,7 +465,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.isCreatingSublists = false;
-          this.snackBar.open('Error al crear la lista', 'Cerrar', { duration: 3000 });
+
         }
       });
   }
@@ -487,7 +475,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   optimizeByStore(): void {
     if (!this.selectedList) return;
     if (!this.selectedList.items || this.selectedList.items.length === 0) {
-      this.snackBar.open('La lista está vacía', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -505,7 +492,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           this.isLoadingByStore = false;
         },
         error: () => {
-          this.snackBar.open('Error al cargar vista por tienda', 'Cerrar', { duration: 3000 });
+
           this.isLoadingByStore = false;
         }
       });
@@ -606,7 +593,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
     }
 
     this.closeAlternatives();
-    this.snackBar.open('Producto cambiado', 'Cerrar', { duration: 2000 });
+
   }
 
   getStoreLogo(logoUrl: string | undefined | null, storeName: string): string {
@@ -624,6 +611,60 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
 
   displayProduct(product: ProductSearchResult): string {
     return product ? product.name : '';
+  }
+
+  hasGenericItems(): boolean {
+    return this.selectedList?.items?.some(i => i.isGeneric) ?? false;
+  }
+
+  getStoreFromListName(name: string): string | null {
+    const knownStores = ['mercadona', 'dia', 'carrefour', 'alcampo', 'ahorramas'];
+    const lower = name?.toLowerCase() || '';
+    for (const store of knownStores) {
+      if (lower.startsWith(store + ' ')) {
+        return store;
+      }
+    }
+    return null;
+  }
+
+  startEditName(): void {
+    if (!this.selectedList) return;
+    this.editNameControl.setValue(this.selectedList.name);
+    this.isEditingName = true;
+  }
+
+  saveListName(): void {
+    const newName = (this.editNameControl.value || '').trim();
+    if (!newName || !this.selectedList) {
+      this.cancelEditName();
+      return;
+    }
+
+    this.shoppingListService.renameList(this.selectedList.listId, newName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedList) => {
+          this.selectedList!.name = updatedList.name;
+          const idx = this.lists.findIndex(l => l.listId === updatedList.listId);
+          if (idx >= 0) {
+            this.lists[idx].name = updatedList.name;
+          }
+          this.isEditingName = false;
+
+        },
+        error: () => {
+
+        }
+      });
+  }
+
+  cancelEditName(): void {
+    this.isEditingName = false;
+  }
+
+  goToExpenses(): void {
+    this.router.navigate(['/mis-gastos']);
   }
 
   backToLists(): void {

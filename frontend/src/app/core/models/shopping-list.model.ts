@@ -1,6 +1,8 @@
 export interface ShoppingList {
   listId: number;
   name: string;
+  userId: number;
+  username: string;
   groupId: number | null;
   groupName: string | null;
   createdAt: string;
@@ -15,6 +17,7 @@ export interface ListItem {
   quantity: number;
   checked: boolean;
   isGeneric: boolean;
+  cheapestStoreName?: string | null;
 }
 
 export interface OptimizedList {

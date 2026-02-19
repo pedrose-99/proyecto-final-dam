@@ -1,8 +1,9 @@
-/* Card principal - tamaño fijo */
+/* Card principal - fluida */
 :host {
   display: block;
-  width: 280px;
+  width: 100%;
   height: 420px;
+  min-width: 0;
 }
 
 .product-card {
@@ -38,10 +39,12 @@
 
 .favorite-btn {
   background-color: rgba(255, 255, 255, 0.9) !important;
-  color: var(--smartcart-text-light);
+  color: #999999 !important;
+  transition: all 0.3s ease !important;
 }
 
 .favorite-btn:hover {
+  color: #ff6b6b !important;
   background-color: rgba(255, 255, 255, 1) !important;
 }
 
@@ -155,15 +158,21 @@
 }
 
 .add-btn {
-  color: var(--smartcart-accent) !important;
+  color: #4299e1 !important;
+  transition: all 0.3s ease !important;
 }
 
-.add-btn:hover {
-  background-color: var(--smartcart-accent-light) !important;
+.add-btn:hover:not(.in-list) {
+  color: #3182ce !important;
+  transform: scale(1.15);
 }
 
 .add-btn.in-list {
-  color: var(--smartcart-success) !important;
+  color: #48bb78 !important;
+}
+
+.add-btn.in-list:hover {
+  opacity: 0.8;
 }
 
 .add-btn mat-icon {

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,8 +12,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
+import { MatChipsModule } from '@angular/material/chips';
+import { Observable, Subject, debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthResponse } from '../../../core/models/user.model';
 import { ProductService } from '../../services/product.service';
 import { NotificationService } from '../../services/notification.service';
 import { ProductSearchResult } from '../../../core/models/product.model';
@@ -36,7 +38,8 @@ import { ThemeService } from '../../../core/services/theme.service';
     MatInputModule,
     MatFormFieldModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatChipsModule
   ],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
@@ -46,8 +49,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   searchControl = new FormControl('');
   searchResults: ProductSearchResult[] = [];
   isSearching = false;
+  
+  // Multi-search terms
+  searchTerms: string[] = [];
 
-  currentUser: any;
+  currentUser$: Observable<AuthResponse | null>;
   favoritesCount = 0;
   cartCount = 0;
 
@@ -63,13 +69,23 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private notificationService: NotificationService,
     private router: Router,
+    private route: ActivatedRoute,
     themeService: ThemeService
   ) {
     this.themeService = themeService;
-    this.currentUser = this.authService.getCurrentUser();
+    this.currentUser$ = this.authService.currentUser$;
   }
 
   ngOnInit(): void {
+    // Cargar los términos de búsqueda de los query params si existen
+    this.route.queryParams.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      if (params['search']) {
+        this.searchTerms = params['search'].split(',').map((t: string) => t.trim()).filter((t: string) => t);
+      }
+    });
+
     this.setupSearch();
     this.loadNotifications();
 
@@ -111,21 +127,45 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onProductSelected(product: ProductSearchResult): void {
-    this.router.navigate(['/producto', product.id]);
+    // Agregar término de búsqueda en lugar de navegar al producto
+    this.addSearchTerm(product.name);
+  }
+
+  addSearchTerm(term: string): void {
+    const trimmedTerm = term.trim().toLowerCase();
+    console.log('[DEBUG-HEADER] addSearchTerm llamado con:', term, 'trimmed:', trimmedTerm);
+    if (trimmedTerm && !this.searchTerms.includes(trimmedTerm)) {
+      this.searchTerms.push(trimmedTerm);
+      console.log('[DEBUG-HEADER] searchTerms actualizado a:', this.searchTerms);
+    }
     this.searchControl.setValue('');
     this.searchResults = [];
+    this.navigateWithSearchTerms();
+    console.log('[DEBUG-HEADER] navigateWithSearchTerms ejecutado');
+  }
+
+  removeSearchTerm(term: string): void {
+    this.searchTerms = this.searchTerms.filter(t => t !== term);
+    this.navigateWithSearchTerms();
   }
 
   onSearchSubmit(): void {
     const query = this.searchControl.value;
     if (query && query.length > 0) {
-      this.router.navigate(['/home'], { queryParams: { search: query } });
-      this.searchResults = [];
+      this.addSearchTerm(query);
     }
   }
 
   viewAllResults(): void {
     this.onSearchSubmit();
+  }
+
+  navigateWithSearchTerms(): void {
+    if (this.searchTerms.length > 0) {
+      this.router.navigate(['/home'], { queryParams: { search: this.searchTerms.join(',') } });
+    } else {
+      this.router.navigate(['/home']);
+    }
   }
 
   goToFavorites(): void {
@@ -179,8 +219,59 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  deleteNotification(notification: AppNotification): void {
+    this.notificationService.deleteNotification(notification.notificationId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.loadNotifications();
+      }
+    });
+  }
+
+  markAllAsRead(): void {
+    this.notificationService.markAllAsRead().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.loadNotifications();
+      }
+    });
+  }
+
+  onNotificationClick(notification: AppNotification): void {
+    if (!notification.isRead && notification.type !== 'INVITE') {
+      this.notificationService.markAsRead(notification.notificationId).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: () => {
+          this.loadNotifications();
+        }
+      });
+    }
+  }
+
+  goToNotifications(): void {
+    this.router.navigate(['/notifications']);
+  }
+
+  get recentNotifications(): AppNotification[] {
+    return this.notifications.slice(0, 5);
+  }
+
+  getNotificationIcon(type: string): string {
+    switch (type) {
+      case 'INVITE': return 'group_add';
+      case 'UPDATE': return 'update';
+      case 'BUDGET_ALERT': return 'account_balance_wallet';
+      case 'PURCHASE': return 'shopping_cart';
+      case 'SYSTEM': return 'info';
+      default: return 'notifications';
+    }
+  }
+
   get isAdmin(): boolean {
-    return this.currentUser?.role === 'ADMIN';
+    return this.authService.getCurrentUser()?.role === 'ADMIN';
   }
 
   logout(): void {

@@ -26,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     private final StoreRepository storeRepository;
     private final ProductStoreRepository productStoreRepository;
     private final CsvImportService csvImportService;
+    private final MockPriceHistoryGenerator mockPriceHistoryGenerator;
 
     @Override
     public void run(String... args) {
@@ -33,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
         initAdminUser();
         initStores();
         initProducts();
+        mockPriceHistoryGenerator.generateIfNeeded();
     }
 
     private void initRoles() {

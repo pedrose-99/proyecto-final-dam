@@ -36,6 +36,7 @@ type ProductDTO {
     unit: String
     categoryName: String
     categoryId: Int
+    isFavorite: Boolean
     currentPrice: Float
 }
 
@@ -49,6 +50,7 @@ type ProductComparisonDTO {
     imageUrl: String
     description: String
     categoryName: String
+    categoryId: ID
     storePrices: [StorePriceDTO]
     bestPrice: StorePriceDTO
 }

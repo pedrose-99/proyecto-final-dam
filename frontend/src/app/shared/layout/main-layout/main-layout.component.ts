@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { FooterComponent } from '../../components/footer/footer.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -34,6 +35,7 @@ import { AuthService } from '../../../core/services/auth.service';
       flex: 1;
       background-color: var(--smartcart-background);
       overflow: visible;
+      padding-top: 64px;
     }
   `]
 })
@@ -47,5 +49,13 @@ export class MainLayoutComponent
     if (user?.role === 'ADMIN') {
       this.router.navigate(['/admin/dashboard']);
     }
+
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
   }
 }

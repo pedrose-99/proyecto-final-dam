@@ -1,6 +1,7 @@
 package com.smartcart.smartcart.modules.group.resolver;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -36,6 +37,14 @@ public class GroupResolver {
         return collaborationService.getGroupDetails(groupId);
     }
 
+    @QueryMapping
+    public Map<String, Object> getNotificationsPaginated(@Argument Integer page, @Argument Integer size) {
+        return collaborationService.getNotificationsPaginated(
+                page != null ? page : 0,
+                size != null ? size : 10
+        );
+    }
+
     // ==================== MUTATIONS ====================
 
     @MutationMapping
@@ -56,5 +65,35 @@ public class GroupResolver {
     @MutationMapping
     public Boolean respondToInvite(@Argument Integer notificationId, @Argument Boolean accept) {
         return collaborationService.respondToInvite(notificationId, accept);
+    }
+
+    @MutationMapping
+    public Boolean deleteNotification(@Argument Integer notificationId) {
+        return collaborationService.deleteNotification(notificationId);
+    }
+
+    @MutationMapping
+    public Boolean deleteGroup(@Argument Integer groupId) {
+        return collaborationService.deleteGroup(groupId);
+    }
+
+    @MutationMapping
+    public Boolean leaveGroup(@Argument Integer groupId) {
+        return collaborationService.leaveGroup(groupId);
+    }
+
+    @MutationMapping
+    public Boolean removeGroupMember(@Argument Integer groupId, @Argument Integer userId) {
+        return collaborationService.removeGroupMember(groupId, userId);
+    }
+
+    @MutationMapping
+    public Boolean markNotificationAsRead(@Argument Integer notificationId) {
+        return collaborationService.markNotificationAsRead(notificationId);
+    }
+
+    @MutationMapping
+    public Boolean markAllNotificationsAsRead() {
+        return collaborationService.markAllNotificationsAsRead();
     }
 }

@@ -12,6 +12,8 @@ import {
   GET_PRODUCTS_BY_STORE,
   GET_STORES_BY_PRODUCT,
   SEARCH_PRODUCTS,
+  ADD_TO_FAVORITES,
+  REMOVE_FROM_FAVORITES,
   SEARCH_PRODUCTS_BY_STORE
 } from '../../core/graphql/queries';
 
@@ -22,9 +24,87 @@ export class ProductService {
 
   constructor(private apollo: Apollo) {}
 
+  clearCache(): void {
+    // No-op: la paginación se hace en servidor
+  }
+
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
-    // Si hay filtro por UNA sola tienda, usar paginacion del servidor directamente
-    if (filters.storeIds && filters.storeIds.length === 1) {
+
+    // Prioridad 1: Si hay búsqueda Y una sola tienda
+    if (filters.search && filters.storeIds?.length === 1) {
+      return this.apollo.query<any>({
+        query: SEARCH_PRODUCTS_BY_STORE,
+        variables: {
+          query: filters.search,
+          storeId: filters.storeIds[0].toString(),
+          page: page,
+          size: size
+        },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => this.mapGraphQLPageToProductPage(result.data?.searchProductsByStore, filters))
+      );
+    }
+    // Prioridad 2: Si hay búsqueda Y múltiples tiendas, buscar en cada una y combinar
+    else if (filters.search && filters.storeIds && filters.storeIds.length > 1) {
+      const queries = filters.storeIds.map(storeId =>
+        this.apollo.query<any>({
+          query: SEARCH_PRODUCTS_BY_STORE,
+          variables: {
+            query: filters.search,
+            storeId: storeId.toString(),
+            page: 0,
+            size: 200
+          },
+          fetchPolicy: 'network-only'
+        })
+      );
+
+      return forkJoin(queries).pipe(
+        map(results => {
+          let allProducts: Product[] = [];
+          const seenIds = new Set<number>();
+
+          results.forEach(result => {
+            const products = (result.data?.searchProductsByStore?.content || [])
+              .map((p: any) => this.mapToProduct(p));
+            products.forEach((p: Product) => {
+              if (!seenIds.has(p.id)) {
+                seenIds.add(p.id);
+                allProducts.push(p);
+              }
+            });
+          });
+
+          const sorted = this.applySorting(allProducts, filters.sortBy);
+          const totalElements = sorted.length;
+          const start = page * size;
+          const end = start + size;
+
+          return {
+            content: sorted.slice(start, end),
+            totalElements,
+            totalPages: Math.ceil(totalElements / size),
+            size,
+            number: page,
+            first: page === 0,
+            last: end >= totalElements
+          };
+        })
+      );
+    }
+    // Prioridad 3: Solo búsqueda
+    else if (filters.search) {
+      return this.apollo.query<any>({
+        query: SEARCH_PRODUCTS,
+        variables: { query: filters.search, page: page, size: size },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => this.mapGraphQLPageToProductPage(result.data?.searchProducts, filters))
+      );
+    }
+    // Prioridad 4: Una sola tienda (sin búsqueda)
+    else if (filters.storeIds && filters.storeIds.length === 1) {
       return this.apollo.query<any>({
         query: GET_PRODUCTS_BY_STORE,
         variables: {
@@ -34,21 +114,18 @@ export class ProductService {
         },
         fetchPolicy: 'network-only'
       }).pipe(
-        map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.productsByStore, filters);
-        })
+        map(result => this.mapGraphQLPageToProductPage(result.data?.productsByStore, filters))
       );
     }
-
-    // Si hay filtro por MULTIPLES tiendas, cargar todos de cada tienda y combinar
-    if (filters.storeIds && filters.storeIds.length > 1) {
+    // Prioridad 5: Múltiples tiendas (sin búsqueda)
+    else if (filters.storeIds && filters.storeIds.length > 1) {
       const queries = filters.storeIds.map(storeId =>
         this.apollo.query<any>({
           query: GET_PRODUCTS_BY_STORE,
           variables: {
             storeId: storeId.toString(),
             page: 0,
-            size: 10000
+            size: 200
           },
           fetchPolicy: 'network-only'
         })
@@ -56,14 +133,12 @@ export class ProductService {
 
       return forkJoin(queries).pipe(
         map(results => {
-          // Combinar productos de todas las tiendas
           let allProducts: Product[] = [];
           const seenIds = new Set<number>();
 
           results.forEach(result => {
             const products = (result.data?.productsByStore?.content || [])
               .map((p: any) => this.mapToProduct(p));
-
             products.forEach((p: Product) => {
               if (!seenIds.has(p.id)) {
                 seenIds.add(p.id);
@@ -72,20 +147,16 @@ export class ProductService {
             });
           });
 
-          // Aplicar ordenamiento
-          allProducts = this.applySorting(allProducts, filters.sortBy);
-
-          // Aplicar paginación manual
-          const totalElements = allProducts.length;
+          const sorted = this.applySorting(allProducts, filters.sortBy);
+          const totalElements = sorted.length;
           const start = page * size;
           const end = start + size;
-          const paginatedContent = allProducts.slice(start, end);
 
           return {
-            content: paginatedContent,
-            totalElements: totalElements,
+            content: sorted.slice(start, end),
+            totalElements,
             totalPages: Math.ceil(totalElements / size),
-            size: size,
+            size,
             number: page,
             first: page === 0,
             last: end >= totalElements
@@ -93,16 +164,33 @@ export class ProductService {
         })
       );
     }
+    // Prioridad 6: Categoría(s)
+    else if ((filters.categoryIds && filters.categoryIds.length > 0) || filters.categoryId) {
+      const catIds = filters.categoryIds && filters.categoryIds.length > 0
+        ? filters.categoryIds
+        : [filters.categoryId!];
 
-    // Si hay filtro por múltiples categorías, hacer queries paralelas y combinar
-    if (filters.categoryIds && filters.categoryIds.length > 0) {
-      const queries = filters.categoryIds.map(catId =>
+      if (catIds.length === 1) {
+        return this.apollo.query<any>({
+          query: GET_PRODUCTS_BY_CATEGORY,
+          variables: {
+            categoryId: catIds[0].toString(),
+            page: page,
+            size: size
+          },
+          fetchPolicy: 'network-only'
+        }).pipe(
+          map(result => this.mapGraphQLPageToProductPage(result.data?.productsByCategoryPaginated, filters))
+        );
+      }
+
+      const queries = catIds.map(catId =>
         this.apollo.query<any>({
           query: GET_PRODUCTS_BY_CATEGORY,
           variables: {
             categoryId: catId.toString(),
             page: 0,
-            size: 200 // Cargar suficientes de cada categoría
+            size: 200
           },
           fetchPolicy: 'network-only'
         })
@@ -110,14 +198,12 @@ export class ProductService {
 
       return forkJoin(queries).pipe(
         map(results => {
-          // Combinar productos de todas las categorías
           let allProducts: Product[] = [];
           const seenIds = new Set<number>();
 
           results.forEach(result => {
             const products = (result.data?.productsByCategoryPaginated?.content || [])
               .map((p: any) => this.mapToProduct(p));
-
             products.forEach((p: Product) => {
               if (!seenIds.has(p.id)) {
                 seenIds.add(p.id);
@@ -126,20 +212,16 @@ export class ProductService {
             });
           });
 
-          // Aplicar ordenamiento
-          allProducts = this.applySorting(allProducts, filters.sortBy);
-
-          // Aplicar paginación manual
-          const totalElements = allProducts.length;
+          const sorted = this.applySorting(allProducts, filters.sortBy);
+          const totalElements = sorted.length;
           const start = page * size;
           const end = start + size;
-          const paginatedContent = allProducts.slice(start, end);
 
           return {
-            content: paginatedContent,
-            totalElements: totalElements,
+            content: sorted.slice(start, end),
+            totalElements,
             totalPages: Math.ceil(totalElements / size),
-            size: size,
+            size,
             number: page,
             first: page === 0,
             last: end >= totalElements
@@ -147,51 +229,16 @@ export class ProductService {
         })
       );
     }
-
-    // Si hay filtro por una sola categoria, usar query especifica
-    if (filters.categoryId) {
+    // Sin filtros: paginación directa del servidor
+    else {
       return this.apollo.query<any>({
-        query: GET_PRODUCTS_BY_CATEGORY,
-        variables: {
-          categoryId: filters.categoryId.toString(),
-          page: page,
-          size: size
-        },
+        query: GET_ALL_PRODUCTS,
+        variables: { page: page, size: size },
         fetchPolicy: 'network-only'
       }).pipe(
-        map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.productsByCategoryPaginated, filters);
-        })
+        map(result => this.mapGraphQLPageToProductPage(result.data?.allProducts, filters))
       );
     }
-
-    // Si hay búsqueda por texto, usar query de búsqueda del servidor
-    if (filters.search) {
-      return this.apollo.query<any>({
-        query: SEARCH_PRODUCTS,
-        variables: { query: filters.search, page: page, size: size },
-        fetchPolicy: 'network-only'
-      }).pipe(
-        map(result => {
-          return this.mapGraphQLPageToProductPage(result.data?.searchProducts, filters);
-        })
-      );
-    }
-
-    // Query general de todos los productos
-    console.log('[DEBUG] Enviando query allProducts con page:', page, 'size:', size);
-    return this.apollo.query<any>({
-      query: GET_ALL_PRODUCTS,
-      variables: { page: page, size: size },
-      fetchPolicy: 'network-only'
-    }).pipe(
-      map(result => {
-        console.log('[DEBUG] Respuesta allProducts:', result);
-        const mapped = this.mapGraphQLPageToProductPage(result.data?.allProducts, filters);
-        console.log('[DEBUG] Productos mapeados:', mapped.content.length, 'de', mapped.totalElements);
-        return mapped;
-      })
-    );
   }
 
   private mapGraphQLPageToProductPage(graphqlPage: any, filters: ProductFilters): ProductPage {
@@ -238,6 +285,29 @@ export class ProductService {
         break;
     }
     return sorted;
+  }
+
+  private normalizeText(value: string): string {
+    return (value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private filterByCategoryNames(products: Product[], categoryNames: string[]): Product[] {
+    const normalizedNames = categoryNames
+      .map(name => this.normalizeText(name))
+      .filter(name => name.length > 0);
+
+    if (normalizedNames.length === 0) {
+      return products;
+    }
+
+    return products.filter(product => {
+      const category = this.normalizeText(product.categoryName || '');
+      // Coincidencia exacta del nombre completo de la categoría
+      return normalizedNames.some(name => category.includes(name));
+    });
   }
 
   private mapToProduct(data: any): Product {
@@ -344,15 +414,21 @@ export class ProductService {
 
   // Estas funciones necesitaran mutations en el backend
   addToFavorites(productId: number): Observable<void> {
-    // TODO: Implementar mutation GraphQL
-    console.log('addToFavorites - pendiente mutation GraphQL', productId);
-    return of(void 0);
+    return this.apollo.mutate<any>({
+      mutation: ADD_TO_FAVORITES,
+      variables: { productId: productId.toString() }
+    }).pipe(
+      map(() => void 0)
+    );
   }
 
   removeFromFavorites(productId: number): Observable<void> {
-    // TODO: Implementar mutation GraphQL
-    console.log('removeFromFavorites - pendiente mutation GraphQL', productId);
-    return of(void 0);
+    return this.apollo.mutate<any>({
+      mutation: REMOVE_FROM_FAVORITES,
+      variables: { productId: productId.toString() }
+    }).pipe(
+      map(() => void 0)
+    );
   }
 
   addToList(productId: number, listId?: number): Observable<void> {

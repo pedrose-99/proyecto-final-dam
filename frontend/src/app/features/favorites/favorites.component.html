@@ -1,0 +1,47 @@
+<div class="favorites-container">
+  <!-- Header -->
+  <section class="favorites-header">
+    <div class="header-content">
+      <mat-icon class="header-icon">favorite</mat-icon>
+      <div class="header-text">
+        <h1>Mis Favoritos</h1>
+        <p>{{ favorites.length }} productos guardados</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  @if (isLoading) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando favoritos...</p>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @else if (favorites.length === 0) {
+    <div class="empty-state">
+      <mat-icon>favorite_border</mat-icon>
+      <h3>No tienes favoritos</h3>
+      <p>Explora productos y añádelos a favoritos para encontrarlos fácilmente aquí.</p>
+      <button mat-flat-button color="primary" routerLink="/home">
+        Explorar productos
+      </button>
+    </div>
+  }
+
+  <!-- Grid de favoritos -->
+  @else {
+    <section class="favorites-grid">
+      @for (product of favorites; track product.id) {
+        <app-product-card
+          [product]="product"
+          [isInList]="isProductInList(product.id)"
+          (addToList)="onAddToList($event)"
+          (toggleFavorite)="onToggleFavorite($event)"
+          (viewProduct)="onViewProduct($event)"
+        />
+      }
+    </section>
+  }
+</div>

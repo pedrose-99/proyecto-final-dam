@@ -1,0 +1,91 @@
+<button class="btn-backing" (click)="router.navigate(['/home'])">
+  ← Volver
+</button>
+<div class="settings-container">
+  <mat-card class="settings-card">
+    <div class="settings-header">
+      <mat-icon class="settings-icon">settings</mat-icon>
+    </div>
+    <mat-card-header>
+      <mat-card-title>Configuración de Perfil</mat-card-title>
+      <mat-card-subtitle>Consulta y modifica tus datos personales</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()">
+
+        <div class="profile-info">
+          <div class="info-row">
+            <div class="info-label">Correo</div>
+            <div class="info-value">{{ currentUser?.email || '-' }}</div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Nombre de usuario</div>
+            <div class="info-value">{{ currentUser?.username || '-' }}</div>
+            <button mat-icon-button type="button" class="edit-icon-btn" (click)="toggleUsernameEdit()"
+                    [attr.aria-label]="editUsername ? 'Cancelar' : 'Cambiar'">
+              <mat-icon>{{ editUsername ? 'close' : 'edit' }}</mat-icon>
+            </button>
+          </div>
+
+          <div class="edit-section" *ngIf="editUsername">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Nuevo nombre de usuario</mat-label>
+              <input matInput type="text" formControlName="username" placeholder="nuevo_usuario">
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="settingsForm.get('username')?.hasError('required')">
+                El nombre de usuario es obligatorio
+              </mat-error>
+              <mat-error *ngIf="settingsForm.get('username')?.hasError('minlength')">
+                Mínimo 3 caracteres
+              </mat-error>
+              <mat-error *ngIf="settingsForm.get('username')?.hasError('maxlength')">
+                Máximo 50 caracteres
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Contraseña</div>
+            <div class="info-value">••••••••</div>
+            <button mat-icon-button type="button" class="edit-icon-btn" (click)="togglePasswordEdit()"
+                    [attr.aria-label]="editPassword ? 'Cancelar' : 'Cambiar'">
+              <mat-icon>{{ editPassword ? 'close' : 'edit' }}</mat-icon>
+            </button>
+          </div>
+
+          <div class="edit-section" *ngIf="editPassword">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Nueva contraseña</mat-label>
+              <input matInput [type]="hideNewPassword ? 'password' : 'text'" formControlName="newPassword" placeholder="nueva contraseña">
+              <button mat-icon-button matSuffix type="button" (click)="hideNewPassword = !hideNewPassword">
+                <mat-icon>{{ hideNewPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="settingsForm.get('newPassword')?.hasError('required')">
+                La contraseña es obligatoria
+              </mat-error>
+              <mat-error *ngIf="settingsForm.get('newPassword')?.hasError('minlength')">
+                Mínimo 6 caracteres
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <button mat-raised-button color="primary" type="submit" class="full-width submit-btn"
+                [disabled]="settingsForm.invalid || isSaving || isLoading || (!editUsername && !editPassword)">
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          <span *ngIf="!isSaving">Guardar cambios</span>
+        </button>
+
+      </form>
+    </mat-card-content>
+
+  </mat-card>
+</div>

@@ -43,12 +43,12 @@
 
         <!-- Ver todos los resultados -->
         @if (searchResults.length > 0) {
-          <mat-option class="view-all-option" (click)="viewAllResults()">
+          <div class="view-all-option" (click)="viewAllResults()">
             <div class="view-all">
               <span>Ver todos los resultados</span>
               <mat-icon>arrow_forward</mat-icon>
             </div>
-          </mat-option>
+          </div>
         }
 
         <!-- Sin resultados -->
@@ -94,16 +94,27 @@
       <mat-icon>groups</mat-icon>
     </button>
 
+    <!-- Mis Gastos -->
+    <button mat-icon-button (click)="goToHistory()" aria-label="Mis Gastos" matTooltip="Mis Gastos">
+      <mat-icon>account_balance_wallet</mat-icon>
+    </button>
+
     <!-- Notificaciones -->
-    <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notificaciones" matTooltip="Notificaciones">
-      <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn" matBadgeSize="small">
-        notifications
-      </mat-icon>
+    <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Notificaciones" matTooltip="Notificaciones" class="notif-btn">
+      <mat-icon>notifications</mat-icon>
+      @if (unreadCount > 0) {
+        <span class="notif-dot"></span>
+      }
     </button>
 
     <mat-menu #notifMenu="matMenu" class="notifications-menu">
       <div class="notif-menu-header" (click)="$event.stopPropagation()">
         <span class="notif-menu-title">Notificaciones</span>
+        @if (unreadCount > 0) {
+          <button mat-button class="notif-mark-all-btn" (click)="markAllAsRead()">
+            Marcar todas como leidas
+          </button>
+        }
       </div>
       <mat-divider></mat-divider>
 
@@ -113,32 +124,41 @@
         </div>
       }
 
-      @for (notif of notifications; track notif.notificationId) {
-        <div class="notif-item" (click)="$event.stopPropagation()">
+      @for (notif of recentNotifications; track notif.notificationId) {
+        <div class="notif-item" (click)="onNotificationClick(notif); $event.stopPropagation()">
           <div class="notif-item-content">
             <mat-icon class="notif-icon" [class.notif-unread]="!notif.isRead">
-              {{ notif.type === 'INVITE' ? 'group_add' : notif.type === 'UPDATE' ? 'update' : 'info' }}
+              {{ getNotificationIcon(notif.type) }}
             </mat-icon>
             <div class="notif-text">
               <span class="notif-message" [class.notif-unread-text]="!notif.isRead">{{ notif.message }}</span>
               @if (notif.relatedGroupName) {
                 <span class="notif-group">{{ notif.relatedGroupName }}</span>
               }
+              <span class="notif-time">{{ notif.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
           </div>
-          @if (notif.type === 'INVITE' && !notif.isRead) {
-            <div class="notif-actions">
-              <button mat-icon-button color="primary" (click)="respondToInvite(notif, true)" matTooltip="Aceptar">
+          <div class="notif-actions">
+            @if (notif.type === 'INVITE' && !notif.isRead) {
+              <button mat-icon-button color="primary" (click)="respondToInvite(notif, true); $event.stopPropagation()" matTooltip="Aceptar">
                 <mat-icon>check_circle</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="respondToInvite(notif, false)" matTooltip="Rechazar">
+              <button mat-icon-button color="warn" (click)="respondToInvite(notif, false); $event.stopPropagation()" matTooltip="Rechazar">
                 <mat-icon>cancel</mat-icon>
               </button>
-            </div>
-          }
+            }
+            <button mat-icon-button (click)="deleteNotification(notif); $event.stopPropagation()" matTooltip="Eliminar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
         </div>
         <mat-divider></mat-divider>
       }
+
+      <div class="notif-view-all" (click)="goToNotifications()">
+        <span>Ver todas las notificaciones</span>
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
     </mat-menu>
 
     <!-- Menu Usuario -->
@@ -150,8 +170,8 @@
       <div class="menu-header">
         <mat-icon>account_circle</mat-icon>
         <div class="menu-header-info">
-          <span class="menu-header-name">{{ currentUser?.username }}</span>
-          <span class="menu-header-email">{{ currentUser?.email }}</span>
+          <span class="menu-header-name">{{ (currentUser$ | async)?.username }}</span>
+          <span class="menu-header-email">{{ (currentUser$ | async)?.email }}</span>
         </div>
       </div>
 
@@ -164,21 +184,6 @@
         </button>
         <mat-divider></mat-divider>
       }
-
-      <button mat-menu-item (click)="goToLists()">
-        <mat-icon>list_alt</mat-icon>
-        <span>Mis listas</span>
-      </button>
-
-      <button mat-menu-item (click)="goToGroups()">
-        <mat-icon>groups</mat-icon>
-        <span>Grupos</span>
-      </button>
-
-      <button mat-menu-item (click)="goToHistory()">
-        <mat-icon>history</mat-icon>
-        <span>Historial</span>
-      </button>
 
       <button mat-menu-item (click)="goToSettings()">
         <mat-icon>settings</mat-icon>

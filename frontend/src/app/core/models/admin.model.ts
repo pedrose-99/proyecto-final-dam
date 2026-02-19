@@ -101,6 +101,17 @@ export interface ScrapingResponse {
     durationSeconds: number;
 }
 
+// --- Scraping Status ---
+
+export interface StoreScrapingStatus {
+    store: string;
+    enabled?: boolean;
+    healthy?: boolean;
+    isRunning: boolean;
+    lastScrapeStatus: string | null;
+    lastScrapeTime: string | null;
+}
+
 // --- Paginación genérica ---
 
 export interface PageResponse<T> {

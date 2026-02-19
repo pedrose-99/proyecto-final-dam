@@ -2,8 +2,24 @@ import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { GET_NOTIFICATIONS, RESPOND_TO_INVITE } from '../../core/graphql/queries';
+import {
+    GET_NOTIFICATIONS,
+    RESPOND_TO_INVITE,
+    DELETE_NOTIFICATION,
+    MARK_NOTIFICATION_AS_READ,
+    MARK_ALL_NOTIFICATIONS_AS_READ,
+    GET_NOTIFICATIONS_PAGINATED
+} from '../../core/graphql/queries';
 import { AppNotification } from '../../core/models/group.model';
+
+export interface NotificationPage
+{
+    content: AppNotification[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+}
 
 @Injectable({
     providedIn: 'root'
@@ -37,6 +53,19 @@ export class NotificationService
         );
     }
 
+    getNotificationsPaginated(page: number, size: number): Observable<NotificationPage>
+    {
+        return this.apollo.query<{ getNotificationsPaginated: NotificationPage }>(
+            {
+                query: GET_NOTIFICATIONS_PAGINATED,
+                variables: { page, size },
+                fetchPolicy: 'network-only'
+            }
+        ).pipe(
+            map(result => result.data!.getNotificationsPaginated)
+        );
+    }
+
     respondToInvite(notificationId: number, accept: boolean): Observable<boolean>
     {
         return this.apollo.mutate<{ respondToInvite: boolean }>(
@@ -49,6 +78,45 @@ export class NotificationService
             }
         ).pipe(
             map(result => result.data?.respondToInvite || false)
+        );
+    }
+
+    deleteNotification(notificationId: number): Observable<boolean>
+    {
+        return this.apollo.mutate<{ deleteNotification: boolean }>(
+            {
+                mutation: DELETE_NOTIFICATION,
+                variables: {
+                    notificationId: notificationId.toString()
+                }
+            }
+        ).pipe(
+            map(result => result.data?.deleteNotification || false)
+        );
+    }
+
+    markAsRead(notificationId: number): Observable<boolean>
+    {
+        return this.apollo.mutate<{ markNotificationAsRead: boolean }>(
+            {
+                mutation: MARK_NOTIFICATION_AS_READ,
+                variables: {
+                    notificationId: notificationId.toString()
+                }
+            }
+        ).pipe(
+            map(result => result.data?.markNotificationAsRead || false)
+        );
+    }
+
+    markAllAsRead(): Observable<boolean>
+    {
+        return this.apollo.mutate<{ markAllNotificationsAsRead: boolean }>(
+            {
+                mutation: MARK_ALL_NOTIFICATIONS_AS_READ
+            }
+        ).pipe(
+            map(result => result.data?.markAllNotificationsAsRead || false)
         );
     }
 

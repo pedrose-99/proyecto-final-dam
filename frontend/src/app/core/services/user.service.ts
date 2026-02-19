@@ -17,7 +17,7 @@ export class UserService
 
 	getProfile(): Observable<User> 
 	{
-		return this.http.get<User>(`${this.apiUrl}/users/profile`);
+		return this.http.get<User>(`${this.apiUrl}/users/me`);
 	}
 
 	updateProfile(data: { username?: string; newPassword?: string; }): Observable<User>

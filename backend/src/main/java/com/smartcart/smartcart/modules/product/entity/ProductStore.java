@@ -11,13 +11,18 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "product_store")
+@Table(name = "product_store", indexes = {
+    @Index(name = "idx_ps_store_id", columnList = "store_id"),
+    @Index(name = "idx_ps_product_id", columnList = "product_id"),
+    @Index(name = "idx_ps_externa_id", columnList = "externa_id")
+})
 @Data
 public class ProductStore {
     @Id

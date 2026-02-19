@@ -35,7 +35,9 @@ public class StoreManagementController {
 
             Optional<ScrapeLog> lastLog = scrapeLogService.getLastLog(store);
             if (lastLog.isPresent()) {
-                lastScrapeDate = lastLog.get().getStartTime();
+                lastScrapeDate = lastLog.get().getEndTime() != null
+                    ? lastLog.get().getEndTime()
+                    : lastLog.get().getStartTime();
                 lastScrapeStatus = lastLog.get().getStatus().name();
             }
 
