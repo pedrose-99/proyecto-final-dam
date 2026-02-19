@@ -43,12 +43,12 @@
 
         <!-- Ver todos los resultados -->
         @if (searchResults.length > 0) {
-          <mat-option class="view-all-option" (click)="viewAllResults()">
+          <div class="view-all-option" (click)="viewAllResults()">
             <div class="view-all">
               <span>Ver todos los resultados</span>
               <mat-icon>arrow_forward</mat-icon>
             </div>
-          </mat-option>
+          </div>
         }
 
         <!-- Sin resultados -->

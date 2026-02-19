@@ -107,6 +107,11 @@
           </mat-select>
         </mat-form-field>
 
+        <!-- Refrescar -->
+        <button mat-icon-button (click)="refreshProducts()" matTooltip="Refrescar productos">
+          <mat-icon>refresh</mat-icon>
+        </button>
+
         <!-- Limpiar -->
         @if (activeFilters.length > 0 || selectedCategories.length > 0 || selectedStores.length > 0) {
           <button mat-button color="warn" (click)="clearAllFilters()">

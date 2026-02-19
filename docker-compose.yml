@@ -16,6 +16,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   scraper-python:
     build: ./scraper-python
@@ -52,6 +56,10 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       PYTHON_SCRAPER_URL: http://scraper-python:8000
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   frontend:
     build: ./frontend
@@ -67,24 +75,37 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper-1 # Ponle nombre fijo
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka-1 # Ponle nombre fijo
     depends_on:
       - zookeeper
     ports:
       - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data # Crucial para que no se corrompa el ID
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      ZOO_TICK_TIME: 2000
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: 30000 
+      KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: 30000
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
 volumes:
   postgres_data:
+  zookeeper_data:
+  zookeeper_log: 
+  kafka_data:
