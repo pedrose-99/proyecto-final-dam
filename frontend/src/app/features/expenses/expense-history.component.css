@@ -19,7 +19,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  
 }
+
 
 .header-icon {
   font-size: 32px;
@@ -33,6 +35,12 @@
   font-weight: 600;
   margin: 0;
   color: var(--smartcart-text);
+}
+
+
+.btn-go-lists {
+  margin-right: -14%;
+  flex-shrink: 0;
 }
 
 /* ============================================
@@ -642,4 +650,11 @@ section h2 mat-icon,
     color: var(--smartcart-accent);
     font-variant-numeric: tabular-nums;
   }
+}
+
+.btn_list{
+  display: flex;
+  justify-content: right;
+  align-items: right;
+
 }
