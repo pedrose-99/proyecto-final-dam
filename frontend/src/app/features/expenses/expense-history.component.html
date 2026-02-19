@@ -1,68 +1,95 @@
 <div class="expense-container">
   <!-- Header -->
   <div class="expense-header">
-    <h1>Mis Gastos</h1>
-    <button class="pill-button pill-outlined pill-small" (click)="goToLists()">
+    <div class="header-left">
+      <mat-icon class="header-icon">account_balance_wallet</mat-icon>
+      <h1>Mis Gastos</h1>
+    </div>
+    <button class="pill-button pill-outlined pill-small btn-go-lists" (click)="goToLists()">
       <mat-icon>shopping_cart</mat-icon>
       <span>Ir a Mis Listas</span>
     </button>
   </div>
+  
 
-  <!-- Sección Límites de Gasto -->
-  <section class="limits-section">
-    <h2><mat-icon>savings</mat-icon> Límites de gasto</h2>
+  <!-- Dashboard: Límites + Gráficas -->
+  <section class="dashboard-section">
+    <!-- Límites de Gasto -->
+    <div class="limits-block">
+      <h2><mat-icon>savings</mat-icon> Límites de gasto</h2>
 
-    <!-- Límites activos -->
-    <div class="limits-cards" *ngIf="limits.length > 0">
-      <div *ngFor="let limit of limits" class="limit-card">
-        <span class="limit-type">{{ getLimitTypeLabel(limit.type) }}</span>
-        <span class="limit-amount">{{ limit.amount | number:'1.2-2' }} €</span>
+      <div class="limits-cards" *ngIf="limits.length > 0">
+        <div *ngFor="let limit of limits" class="limit-card">
+          <span class="limit-type">{{ getLimitTypeLabel(limit.type) }}</span>
+          <span class="limit-amount">{{ limit.amount | number:'1.2-2' }} &euro;</span>
+        </div>
+      </div>
+      <p *ngIf="limits.length === 0" class="no-limits">No tienes límites configurados.</p>
+
+      <div class="limit-form">
+        <mat-form-field appearance="outline" class="limit-type-field" subscriptSizing="dynamic">
+          <mat-label>Tipo</mat-label>
+          <mat-select [formControl]="limitTypeControl">
+            <mat-option value="WEEKLY">Semanal</mat-option>
+            <mat-option value="MONTHLY">Mensual</mat-option>
+            <mat-option value="YEARLY">Anual</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="limit-amount-field" subscriptSizing="dynamic">
+          <mat-label>Importe (&euro;)</mat-label>
+          <input matInput type="number" [formControl]="limitAmountControl" placeholder="Ej: 200" min="1">
+        </mat-form-field>
+
+        <button class="pill-button pill-filled" (click)="saveLimit()" [disabled]="isSavingLimit">
+          <mat-spinner *ngIf="isSavingLimit" diameter="18" class="inline-spinner"></mat-spinner>
+          <mat-icon *ngIf="!isSavingLimit">check</mat-icon>
+          <span>{{ isSavingLimit ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
       </div>
     </div>
-    <p *ngIf="limits.length === 0" class="no-limits">No tienes límites configurados.</p>
 
-    <!-- Formulario para crear/editar límite -->
-    <div class="limit-form">
-      <mat-form-field appearance="outline" class="limit-type-field" subscriptSizing="dynamic">
-        <mat-label>Tipo</mat-label>
-        <mat-select [formControl]="limitTypeControl">
-          <mat-option value="WEEKLY">Semanal</mat-option>
-          <mat-option value="MONTHLY">Mensual</mat-option>
-          <mat-option value="YEARLY">Anual</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="limit-amount-field" subscriptSizing="dynamic">
-        <mat-label>Importe (€)</mat-label>
-        <input matInput type="number" [formControl]="limitAmountControl" placeholder="Ej: 200" min="1">
-      </mat-form-field>
-
-      <button class="pill-button pill-filled" (click)="saveLimit()" [disabled]="isSavingLimit">
-        <mat-spinner *ngIf="isSavingLimit" diameter="18" class="inline-spinner"></mat-spinner>
-        <mat-icon *ngIf="!isSavingLimit">check</mat-icon>
-        <span>{{ isSavingLimit ? 'Guardando...' : 'Guardar' }}</span>
-      </button>
+    <!-- Gráficas -->
+    <div class="charts-block">
+      <h2><mat-icon>bar_chart</mat-icon> Resumen</h2>
+      <app-expense-charts
+        [summary]="summary"
+        [storeExpenses]="storeExpenses"
+        [weeklyLimit]="weeklyLimit"
+        [monthlyLimit]="monthlyLimit"
+        [yearlyLimit]="yearlyLimit"
+        [selectedPeriod]="selectedPeriod"
+        [offset]="chartOffset"
+        (periodChange)="onPeriodChange($event)"
+        (offsetChange)="onOffsetChange($event)">
+      </app-expense-charts>
     </div>
   </section>
 
-  <!-- Sección Gráficas -->
-  <section class="charts-section">
-    <h2><mat-icon>bar_chart</mat-icon> Resumen</h2>
-    <app-expense-charts
-      [summary]="summary"
-      [weeklyLimit]="weeklyLimit"
-      [monthlyLimit]="monthlyLimit"
-      [yearlyLimit]="yearlyLimit"
-      [selectedPeriod]="selectedPeriod"
-      [offset]="chartOffset"
-      (periodChange)="onPeriodChange($event)"
-      (offsetChange)="onOffsetChange($event)">
-    </app-expense-charts>
+  <!-- Gasto por tienda -->
+  <section class="store-expenses-section" *ngIf="!isLoading && storeExpenses.length > 0">
+    <h2><mat-icon>store</mat-icon> Gasto por tienda</h2>
+    <div class="store-expenses-grid">
+      <div *ngFor="let se of storeExpenses" class="store-expense-card">
+        <img [src]="getStoreLogo(se.storeName)" class="store-expense-logo" [alt]="se.storeName">
+        <div class="store-expense-info">
+          <span class="store-expense-name">{{ se.storeName }}</span>
+          <span class="store-expense-amount">{{ se.totalAmount | number:'1.2-2' }} &euro;</span>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <!-- Filtros -->
-  <section class="filters-section">
-    <h2><mat-icon>filter_list</mat-icon> Historial</h2>
+  <!-- Historial -->
+  <section class="history-section">
+    <div class="history-header-row">
+      <h2><mat-icon>receipt_long</mat-icon> Historial</h2>
+      <button class="pill-button pill-text pill-small" (click)="clearFilters()" *ngIf="filterControl.value || monthControl.value || yearControl.value">
+        <mat-icon>clear</mat-icon>
+        <span>Limpiar filtros</span>
+      </button>
+    </div>
+
     <div class="filters-row">
       <mat-form-field appearance="outline" class="filter-text-field" subscriptSizing="dynamic">
         <mat-label>Buscar</mat-label>
@@ -79,114 +106,95 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-select-field" subscriptSizing="dynamic">
-        <mat-label>Año</mat-label>
+        <mat-label>A&ntilde;o</mat-label>
         <mat-select [formControl]="yearControl">
           <mat-option [value]="null">Todos</mat-option>
           <mat-option *ngFor="let y of yearOptions" [value]="y">{{ y }}</mat-option>
         </mat-select>
       </mat-form-field>
-
-      <button class="pill-button pill-text" (click)="clearFilters()">
-        <mat-icon>clear</mat-icon>
-        <span>Limpiar</span>
-      </button>
     </div>
-  </section>
 
-  <!-- Gasto por tienda -->
-  <section class="store-expenses-section" *ngIf="!isLoading && storeExpenses.length > 0">
-    <h2><mat-icon>store</mat-icon> Gasto por tienda</h2>
-    <div class="store-expenses-grid">
-      <div *ngFor="let se of storeExpenses" class="store-expense-card">
-        <img [src]="getStoreLogo(se.storeName)" class="store-expense-logo" [alt]="se.storeName">
-        <span class="store-expense-name">{{ se.storeName }}</span>
-        <span class="store-expense-amount">{{ se.totalAmount | number:'1.2-2' }} &euro;</span>
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="loading-spinner">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando historial...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && bills.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">receipt_long</mat-icon>
+      <p>No tienes gastos registrados.</p>
+      <p class="empty-hint">Simula una compra desde tus listas para ver el historial aqu&iacute;.</p>
+    </div>
+
+    <!-- Historial agrupado por mes -->
+    <div *ngIf="!isLoading && monthGroups.length > 0" class="month-groups">
+      <div *ngFor="let group of monthGroups" class="month-group">
+        <div class="month-header">
+          <span class="month-label">{{ group.label }}</span>
+          <span class="month-total">{{ group.totalAmount | number:'1.2-2' }} &euro;</span>
+        </div>
+
+        <mat-accordion multi>
+          <mat-expansion-panel *ngFor="let bill of group.bills" class="bill-panel">
+            <mat-expansion-panel-header>
+              <mat-panel-title class="bill-title">
+                <mat-icon class="bill-icon">receipt</mat-icon>
+                <span class="bill-name">{{ bill.name }}</span>
+                <span *ngIf="bill.exceededLimit" class="exceeded-badge">L&iacute;mite excedido</span>
+              </mat-panel-title>
+              <mat-panel-description class="bill-summary">
+                <span class="bill-date">{{ formatDate(bill.recordedAt) }}</span>
+                <span class="bill-total" [class.exceeded]="bill.exceededLimit">
+                  {{ bill.totalAmount | number:'1.2-2' }} &euro;
+                </span>
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <!-- Contenido desktop -->
+            <div class="ticket-content">
+              <div class="ticket-header-row">
+                <span class="col-product">Producto</span>
+                <span class="col-store">Tienda</span>
+                <span class="col-qty">Cant.</span>
+                <span class="col-price">P. Unit.</span>
+                <span class="col-line">Total</span>
+              </div>
+              <mat-divider></mat-divider>
+              <div *ngFor="let item of bill.itemsSummary" class="ticket-item-row">
+                <span class="col-product">{{ item.productName }}</span>
+                <span class="col-store">{{ item.storeName || '&mdash;' }}</span>
+                <span class="col-qty">{{ item.quantity }}</span>
+                <span class="col-price">{{ item.price | number:'1.2-2' }}</span>
+                <span class="col-line">{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
+              </div>
+              <mat-divider></mat-divider>
+              <div class="ticket-total-row">
+                <span class="total-label">TOTAL</span>
+                <span class="total-value">{{ bill.totalAmount | number:'1.2-2' }} &euro;</span>
+              </div>
+            </div>
+
+            <!-- Cards para m&oacute;vil -->
+            <div class="ticket-cards-mobile">
+              <div *ngFor="let item of bill.itemsSummary" class="mobile-item-card">
+                <div class="mobile-item-header">
+                  <span class="mobile-item-name">{{ item.productName }}</span>
+                  <span *ngIf="item.storeName" class="mobile-store-badge">{{ item.storeName }}</span>
+                </div>
+                <div class="mobile-item-details">
+                  <span>{{ item.quantity }} x {{ item.price | number:'1.2-2' }} &euro;</span>
+                  <span class="mobile-item-total">{{ (item.price * item.quantity) | number:'1.2-2' }} &euro;</span>
+                </div>
+              </div>
+              <div class="mobile-total">
+                <span>TOTAL</span>
+                <span class="mobile-total-value">{{ bill.totalAmount | number:'1.2-2' }} &euro;</span>
+              </div>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
       </div>
     </div>
   </section>
-
-  <!-- Loading -->
-  <div *ngIf="isLoading" class="loading-spinner">
-    <mat-spinner diameter="40"></mat-spinner>
-    <p>Cargando historial...</p>
-  </div>
-
-  <!-- Empty state -->
-  <div *ngIf="!isLoading && bills.length === 0" class="empty-state">
-    <mat-icon class="empty-icon">receipt_long</mat-icon>
-    <p>No tienes gastos registrados.</p>
-    <p class="empty-hint">Simula una compra desde tus listas para ver el historial aquí.</p>
-  </div>
-
-  <!-- Historial agrupado por mes -->
-  <div *ngIf="!isLoading && monthGroups.length > 0" class="month-groups">
-    <div *ngFor="let group of monthGroups" class="month-group">
-      <!-- Cabecera del mes -->
-      <div class="month-header">
-        <span class="month-label">{{ group.label }}</span>
-        <span class="month-total">{{ group.totalAmount | number:'1.2-2' }} €</span>
-      </div>
-
-      <!-- Tickets del mes -->
-      <mat-accordion multi>
-        <mat-expansion-panel *ngFor="let bill of group.bills" class="bill-panel">
-          <mat-expansion-panel-header>
-            <mat-panel-title class="bill-title">
-              <mat-icon class="bill-icon">receipt</mat-icon>
-              <span class="bill-name">{{ bill.name }}</span>
-              <span *ngIf="bill.exceededLimit" class="exceeded-badge">Límite excedido</span>
-            </mat-panel-title>
-            <mat-panel-description class="bill-summary">
-              <span class="bill-date">{{ formatDate(bill.recordedAt) }}</span>
-              <span class="bill-total" [class.exceeded]="bill.exceededLimit">
-                {{ bill.totalAmount | number:'1.2-2' }} €
-              </span>
-            </mat-panel-description>
-          </mat-expansion-panel-header>
-
-          <!-- Contenido desktop -->
-          <div class="ticket-content">
-            <div class="ticket-header-row">
-              <span class="col-product">Producto</span>
-              <span class="col-store">Tienda</span>
-              <span class="col-qty">Cant.</span>
-              <span class="col-price">P. Unit.</span>
-              <span class="col-line">Total</span>
-            </div>
-            <mat-divider></mat-divider>
-            <div *ngFor="let item of bill.itemsSummary" class="ticket-item-row">
-              <span class="col-product">{{ item.productName }}</span>
-              <span class="col-store">{{ item.storeName || '—' }}</span>
-              <span class="col-qty">{{ item.quantity }}</span>
-              <span class="col-price">{{ item.price | number:'1.2-2' }}</span>
-              <span class="col-line">{{ (item.price * item.quantity) | number:'1.2-2' }}</span>
-            </div>
-            <mat-divider></mat-divider>
-            <div class="ticket-total-row">
-              <span class="total-label">TOTAL</span>
-              <span class="total-value">{{ bill.totalAmount | number:'1.2-2' }} €</span>
-            </div>
-          </div>
-
-          <!-- Cards para móvil -->
-          <div class="ticket-cards-mobile">
-            <div *ngFor="let item of bill.itemsSummary" class="mobile-item-card">
-              <div class="mobile-item-header">
-                <span class="mobile-item-name">{{ item.productName }}</span>
-                <span *ngIf="item.storeName" class="mobile-store-badge">{{ item.storeName }}</span>
-              </div>
-              <div class="mobile-item-details">
-                <span>{{ item.quantity }} x {{ item.price | number:'1.2-2' }} €</span>
-                <span class="mobile-item-total">{{ (item.price * item.quantity) | number:'1.2-2' }} €</span>
-              </div>
-            </div>
-            <div class="mobile-total">
-              <span>TOTAL</span>
-              <span class="mobile-total-value">{{ bill.totalAmount | number:'1.2-2' }} €</span>
-            </div>
-          </div>
-        </mat-expansion-panel>
-      </mat-accordion>
-    </div>
-  </div>
 </div>

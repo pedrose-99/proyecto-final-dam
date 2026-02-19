@@ -13,6 +13,7 @@ import {
     StoreAdmin,
     UpdateStoreRequest,
     ScrapingResponse,
+    StoreScrapingStatus,
     PageResponse
 } from "../models/admin.model";
 
@@ -113,9 +114,9 @@ export class AdminService
             `${this.apiUrl}/admin/scraping/${storeSlug}/cancel`, {});
     }
 
-    getStoreScrapingStatus(storeSlug: string): Observable<any>
+    getStoreScrapingStatus(storeSlug: string): Observable<StoreScrapingStatus>
     {
-        return this.http.get<any>(`${this.apiUrl}/admin/scraping/${storeSlug}/status`);
+        return this.http.get<StoreScrapingStatus>(`${this.apiUrl}/admin/scraping/${storeSlug}/status`);
     }
 
     // --- CSV Export ---

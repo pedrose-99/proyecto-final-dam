@@ -13,7 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpStatus;
+
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -31,15 +35,30 @@ public class AlcampoScrapingController
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus()
     {
-        return ResponseEntity.ok(Map.of(
-            "store", "alcampo",
-            "enabled", alcampoService.isEnabled()
-        ));
+        Store store = storeRepository.findBySlug("alcampo")
+                .orElseThrow(() -> new RuntimeException("Store not found: alcampo"));
+        boolean running = jobRegistry.isRunning("alcampo");
+        Optional<ScrapeLog> lastLog = scrapeLogService.getLastLog(store);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("store", "alcampo");
+        response.put("enabled", alcampoService.isEnabled());
+        response.put("isRunning", running);
+        response.put("lastScrapeStatus", lastLog.map(l -> l.getStatus().name()).orElse(null));
+        response.put("lastScrapeTime", lastLog.map(l ->
+            l.getEndTime() != null ? l.getEndTime().toString() : l.getStartTime().toString()
+        ).orElse(null));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/sync/all")
     public ResponseEntity<Map<String, Object>> syncAll()
     {
+        if (jobRegistry.isRunning("alcampo")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "El scraping ya esta en curso"));
+        }
+
         log.info("Sincronizando todos los productos de Alcampo");
 
         Store store = storeRepository.findBySlug("alcampo")

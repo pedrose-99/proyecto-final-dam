@@ -35,9 +35,14 @@
             <mat-card class="store-card" [class.inactive]="!store.active">
                 <mat-card-header>
                     <mat-card-title>{{ store.name }}</mat-card-title>
-                    <span class="store-status-chip" [class]="getStatusClass(store.lastScrapeStatus)">
-                        {{ store.active ? 'Activo' : 'Inactivo' }}
-                    </span>
+                    <div class="header-chips">
+                        <span class="store-active-chip" [class.active]="store.active">
+                            {{ store.active ? 'Activo' : 'Inactivo' }}
+                        </span>
+                        <span class="store-status-chip" [class]="getStatusClass(store)">
+                            {{ getStatusLabel(store) }}
+                        </span>
+                    </div>
                 </mat-card-header>
 
                 <mat-card-content>
@@ -48,17 +53,15 @@
                         </div>
                         <div class="stat-row">
                             <mat-icon>schedule</mat-icon>
-                            <span>Último: {{ formatDate(store.lastScrapeDate) }}</span>
-                        </div>
-                        <div class="stat-row">
-                            <mat-icon>info</mat-icon>
-                            <span class="last-status" [class]="getStatusClass(store.lastScrapeStatus)">
-                                {{ getStatusLabel(store.lastScrapeStatus) }}
-                            </span>
+                            @if (getLastScrapeDate(store)) {
+                                <span>Ultimo: {{ getLastScrapeDate(store) | date:'dd/MM/yy, HH:mm' }}</span>
+                            } @else {
+                                <span>Ultimo: Nunca</span>
+                            }
                         </div>
                     </div>
 
-                    @if (store.result) {
+                    @if (!isScraping(store) && store.result) {
                         <div class="result-summary">
                             <span class="result-item success">+{{ store.result.created }} creados</span>
                             <span class="result-item info">{{ store.result.updated }} actualizados</span>
@@ -70,7 +73,7 @@
                 </mat-card-content>
 
                 <mat-card-actions>
-                    @if (store.scraping) {
+                    @if (isScraping(store)) {
                         <div class="scraping-actions">
                             <div class="scraping-indicator">
                                 <mat-spinner diameter="24"></mat-spinner>
@@ -88,7 +91,7 @@
                             <button mat-flat-button
                                     class="primary-btn scrape-btn"
                                     (click)="triggerScraping(store)"
-                                    [disabled]="!store.active || scrapingAll">
+                                    [disabled]="!store.active || scrapingAll || isAnyScraping()">
                                 Lanzar Scraping
                             </button>
                             <button mat-stroked-button
