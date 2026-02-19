@@ -8,7 +8,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
@@ -32,7 +31,6 @@ import { Group, GroupMember } from '../../../core/models/group.model';
         MatIconModule,
         MatFormFieldModule,
         MatInputModule,
-        MatSnackBarModule,
         MatProgressSpinnerModule,
         MatChipsModule,
         MatDividerModule,
@@ -68,8 +66,7 @@ export class GroupDetailComponent implements OnInit, OnDestroy
         private groupService: GroupService,
         private shoppingListService: ShoppingListService,
         private authService: AuthService,
-        private clipboard: Clipboard,
-        private snackBar: MatSnackBar
+        private clipboard: Clipboard
     ) {}
 
     ngOnInit(): void
@@ -106,7 +103,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy
             },
             error: () =>
             {
-                this.snackBar.open('Error al cargar el grupo', 'Cerrar', { duration: 3000 });
                 this.isLoading = false;
             }
         });
@@ -117,7 +113,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy
         if (this.group?.groupCode)
         {
             this.clipboard.copy(this.group.groupCode);
-            this.snackBar.open('Codigo copiado al portapapeles', 'Cerrar', { duration: 2000 });
         }
     }
 
@@ -141,14 +136,11 @@ export class GroupDetailComponent implements OnInit, OnDestroy
                 this.showInviteForm = false;
                 this.inviteTargetControl.setValue('');
                 this.isInviting = false;
-                this.snackBar.open('Invitacion enviada correctamente', 'Cerrar', { duration: 3000 });
                 this.loadGroup(this.group!.groupId);
             },
             error: (err) =>
             {
                 this.isInviting = false;
-                const message = err?.graphQLErrors?.[0]?.message || 'Error al enviar la invitacion';
-                this.snackBar.open(message, 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -183,13 +175,11 @@ export class GroupDetailComponent implements OnInit, OnDestroy
                 this.showCreateListForm = false;
                 this.listNameControl.setValue('');
                 this.isCreatingList = false;
-                this.snackBar.open('Lista creada correctamente', 'Cerrar', { duration: 3000 });
                 this.loadGroup(this.group!.groupId);
             },
             error: () =>
             {
                 this.isCreatingList = false;
-                this.snackBar.open('Error al crear la lista', 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -214,13 +204,11 @@ export class GroupDetailComponent implements OnInit, OnDestroy
         ).subscribe({
             next: () =>
             {
-                this.snackBar.open('Grupo eliminado correctamente', 'Cerrar', { duration: 3000 });
                 this.router.navigate(['/grupos']);
             },
             error: (error) =>
             {
                 this.isDeleting = false;
-                this.snackBar.open('Error al eliminar el grupo', 'Cerrar', { duration: 3000 });
                 console.error(error);
             }
         });
@@ -240,13 +228,11 @@ export class GroupDetailComponent implements OnInit, OnDestroy
         ).subscribe({
             next: () =>
             {
-                this.snackBar.open('Has salido del grupo', 'Cerrar', { duration: 3000 });
                 this.router.navigate(['/grupos']);
             },
             error: () =>
             {
                 this.isLeaving = false;
-                this.snackBar.open('Error al salir del grupo', 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -266,13 +252,11 @@ export class GroupDetailComponent implements OnInit, OnDestroy
             next: () =>
             {
                 this.removingMemberIds.delete(member.id);
-                this.snackBar.open('Miembro eliminado del grupo', 'Cerrar', { duration: 3000 });
                 this.loadGroup(this.group!.groupId);
             },
             error: () =>
             {
                 this.removingMemberIds.delete(member.id);
-                this.snackBar.open('Error al eliminar el miembro', 'Cerrar', { duration: 3000 });
             }
         });
     }

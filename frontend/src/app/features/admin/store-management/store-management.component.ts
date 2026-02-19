@@ -8,7 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminService } from '../../../core/services/admin.service';
 import { StoreAdmin } from '../../../core/models/admin.model';
@@ -26,7 +25,6 @@ import { StoreAdmin } from '../../../core/models/admin.model';
         MatButtonModule,
         MatFormFieldModule,
         MatInputModule,
-        MatSnackBarModule,
         MatProgressSpinnerModule
     ],
     templateUrl: './store-management.component.html',
@@ -43,7 +41,6 @@ export class StoreManagementComponent implements OnInit
 
     constructor(
         private adminService: AdminService,
-        private snackBar: MatSnackBar,
         private cdr: ChangeDetectorRef
     ) {}
 
@@ -70,14 +67,8 @@ export class StoreManagementComponent implements OnInit
         this.adminService.updateStore(store.id, { active: newActive }).subscribe({
             next: (updated) => {
                 store.active = updated.active;
-                this.snackBar.open(
-                    `${store.name} ${newActive ? 'activada' : 'desactivada'}`,
-                    'OK',
-                    { duration: 3000 }
-                );
             },
             error: () => {
-                this.snackBar.open('Error al actualizar tienda', 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -101,10 +92,8 @@ export class StoreManagementComponent implements OnInit
                 store.scrapingUrl = updated.scrapingUrl;
                 this.editingStoreId = null;
                 this.editUrl = '';
-                this.snackBar.open('URL actualizada', 'OK', { duration: 3000 });
             },
             error: () => {
-                this.snackBar.open('Error al actualizar URL', 'Cerrar', { duration: 3000 });
             }
         });
     }

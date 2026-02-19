@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { MatIconModule } from '@angular/material/icon';
 import { Subject, takeUntil } from 'rxjs';
 import { FavoriteService } from '../../shared/services/favorite.service';
@@ -18,7 +18,7 @@ import { MatDialog } from '@angular/material/dialog';
   imports: [
     CommonModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
+
     MatIconModule,
     ProductCardComponent
   ],
@@ -37,8 +37,7 @@ export class FavoritesComponent implements OnInit, OnDestroy {
     private favoriteService: FavoriteService,
     private shoppingListService: ShoppingListService,
     private dialog: MatDialog,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -61,7 +60,6 @@ export class FavoritesComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al cargar favoritos:', err);
-          this.snackBar.open('Error al cargar favoritos', 'Cerrar', { duration: 3000 });
           this.isLoading = false;
         }
       });
@@ -73,10 +71,8 @@ export class FavoritesComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.favorites = this.favorites.filter(p => p.id !== product.id);
-          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
         },
         error: () => {
-          this.snackBar.open('Error al eliminar de favoritos', 'Cerrar', { duration: 3000 });
         }
       });
   }
@@ -95,10 +91,8 @@ export class FavoritesComponent implements OnInit, OnDestroy {
       this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
         next: () => {
           this.productsInList.add(product.id);
-          this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
         },
         error: () => {
-          this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
         }
       });
     });

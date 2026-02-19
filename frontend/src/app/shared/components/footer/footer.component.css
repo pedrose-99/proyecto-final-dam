@@ -15,7 +15,7 @@
 
 /* Logo */
 .footer-brand {
-  max-width: 280px;
+  max-width: 300px;
 }
 
 .footer-logo {
@@ -72,40 +72,9 @@
   color: var(--smartcart-accent);
 }
 
-/* Redes sociales */
-.social-links {
-  display: flex;
-  gap: 16px;
-}
-
-.social-links a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  transition: all 0.2s ease;
-}
-
-.social-links a:hover {
-  background-color: var(--smartcart-accent);
-  transform: scale(1.1);
-}
-
-.social-links mat-icon {
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-}
-
 /* Bottom */
 .footer-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  text-align: center;
   padding-top: 24px;
   margin-top: 32px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -120,12 +89,6 @@
   margin: 0;
 }
 
-.footer-credits {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .footer-content {
@@ -136,12 +99,6 @@
   .footer-brand {
     grid-column: 1 / -1;
     max-width: none;
-  }
-
-  .footer-bottom {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
   }
 }
 

@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
 import { StoreAdmin, ScrapingResponse } from '../../../core/models/admin.model';
@@ -23,8 +22,7 @@ interface StoreCard extends StoreAdmin {
         MatCardModule,
         MatButtonModule,
         MatIconModule,
-        MatProgressSpinnerModule,
-        MatSnackBarModule
+        MatProgressSpinnerModule
     ],
     templateUrl: './scraping-control.component.html',
     styleUrls: ['./scraping-control.component.css']
@@ -42,7 +40,6 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
     constructor(
         private adminService: AdminService,
         private scrapingState: ScrapingStateService,
-        private snackBar: MatSnackBar,
         private cdr: ChangeDetectorRef
     ) {}
 
@@ -79,7 +76,6 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
             error: () => {
                 this.loading = false;
                 this.cdr.detectChanges();
-                this.snackBar.open('Error al cargar tiendas', 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -105,28 +101,13 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
                 this.scrapingState.markFinished(store.slug, 'COMPLETED', new Date().toISOString());
                 store.result = result;
                 this.cdr.detectChanges();
-                this.snackBar.open(
-                    `${store.name}: ${result.created} creados, ${result.updated} actualizados, ${result.scrapingErrors + result.syncErrors} errores`,
-                    'OK',
-                    { duration: 5000 }
-                );
                 this.loadStores();
             },
             error: (err) => {
                 if (err.status === 409) {
-                    this.snackBar.open(
-                        `${store.name}: El scraping ya esta en curso`,
-                        'Cerrar',
-                        { duration: 4000 }
-                    );
                     this.scrapingState.refreshAllStatuses();
                 } else {
                     this.scrapingState.markFinished(store.slug, 'FAILED', new Date().toISOString());
-                    this.snackBar.open(
-                        `Error al scrapear ${store.name}: ${err.error?.message || 'Error desconocido'}`,
-                        'Cerrar',
-                        { duration: 5000 }
-                    );
                 }
                 this.cdr.detectChanges();
             }
@@ -140,12 +121,10 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
 
         this.adminService.cancelScraping(store.slug).subscribe({
             next: () => {
-                this.snackBar.open(`Scraping de ${store.name} cancelado`, 'OK', { duration: 3000 });
                 this.scrapingState.refreshAllStatuses();
                 this.loadStores();
             },
             error: () => {
-                this.snackBar.open(`Error al cancelar ${store.name}`, 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -176,9 +155,6 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
         }
 
         this.scrapingAll = false;
-        if (!this.cancelledAll) {
-            this.snackBar.open('Scraping completo para todas las tiendas', 'OK', { duration: 4000 });
-        }
         this.cdr.detectChanges();
         this.loadStores();
     }
@@ -190,7 +166,6 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
         scrapingStores.forEach(store => this.cancelScraping(store));
         this.scrapingAll = false;
         this.cdr.detectChanges();
-        this.snackBar.open('Todos los scrapings cancelados', 'OK', { duration: 3000 });
     }
 
     exportCsv(store: StoreCard): void
@@ -198,10 +173,8 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
         this.adminService.exportCsv(store.slug).subscribe({
             next: (blob) => {
                 this.downloadBlob(blob, `products_${store.slug}.csv`);
-                this.snackBar.open(`CSV de ${store.name} descargado`, 'OK', { duration: 3000 });
             },
             error: () => {
-                this.snackBar.open(`Error al exportar CSV de ${store.name}`, 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -213,11 +186,9 @@ export class ScrapingControlComponent implements OnInit, OnDestroy
             next: (blob) => {
                 this.exportingAll = false;
                 this.downloadBlob(blob, 'products_all.zip');
-                this.snackBar.open('ZIP con todos los CSVs descargado', 'OK', { duration: 3000 });
             },
             error: () => {
                 this.exportingAll = false;
-                this.snackBar.open('Error al exportar CSVs', 'Cerrar', { duration: 3000 });
             }
         });
     }

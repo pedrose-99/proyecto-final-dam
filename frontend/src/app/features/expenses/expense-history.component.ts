@@ -12,7 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, debounceTime, distinctUntilChanged, switchMap, startWith } from 'rxjs/operators';
 import { ExpenseService } from '../../shared/services/expense.service';
@@ -49,7 +49,7 @@ interface StoreExpense
     MatBadgeModule,
     MatDividerModule,
     MatSelectModule,
-    MatSnackBarModule,
+
     ExpenseChartsComponent
   ],
   templateUrl: './expense-history.component.html',
@@ -97,7 +97,6 @@ export class ExpenseHistoryComponent implements OnInit, OnDestroy
 
   constructor(
     private expenseService: ExpenseService,
-    private snackBar: MatSnackBar,
     private router: Router
   ) {}
 
@@ -206,7 +205,6 @@ export class ExpenseHistoryComponent implements OnInit, OnDestroy
     const type = this.limitTypeControl.value || 'MONTHLY';
     if (!amount || amount <= 0)
     {
-      this.snackBar.open('Introduce un importe válido', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -219,12 +217,10 @@ export class ExpenseHistoryComponent implements OnInit, OnDestroy
           this.isSavingLimit = false;
           this.limitAmountControl.reset();
           this.loadLimits();
-          this.snackBar.open('Límite guardado', 'Cerrar', { duration: 3000 });
         },
         error: () =>
         {
           this.isSavingLimit = false;
-          this.snackBar.open('Error al guardar el límite', 'Cerrar', { duration: 3000 });
         }
       });
   }

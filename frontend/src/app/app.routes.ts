@@ -35,7 +35,13 @@ export const routes: Routes = [
       { path: 'grupos', loadComponent: () => import('./features/groups/groups.component').then(m => m.GroupsComponent) },
       { path: 'grupos/:id', loadComponent: () => import('./features/groups/group-detail/group-detail.component').then(m => m.GroupDetailComponent) },
       { path: 'settings', loadComponent: () => import('./features/user/settings/settings.component').then(m => m.SettingsComponent) },
-      { path: 'mis-gastos', loadComponent: () => import('./features/expenses/expense-history.component').then(m => m.ExpenseHistoryComponent) }
+      { path: 'mis-gastos', loadComponent: () => import('./features/expenses/expense-history.component').then(m => m.ExpenseHistoryComponent) },
+      { path: 'notifications', loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent) },
+      { path: 'help', loadComponent: () => import('./features/support/help/help.component').then(m => m.HelpComponent) },
+      { path: 'contact', loadComponent: () => import('./features/support/contact/contact.component').then(m => m.ContactComponent) },
+      { path: 'faq', loadComponent: () => import('./features/support/faq/faq.component').then(m => m.FaqComponent) },
+      { path: 'terms', loadComponent: () => import('./features/support/terms/terms.component').then(m => m.TermsComponent) },
+      { path: 'privacy', loadComponent: () => import('./features/support/privacy/privacy.component').then(m => m.PrivacyComponent) }
     ]
   },
   { path: '**', redirectTo: '/login' }

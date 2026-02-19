@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -36,7 +36,7 @@ import { Store } from '../../core/models/store.model';
     MatIconModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
+
     MatAutocompleteModule,
     MatChipsModule,
     MatDialogModule,
@@ -91,7 +91,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -141,6 +140,33 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private parseIdArray(value: any): number[] {
+    // Maneja string, array, o un solo valor
+    if (typeof value === 'string') {
+      // "1,2,3" -> [1,2,3]
+      return value.split(',').map(s => {
+        const num = Number(s.trim());
+        return isNaN(num) ? 0 : num;
+      }).filter(n => n > 0);
+    } else if (Array.isArray(value)) {
+      // ["1", "2", "3"] o ["1,2,3"] -> [1,2,3]
+      return value.flatMap(v => {
+        if (typeof v === 'string') {
+          // Puede ser "1" o "1,2,3"
+          return v.split(',').map(s => {
+            const num = Number(s.trim());
+            return isNaN(num) ? 0 : num;
+          });
+        }
+        return isNaN(Number(v)) ? [] : [Number(v)];
+      }).filter(n => n > 0);
+    } else if (typeof value === 'number') {
+      // 1 -> [1]
+      return [value];
+    }
+    return [];
   }
 
   private setupCategorySearch(): void {
@@ -227,20 +253,22 @@ export class HomeComponent implements OnInit, OnDestroy {
       
       // Restaurar filtros de categoría
       if (params['categoryIds']) {
-        const categoryIds = Array.isArray(params['categoryIds'])
-          ? params['categoryIds'].map((id: string) => +id)
-          : [+params['categoryIds']];
-        
-        this.selectedCategories = this.categories.filter(category => categoryIds.includes(category.id));
+        const categoryIds = this.parseIdArray(params['categoryIds']);
+        this.selectedCategories = categoryIds.length > 0 
+          ? this.categories.filter(category => categoryIds.includes(category.id))
+          : [];
+      } else {
+        this.selectedCategories = [];
       }
       
       // Restaurar filtros de tienda
       if (params['storeIds']) {
-        const storeIds = Array.isArray(params['storeIds'])
-          ? params['storeIds'].map((id: string) => +id)
-          : [+params['storeIds']];
-        
-        this.selectedStores = this.stores.filter(store => storeIds.includes(store.id));
+        const storeIds = this.parseIdArray(params['storeIds']);
+        this.selectedStores = storeIds.length > 0 
+          ? this.stores.filter(store => storeIds.includes(store.id))
+          : [];
+      } else {
+        this.selectedStores = [];
       }
       
       this.loadProducts();
@@ -266,10 +294,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (page: ProductPage) => {
           console.log('[DEBUG] Productos recibidos:', page.content.length, 'total:', page.totalElements);
-          // Filtrar productos que contengan el término completo como palabra
-          if (this.filters.search) {
-            page.content = this.filterProductsByCompleteWord(page.content, this.filters.search);
-          }
+          // Backend ya filtra por search, no aplicar filtro adicional cliente
           this.products = page.content;
           this.totalProducts = page.totalElements;
           this.isLoading = false;
@@ -280,9 +305,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error('Error al cargar productos:', err);
           this.isLoading = false;
-          this.snackBar.open('Error al cargar los productos', 'Cerrar', {
-            duration: 3000
-          });
         }
       });
   }
@@ -299,11 +321,9 @@ export class HomeComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (page: ProductPage) => {
-            // Filtrar productos que contengan el término completo como palabra
-            const filteredContent = this.filterProductsByCompleteWord(page.content, term);
-            
+            // Backend ya filtra por search, no aplicar filtro adicional cliente
             // Agregar productos únicos por ID
-            filteredContent.forEach(product => {
+            page.content.forEach(product => {
               if (!productIds.has(product.id)) {
                 productIds.add(product.id);
                 allProducts.push(product);
@@ -329,32 +349,9 @@ export class HomeComponent implements OnInit, OnDestroy {
             completedRequests++;
             if (completedRequests === this.searchTerms.length) {
               this.isLoading = false;
-              this.snackBar.open('Error al cargar los productos', 'Cerrar', {
-                duration: 3000
-              });
             }
           }
         });
-    });
-  }
-
-  private filterProductsByCompleteWord(products: Product[], searchTerm: string): Product[] {
-    // Dividir el término en palabras individuales
-    const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
-    
-    if (words.length === 0) {
-      return products;
-    }
-    
-    // Crear un regex para cada palabra como palabra completa
-    const wordRegexes = words.map(word => new RegExp(`\\b${word}\\b`, 'i'));
-    
-    return products.filter(product => {
-      const productName = (product.name || '').toLowerCase();
-      const productBrand = (product.brand || '').toLowerCase();
-      
-      // Comprobar que TODAS las palabras del término aparecen como palabras completa en nombre o marca
-      return wordRegexes.every(regex => regex.test(productName) || regex.test(productBrand));
     });
   }
 
@@ -389,9 +386,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // Usar múltiples categorías por ID
     if (this.selectedCategories.length > 0) {
-      this.filters.categoryIds = this.selectedCategories.map(c => c.id);
+      this.filters.categoryIds = this.getExpandedCategoryIds(this.selectedCategories);
       this.filters.categoryId = undefined;
-      this.filters.categoryNames = undefined;
+      this.filters.categoryNames = this.selectedCategories.map(c => c.name);
     } else {
       this.filters.categoryIds = undefined;
       this.filters.categoryId = undefined;
@@ -404,6 +401,42 @@ export class HomeComponent implements OnInit, OnDestroy {
     } else {
       this.filters.storeIds = undefined;
     }
+  }
+
+  private getExpandedCategoryIds(selected: Category[]): number[] {
+    const selectedIds = selected.map(c => c.id);
+    if (this.categories.length === 0) {
+      return selectedIds;
+    }
+
+    const childrenByParent = new Map<number, number[]>();
+    this.categories.forEach(category => {
+      if (category.parentId !== null) {
+        const parentId = category.parentId;
+        const siblings = childrenByParent.get(parentId) || [];
+        siblings.push(category.id);
+        childrenByParent.set(parentId, siblings);
+      }
+    });
+
+    const expanded = new Set<number>(selectedIds);
+    const queue: number[] = [...selectedIds];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (currentId === undefined) {
+        continue;
+      }
+      const children = childrenByParent.get(currentId) || [];
+      children.forEach(childId => {
+        if (!expanded.has(childId)) {
+          expanded.add(childId);
+          queue.push(childId);
+        }
+      });
+    }
+
+    return Array.from(expanded);
   }
 
   private updateActiveFilters(): void {
@@ -466,14 +499,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     if (!this.selectedStores.some(s => s.id === store.id)) {
       this.selectedStores.push(store);
+      
+      this.storeSearchControl.setValue('');
+      this.filterStores('');
+
+      this.pageIndex = 0;
+      this.updateQueryParams();
+      this.loadProducts();
     }
-
-    this.storeSearchControl.setValue('');
-    this.filterStores('');
-
-    this.pageIndex = 0;
-    this.updateQueryParams();
-    this.loadProducts();
   }
 
   removeStore(store: Store): void {
@@ -487,19 +520,25 @@ export class HomeComponent implements OnInit, OnDestroy {
   private updateQueryParams(): void {
     const queryParams: any = {};
     
-    // Actualizar parámetro de búsqueda
+    // Actualizar parámetro de búsqueda (null para eliminar de la URL)
     if (this.searchTerms.length > 0) {
       queryParams['search'] = this.searchTerms.join(',');
+    } else {
+      queryParams['search'] = null;
     }
     
-    // Actualizar parámetro de tiendas
+    // Actualizar parámetro de tiendas (null para eliminar de la URL)
     if (this.selectedStores.length > 0) {
-      queryParams['storeIds'] = this.selectedStores.map(s => s.id);
+      queryParams['storeIds'] = this.selectedStores.map(s => s.id).join(',');
+    } else {
+      queryParams['storeIds'] = null;
     }
     
-    // Actualizar parámetro de categorías
+    // Actualizar parámetro de categorías (null para eliminar de la URL)
     if (this.selectedCategories.length > 0) {
-      queryParams['categoryIds'] = this.selectedCategories.map(c => c.id);
+      queryParams['categoryIds'] = this.selectedCategories.map(c => c.id).join(',');
+    } else {
+      queryParams['categoryIds'] = null;
     }
     
     this.router.navigate([], { queryParams, queryParamsHandling: 'merge' });
@@ -568,7 +607,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           
           if (!selectedList) {
             console.error('❌ Lista no encontrada:', result.listId);
-            this.snackBar.open('Error: lista no encontrada', 'Cerrar', { duration: 3000 });
             return;
           }
 
@@ -589,10 +627,8 @@ export class HomeComponent implements OnInit, OnDestroy {
             ).subscribe({
               next: () => {
                 this.productsInList.add(product.id);
-                this.snackBar.open('Cantidad aumentada en la lista', 'Cerrar', { duration: 2000 });
               },
               error: () => {
-                this.snackBar.open('Error al actualizar la cantidad', 'Cerrar', { duration: 3000 });
               }
             });
           } else {
@@ -601,17 +637,14 @@ export class HomeComponent implements OnInit, OnDestroy {
             this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
               next: () => {
                 this.productsInList.add(product.id);
-                this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
               },
               error: () => {
-                this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
               }
             });
           }
         },
         error: (err) => {
           console.error('❌ Error al refrescar listas:', err);
-          this.snackBar.open('Error al obtener las listas', 'Cerrar', { duration: 3000 });
         }
       });
     });
@@ -622,14 +655,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.productService.removeFromFavorites(product.id).subscribe({
         next: () => {
           product.isFavorite = false;
-          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
         }
       });
     } else {
       this.productService.addToFavorites(product.id).subscribe({
         next: () => {
           product.isFavorite = true;
-          this.snackBar.open('Añadido a favoritos', 'Cerrar', { duration: 2000 });
         }
       });
     }

@@ -10,6 +10,7 @@ export const GET_ALL_PRODUCTS = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -39,9 +40,10 @@ export const GET_PRODUCT_COMPARISON = gql`
       name
       brand
       ean
-      description  # <--- HE AÑADIDO ESTA LÍNEA
+      description
       imageUrl
       categoryName
+      categoryId
       storePrices {
         storeId
         storeName
@@ -69,6 +71,7 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -89,6 +92,7 @@ export const GET_PRODUCTS_BY_STORE = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -110,6 +114,7 @@ export const SEARCH_PRODUCTS = gql`
         brand
         categoryName
         imageUrl
+        isFavorite
       }
       totalElements
       totalPages
@@ -437,6 +442,7 @@ export const SEARCH_PRODUCTS_BY_STORE = gql`
         categoryName
         imageUrl
         currentPrice
+        isFavorite
       }
       totalElements
       totalPages
@@ -564,6 +570,38 @@ export const RESPOND_TO_INVITE = gql`
 export const DELETE_NOTIFICATION = gql`
   mutation DeleteNotification($notificationId: ID!) {
     deleteNotification(notificationId: $notificationId)
+  }
+`;
+
+export const MARK_NOTIFICATION_AS_READ = gql`
+  mutation MarkNotificationAsRead($notificationId: ID!) {
+    markNotificationAsRead(notificationId: $notificationId)
+  }
+`;
+
+export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
+  mutation MarkAllNotificationsAsRead {
+    markAllNotificationsAsRead
+  }
+`;
+
+export const GET_NOTIFICATIONS_PAGINATED = gql`
+  query GetNotificationsPaginated($page: Int, $size: Int) {
+    getNotificationsPaginated(page: $page, size: $size) {
+      content {
+        notificationId
+        message
+        type
+        isRead
+        relatedGroupId
+        relatedGroupName
+        createdAt
+      }
+      totalElements
+      totalPages
+      number
+      size
+    }
   }
 `;
 

@@ -8,7 +8,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
@@ -25,8 +24,7 @@ import { finalize } from 'rxjs';
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatProgressSpinnerModule
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
@@ -48,8 +46,7 @@ export class SettingsComponent implements OnInit {
     private fb: FormBuilder,
     private userService: UserService,
     private authService: AuthService,
-    public router: Router,
-    private snackBar: MatSnackBar
+    public router: Router
   ) {
     this.settingsForm = this.fb.group({
       username: [{
@@ -167,21 +164,9 @@ export class SettingsComponent implements OnInit {
             email: user.email,
             role: user.role
           });
-          this.snackBar.open('Perfil actualizado correctamente', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top',
-            panelClass: ['success-snackbar']
-          });
         },
         error: (err) => {
           this.errorMessage = err.error?.message || 'Error al actualizar el perfil';
-          this.snackBar.open(this.errorMessage, 'Cerrar', {
-            duration: 5000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top',
-            panelClass: ['error-snackbar']
-          });
         }
       });
   }

@@ -1,3 +1,6 @@
+<button class="btn-backing" (click)="router.navigate(['/home'])">
+  ← Volver
+</button>
 <div class="settings-container">
   <mat-card class="settings-card">
     <div class="settings-header">
@@ -84,11 +87,5 @@
       </form>
     </mat-card-content>
 
-    <mat-card-actions>
-      <button mat-button (click)="router.navigate(['/home'])">
-        <mat-icon>arrow_back</mat-icon>
-        Volver
-      </button>
-    </mat-card-actions>
   </mat-card>
 </div>

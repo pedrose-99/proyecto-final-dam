@@ -133,12 +133,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   addSearchTerm(term: string): void {
     const trimmedTerm = term.trim().toLowerCase();
+    console.log('[DEBUG-HEADER] addSearchTerm llamado con:', term, 'trimmed:', trimmedTerm);
     if (trimmedTerm && !this.searchTerms.includes(trimmedTerm)) {
       this.searchTerms.push(trimmedTerm);
+      console.log('[DEBUG-HEADER] searchTerms actualizado a:', this.searchTerms);
     }
     this.searchControl.setValue('');
     this.searchResults = [];
     this.navigateWithSearchTerms();
+    console.log('[DEBUG-HEADER] navigateWithSearchTerms ejecutado');
   }
 
   removeSearchTerm(term: string): void {
@@ -224,6 +227,47 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.loadNotifications();
       }
     });
+  }
+
+  markAllAsRead(): void {
+    this.notificationService.markAllAsRead().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.loadNotifications();
+      }
+    });
+  }
+
+  onNotificationClick(notification: AppNotification): void {
+    if (!notification.isRead && notification.type !== 'INVITE') {
+      this.notificationService.markAsRead(notification.notificationId).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: () => {
+          this.loadNotifications();
+        }
+      });
+    }
+  }
+
+  goToNotifications(): void {
+    this.router.navigate(['/notifications']);
+  }
+
+  get recentNotifications(): AppNotification[] {
+    return this.notifications.slice(0, 5);
+  }
+
+  getNotificationIcon(type: string): string {
+    switch (type) {
+      case 'INVITE': return 'group_add';
+      case 'UPDATE': return 'update';
+      case 'BUDGET_ALERT': return 'account_balance_wallet';
+      case 'PURCHASE': return 'shopping_cart';
+      case 'SYSTEM': return 'info';
+      default: return 'notifications';
+    }
   }
 
   get isAdmin(): boolean {

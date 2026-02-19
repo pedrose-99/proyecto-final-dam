@@ -1,0 +1,219 @@
+.notifications-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.notifications-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--smartcart-text);
+  margin: 0;
+}
+
+.mark-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--smartcart-accent);
+  border-color: var(--smartcart-accent);
+}
+
+.filters-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--smartcart-text-light);
+  min-width: 48px;
+}
+
+.filters button {
+  font-size: 13px;
+  border-radius: 20px;
+  padding: 4px 16px;
+  color: var(--smartcart-text-light);
+  border-color: var(--smartcart-border, #e0e0e0);
+}
+
+.filters button.active-filter {
+  background-color: var(--smartcart-accent);
+  color: #ffffff;
+  border-color: var(--smartcart-accent);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--smartcart-text-light);
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notification-card {
+  padding: 16px;
+  transition: box-shadow 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.notification-card.unread {
+  border-left-color: var(--smartcart-accent);
+  background-color: rgba(37, 99, 235, 0.03);
+}
+
+.notification-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.notification-icon-wrapper {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--smartcart-background, #f5f5f5);
+  color: var(--smartcart-text-light);
+}
+
+.notification-icon-wrapper.unread-icon {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--smartcart-accent);
+}
+
+.notification-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.notification-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background-color: var(--smartcart-background, #f0f0f0);
+  color: var(--smartcart-text-light);
+}
+
+.notification-type-badge[data-type="INVITE"] {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.notification-type-badge[data-type="PURCHASE"] {
+  background-color: rgba(33, 150, 243, 0.1);
+  color: #2196f3;
+}
+
+.notification-type-badge[data-type="BUDGET_ALERT"] {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.notification-type-badge[data-type="SYSTEM"] {
+  background-color: rgba(156, 39, 176, 0.1);
+  color: #9c27b0;
+}
+
+.notification-date {
+  font-size: 12px;
+  color: var(--smartcart-text-light);
+}
+
+.notification-message {
+  font-size: 14px;
+  color: var(--smartcart-text-light);
+  line-height: 1.5;
+  margin: 0 0 2px 0;
+}
+
+.notification-message.unread-text {
+  color: var(--smartcart-text);
+  font-weight: 500;
+}
+
+.notification-group {
+  font-size: 12px;
+  color: var(--smartcart-accent);
+}
+
+.notification-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+mat-paginator {
+  margin-top: 16px;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .notifications-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .notification-content {
+    flex-wrap: wrap;
+  }
+
+  .notification-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

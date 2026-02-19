@@ -1,6 +1,9 @@
 package com.smartcart.smartcart.modules.user.service;
 
 
+import com.smartcart.smartcart.common.enums.NotificationType;
+import com.smartcart.smartcart.modules.notification.entity.Notification;
+import com.smartcart.smartcart.modules.notification.repository.NotificationRepository;
 import com.smartcart.smartcart.modules.product.entity.ProductStore;
 import com.smartcart.smartcart.modules.product.repository.ProductStoreRepository;
 import com.smartcart.smartcart.modules.shoppinglist.entity.ListItem;
@@ -11,8 +14,10 @@ import com.smartcart.smartcart.modules.user.dto.MonthlyExpenseSummaryDTO;
 import com.smartcart.smartcart.modules.user.entity.BillsHistory;
 import com.smartcart.smartcart.modules.user.entity.LimitType;
 import com.smartcart.smartcart.modules.user.entity.SpendingLimit;
+import com.smartcart.smartcart.modules.user.entity.User;
 import com.smartcart.smartcart.modules.user.repository.BillsHistoryRepository;
 import com.smartcart.smartcart.modules.user.repository.SpendingLimitRepository;
+import com.smartcart.smartcart.modules.user.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +39,8 @@ public class ExpenseService {
     private final BudgetProducerService budgetProducer;
     private final ShoppingListRepository shoppingListRepository;
     private final ProductStoreRepository productStoreRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
 
     // --- MUTATION: saveSpendingLimit ---
     @Transactional
@@ -146,7 +153,19 @@ public class ExpenseService {
         // 6. Disparar evento Kafka
         budgetProducer.checkLimitsAndNotify(userId, totalAmount);
 
-        return historyRepository.save(history);
+        BillsHistory saved = historyRepository.save(history);
+
+        // 7. Crear notificación de compra
+        User user = userRepository.findById(Math.toIntExact(userId)).orElse(null);
+        if (user != null) {
+            Notification notification = new Notification();
+            notification.setRecipient(user);
+            notification.setMessage("Compra '" + billName + "' registrada por " + String.format("%.2f", totalAmount) + "€");
+            notification.setType(NotificationType.PURCHASE);
+            notificationRepository.save(notification);
+        }
+
+        return saved;
     }
 
     // --- QUERY: getBillsHistory ---

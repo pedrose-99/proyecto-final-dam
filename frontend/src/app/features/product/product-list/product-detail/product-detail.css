@@ -530,3 +530,73 @@
   color: var(--smartcart-text);
   border-color: var(--smartcart-primary);
 }
+
+/* Productos relacionados - Carrusel */
+.related-section {
+  margin-top: 50px;
+  margin-bottom: 40px;
+}
+
+.carousel-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.carousel-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--smartcart-border);
+  background: var(--smartcart-card);
+  color: var(--smartcart-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.carousel-arrow:hover:not(:disabled) {
+  background: var(--smartcart-accent);
+  color: #fff;
+  border-color: var(--smartcart-accent);
+}
+
+.carousel-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.carousel-card {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: calc(33.333% - 11px);
+}
+
+@media (max-width: 900px) {
+  .carousel-card {
+    max-width: calc(50% - 8px);
+  }
+}
+
+@media (max-width: 600px) {
+  .carousel-card {
+    max-width: 100%;
+  }
+
+  .carousel-arrow {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+}

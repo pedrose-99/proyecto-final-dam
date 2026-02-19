@@ -1,8 +1,9 @@
-/* Card principal - tamaño fijo */
+/* Card principal - fluida */
 :host {
   display: block;
-  width: 280px;
+  width: 100%;
   height: 420px;
+  min-width: 0;
 }
 
 .product-card {

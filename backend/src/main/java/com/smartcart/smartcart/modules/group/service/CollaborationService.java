@@ -1,9 +1,13 @@
 package com.smartcart.smartcart.modules.group.service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -250,6 +254,15 @@ public class CollaborationService {
                 .orElseThrow(() -> new ResourceNotFoundException("El usuario no pertenece a este grupo"));
 
         groupMemberRepository.delete(membership);
+
+        // Notificar al usuario expulsado
+        Notification notification = new Notification();
+        notification.setRecipient(targetUser);
+        notification.setMessage("Has sido eliminado del grupo '" + group.getName() + "'");
+        notification.setType(NotificationType.SYSTEM);
+        notification.setRelatedGroup(group);
+        notificationRepository.save(notification);
+
         return true;
     }
 
@@ -317,6 +330,31 @@ public class CollaborationService {
         return true;
     }
 
+    // ==================== MARK AS READ ====================
+
+    @Transactional
+    public boolean markNotificationAsRead(Integer notificationId) {
+        User currentUser = getAuthenticatedUser();
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
+
+        if (!notification.getRecipient().getIdUser().equals(currentUser.getIdUser())) {
+            throw new UnauthorizedException("Esta notificación no te pertenece");
+        }
+
+        notification.setIsRead(true);
+        notificationRepository.save(notification);
+        return true;
+    }
+
+    @Transactional
+    public boolean markAllNotificationsAsRead() {
+        User currentUser = getAuthenticatedUser();
+        notificationRepository.markAllAsReadByRecipient(currentUser);
+        return true;
+    }
+
     // ==================== QUERIES ====================
 
     public List<GroupDTO> getMyGroups() {
@@ -335,6 +373,24 @@ public class CollaborationService {
         return notifications.stream()
                 .map(this::toNotificationDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Map<String, Object> getNotificationsPaginated(int page, int size) {
+        User currentUser = getAuthenticatedUser();
+        Page<Notification> notifPage = notificationRepository.findByRecipientOrderByCreatedAtDesc(
+                currentUser, PageRequest.of(page, size));
+
+        List<NotificationDTO> content = notifPage.getContent().stream()
+                .map(this::toNotificationDTO)
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", content);
+        result.put("totalElements", notifPage.getTotalElements());
+        result.put("totalPages", notifPage.getTotalPages());
+        result.put("number", notifPage.getNumber());
+        result.put("size", notifPage.getSize());
+        return result;
     }
 
     public GroupDTO getGroupDetails(Integer groupId) {
