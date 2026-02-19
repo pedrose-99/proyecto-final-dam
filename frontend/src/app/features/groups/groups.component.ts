@@ -7,7 +7,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
@@ -28,7 +27,6 @@ import { Group, AppNotification } from '../../core/models/group.model';
         MatIconModule,
         MatFormFieldModule,
         MatInputModule,
-        MatSnackBarModule,
         MatProgressSpinnerModule,
         MatChipsModule,
         MatDividerModule,
@@ -56,7 +54,6 @@ export class GroupsComponent implements OnInit, OnDestroy
     constructor(
         private groupService: GroupService,
         private notificationService: NotificationService,
-        private snackBar: MatSnackBar,
         private router: Router
     ) {}
 
@@ -85,7 +82,6 @@ export class GroupsComponent implements OnInit, OnDestroy
             },
             error: () =>
             {
-                this.snackBar.open('Error al cargar los grupos', 'Cerrar', { duration: 3000 });
                 this.isLoading = false;
             }
         });
@@ -132,12 +128,10 @@ export class GroupsComponent implements OnInit, OnDestroy
                 this.showCreateForm = false;
                 this.createNameControl.setValue('');
                 this.isCreating = false;
-                this.snackBar.open('Grupo creado correctamente', 'Cerrar', { duration: 3000 });
             },
             error: () =>
             {
                 this.isCreating = false;
-                this.snackBar.open('Error al crear el grupo', 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -157,12 +151,10 @@ export class GroupsComponent implements OnInit, OnDestroy
                 this.showJoinForm = false;
                 this.joinCodeControl.setValue('');
                 this.isJoining = false;
-                this.snackBar.open('Te has unido al grupo correctamente', 'Cerrar', { duration: 3000 });
             },
             error: () =>
             {
                 this.isJoining = false;
-                this.snackBar.open('Codigo invalido o error al unirse', 'Cerrar', { duration: 3000 });
             }
         });
     }
@@ -180,11 +172,6 @@ export class GroupsComponent implements OnInit, OnDestroy
                 if (accept)
                 {
                     this.loadGroups();
-                    this.snackBar.open('Invitacion aceptada', 'Cerrar', { duration: 3000 });
-                }
-                else
-                {
-                    this.snackBar.open('Invitacion rechazada', 'Cerrar', { duration: 3000 });
                 }
                 this.notificationService.loadNotifications().pipe(
                     takeUntil(this.destroy$)
@@ -192,7 +179,6 @@ export class GroupsComponent implements OnInit, OnDestroy
             },
             error: () =>
             {
-                this.snackBar.open('Error al responder a la invitacion', 'Cerrar', { duration: 3000 });
             }
         });
     }

@@ -11,7 +11,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
@@ -36,7 +35,6 @@ import { CreateUserDialogComponent } from './create-user-dialog.component';
         MatIconModule,
         MatTooltipModule,
         MatDialogModule,
-        MatSnackBarModule,
         MatProgressSpinnerModule
     ],
     templateUrl: './user-management.component.html',
@@ -63,7 +61,6 @@ export class UserManagementComponent implements OnInit
         private adminService: AdminService,
         private authService: AuthService,
         private dialog: MatDialog,
-        private snackBar: MatSnackBar,
         private cdr: ChangeDetectorRef
     ) {
         this.currentUserEmail = this.authService.getCurrentUser()?.email ?? '';
@@ -126,7 +123,6 @@ export class UserManagementComponent implements OnInit
         dialogRef.afterClosed().subscribe(result => {
             if (result) {
                 this.loadUsers();
-                this.snackBar.open('Usuario creado correctamente', 'OK', { duration: 3000 });
             }
         });
     }
@@ -138,10 +134,8 @@ export class UserManagementComponent implements OnInit
         this.adminService.deleteUser(user.id).subscribe({
             next: () => {
                 this.loadUsers();
-                this.snackBar.open('Usuario eliminado', 'OK', { duration: 3000 });
             },
             error: (err) => {
-                this.snackBar.open(err.error?.message || 'Error al eliminar usuario', 'Cerrar', { duration: 3000 });
             }
         });
     }

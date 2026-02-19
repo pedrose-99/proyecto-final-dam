@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -36,7 +36,7 @@ import { Store } from '../../core/models/store.model';
     MatIconModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
+
     MatAutocompleteModule,
     MatChipsModule,
     MatDialogModule,
@@ -91,7 +91,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -306,9 +305,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error('Error al cargar productos:', err);
           this.isLoading = false;
-          this.snackBar.open('Error al cargar los productos', 'Cerrar', {
-            duration: 3000
-          });
         }
       });
   }
@@ -353,9 +349,6 @@ export class HomeComponent implements OnInit, OnDestroy {
             completedRequests++;
             if (completedRequests === this.searchTerms.length) {
               this.isLoading = false;
-              this.snackBar.open('Error al cargar los productos', 'Cerrar', {
-                duration: 3000
-              });
             }
           }
         });
@@ -614,7 +607,6 @@ export class HomeComponent implements OnInit, OnDestroy {
           
           if (!selectedList) {
             console.error('❌ Lista no encontrada:', result.listId);
-            this.snackBar.open('Error: lista no encontrada', 'Cerrar', { duration: 3000 });
             return;
           }
 
@@ -635,10 +627,8 @@ export class HomeComponent implements OnInit, OnDestroy {
             ).subscribe({
               next: () => {
                 this.productsInList.add(product.id);
-                this.snackBar.open('Cantidad aumentada en la lista', 'Cerrar', { duration: 2000 });
               },
               error: () => {
-                this.snackBar.open('Error al actualizar la cantidad', 'Cerrar', { duration: 3000 });
               }
             });
           } else {
@@ -647,17 +637,14 @@ export class HomeComponent implements OnInit, OnDestroy {
             this.shoppingListService.addItem(result.listId, product.id, null, 1).subscribe({
               next: () => {
                 this.productsInList.add(product.id);
-                this.snackBar.open('Producto añadido a la lista', 'Cerrar', { duration: 2000 });
               },
               error: () => {
-                this.snackBar.open('Error al añadir el producto', 'Cerrar', { duration: 3000 });
               }
             });
           }
         },
         error: (err) => {
           console.error('❌ Error al refrescar listas:', err);
-          this.snackBar.open('Error al obtener las listas', 'Cerrar', { duration: 3000 });
         }
       });
     });
@@ -668,14 +655,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.productService.removeFromFavorites(product.id).subscribe({
         next: () => {
           product.isFavorite = false;
-          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
         }
       });
     } else {
       this.productService.addToFavorites(product.id).subscribe({
         next: () => {
           product.isFavorite = true;
-          this.snackBar.open('Añadido a favoritos', 'Cerrar', { duration: 2000 });
         }
       });
     }

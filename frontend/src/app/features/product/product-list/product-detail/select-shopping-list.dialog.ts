@@ -4,7 +4,7 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { ShoppingListService } from '../../../../shared/services/shopping-list.service';
 import { forkJoin, of } from 'rxjs';
 
@@ -17,7 +17,6 @@ import { forkJoin, of } from 'rxjs';
     MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
-    MatSnackBarModule
   ],
   template: `
     <div class="dialog-container">
@@ -152,8 +151,7 @@ export class SelectShoppingListDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<SelectShoppingListDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
-    private shoppingListService: ShoppingListService,
-    private snackBar: MatSnackBar
+    private shoppingListService: ShoppingListService
   ) {
     // Validar y filtrar listas al inicializar
     this.validLists = (data.lists || []).filter((list: any) => 
@@ -229,23 +227,19 @@ export class SelectShoppingListDialogComponent {
         // Ejecutar todas las operaciones en paralelo
         forkJoin(operations).subscribe({
           next: () => {
-            const listNames = this.selectedLists.map(l => `"${l.name}"`).join(', ');
-            this.snackBar.open(`Añadido a ${listNames}`, 'Cerrar', { duration: 3000 });
-            this.dialogRef.close({ 
+            this.dialogRef.close({
               success: true, 
               addedCount: this.selectedLists.length 
             });
           },
           error: (err) => {
             console.error('Error al añadir producto a listas:', err);
-            this.snackBar.open('Error al añadir producto a las listas', 'Cerrar', { duration: 3000 });
             this.isAdding = false;
           }
         });
       },
       error: (err) => {
         console.error('Error al refrescar listas:', err);
-        this.snackBar.open('Error al obtener listas actualizadas', 'Cerrar', { duration: 3000 });
         this.isAdding = false;
       }
     });

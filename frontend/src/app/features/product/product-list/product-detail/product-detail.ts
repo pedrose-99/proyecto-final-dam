@@ -4,7 +4,7 @@ import { CommonModule, Location } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { ProductService } from '../../../../core/services/product.service';
@@ -22,7 +22,7 @@ import { Chart, registerables } from 'chart.js';
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
-    MatSnackBarModule,
+
     MatDialogModule,
     ProductCardComponent
   ],
@@ -64,7 +64,6 @@ export class ProductDetailComponent implements OnInit {
     private shoppingListService: ShoppingListService,
     private cdr: ChangeDetectorRef,
     private location: Location,
-    private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router
   ) {}
@@ -83,7 +82,9 @@ export class ProductDetailComponent implements OnInit {
   }
 
   private loadProduct(id: string): void {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     this.loading = true;
     this.productId = parseInt(id);
     this.relatedProducts = [];
@@ -219,22 +220,18 @@ export class ProductDetailComponent implements OnInit {
       this.favoriteService.removeFromFavorites(this.productId).subscribe({
         next: () => {
           this.isFavorite = false;
-          this.snackBar.open('Eliminado de favoritos', 'Cerrar', { duration: 2000 });
           this.cdr.detectChanges();
         },
         error: () => {
-          this.snackBar.open('Error al eliminar de favoritos', 'Cerrar', { duration: 3000 });
         }
       });
     } else {
       this.favoriteService.addToFavorites(this.productId).subscribe({
         next: () => {
           this.isFavorite = true;
-          this.snackBar.open('Añadido a favoritos', 'Cerrar', { duration: 2000 });
           this.cdr.detectChanges();
         },
         error: () => {
-          this.snackBar.open('Error al añadir a favoritos', 'Cerrar', { duration: 3000 });
         }
       });
     }
@@ -242,7 +239,6 @@ export class ProductDetailComponent implements OnInit {
 
   addToShoppingList(): void {
     if (!this.productId) {
-      this.snackBar.open('Error: No se puede añadir el producto', 'Cerrar', { duration: 3000 });
       return;
     }
 
@@ -253,7 +249,6 @@ export class ProductDetailComponent implements OnInit {
         const validLists = lists.filter(list => list && list.listId && list.name);
         
         if (validLists.length === 0) {
-          this.snackBar.open('No tienes listas de compra. Crea una primera.', 'Cerrar', { duration: 3000 });
           return;
         }
 
@@ -270,7 +265,6 @@ export class ProductDetailComponent implements OnInit {
             // Actualizar inmediatamente
             this.isInShoppingList = true;
             this.cdr.detectChanges();
-            this.snackBar.open(`Añadido a ${result.addedCount} lista(s)`, 'Cerrar', { duration: 2000 });
             
             // Refrescar después de 1 segundo para confirmar
             setTimeout(() => {
@@ -282,7 +276,6 @@ export class ProductDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error al obtener listas:', err);
-        this.snackBar.open('Error al obtener tus listas de compra', 'Cerrar', { duration: 3000 });
       }
     });
   }
