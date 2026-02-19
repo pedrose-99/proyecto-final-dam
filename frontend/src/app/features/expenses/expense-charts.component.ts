@@ -1,10 +1,15 @@
 import { Component, Input, OnChanges, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { MonthlyExpenseSummary } from '../../core/models/expense.model';
+
+interface StoreExpenseInput {
+  storeName: string;
+  totalAmount: number;
+}
 
 @Component({
   selector: 'app-expense-charts',
@@ -32,33 +37,57 @@ import { MonthlyExpenseSummary } from '../../core/models/expense.model';
       </button>
     </div>
 
+    <!-- Resumen rápido -->
+    <div class="summary-cards" *ngIf="summary.length > 0">
+      <div class="summary-card">
+        <span class="summary-label">Gasto Total</span>
+        <span class="summary-value">{{ totalSpent | number:'1.2-2' }} &euro;</span>
+      </div>
+      <div class="summary-card" *ngIf="activeLimit">
+        <span class="summary-label">Presupuesto</span>
+        <span class="summary-value" [class.exceeded]="currentPeriodSpent > activeLimit">
+          {{ currentPeriodSpent | number:'1.2-2' }} / {{ activeLimit | number:'1.2-2' }} &euro;
+        </span>
+      </div>
+    </div>
+
     <div class="charts-grid">
-      <!-- Gráfica de barras -->
-      <div class="chart-card" *ngIf="barChartData.labels!.length > 0">
-        <h3>Gasto {{ periodLabels[selectedPeriod] }}</h3>
+      <!-- Gráfica de líneas - evolución del gasto -->
+      <div class="chart-card" *ngIf="lineChartData.labels!.length > 0">
+        <h3>Evolución del gasto {{ periodLabels[selectedPeriod] }}</h3>
         <canvas baseChart
-          [data]="barChartData"
-          [options]="barChartOptions"
-          [type]="'bar'">
+          [data]="lineChartData"
+          [options]="lineChartOptions"
+          [type]="'line'">
         </canvas>
       </div>
 
-      <!-- Gráfica doughnut -->
-      <div class="chart-card" *ngIf="activeLimit && doughnutChartData.labels!.length > 0">
+      <!-- Gráfica doughnut por supermercado -->
+      <div class="chart-card" *ngIf="storeDoughnutData.labels!.length > 0">
+        <h3>Gasto por Supermercado</h3>
+        <canvas baseChart
+          [data]="storeDoughnutData"
+          [options]="storeDoughnutOptions"
+          [type]="'doughnut'">
+        </canvas>
+      </div>
+
+      <!-- Gráfica doughnut presupuesto -->
+      <div class="chart-card" *ngIf="activeLimit && budgetDoughnutData.labels!.length > 0">
         <h3>Presupuesto {{ periodLabels[selectedPeriod] }}</h3>
         <canvas baseChart
-          [data]="doughnutChartData"
-          [options]="doughnutChartOptions"
+          [data]="budgetDoughnutData"
+          [options]="budgetDoughnutOptions"
           [type]="'doughnut'">
         </canvas>
         <div class="doughnut-center-label">
-          {{ currentPeriodSpent | number:'1.2-2' }}€<br>
-          <small>de {{ activeLimit | number:'1.2-2' }}€</small>
+          {{ currentPeriodSpent | number:'1.2-2' }}&euro;<br>
+          <small>de {{ activeLimit | number:'1.2-2' }}&euro;</small>
         </div>
       </div>
 
       <!-- Sin datos -->
-      <div class="chart-card chart-empty" *ngIf="barChartData.labels!.length === 0">
+      <div class="chart-card chart-empty" *ngIf="lineChartData.labels!.length === 0">
         <p>No hay datos para este periodo.</p>
       </div>
     </div>
@@ -107,6 +136,37 @@ import { MonthlyExpenseSummary } from '../../core/models/expense.model';
       color: var(--smartcart-text);
       min-width: 180px;
       text-align: center;
+    }
+
+    .summary-cards {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: var(--smartcart-card);
+      border-radius: 12px;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: var(--smartcart-text-light);
+      font-weight: 500;
+    }
+
+    .summary-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--smartcart-text);
+    }
+
+    .summary-value.exceeded {
+      color: #ef4444;
     }
 
     .charts-grid {
@@ -170,6 +230,7 @@ import { MonthlyExpenseSummary } from '../../core/models/expense.model';
 export class ExpenseChartsComponent implements OnChanges
 {
   @Input() summary: MonthlyExpenseSummary[] = [];
+  @Input() storeExpenses: StoreExpenseInput[] = [];
   @Input() weeklyLimit: number | null = null;
   @Input() monthlyLimit: number | null = null;
   @Input() yearlyLimit: number | null = null;
@@ -179,6 +240,7 @@ export class ExpenseChartsComponent implements OnChanges
   @Output() offsetChange = new EventEmitter<number>();
 
   currentPeriodSpent = 0;
+  totalSpent = 0;
   activeLimit: number | null = null;
   rangeLabel = '';
   hasPrevData = true;
@@ -195,8 +257,9 @@ export class ExpenseChartsComponent implements OnChanges
     'YEARLY': 'anual'
   };
 
-  barChartData: ChartData<'bar'> = { labels: [], datasets: [] };
-  barChartOptions: ChartConfiguration<'bar'>['options'] = {
+  // Gráfica de líneas - evolución del gasto
+  lineChartData: ChartData<'line'> = { labels: [], datasets: [] };
+  lineChartOptions: ChartConfiguration<'line'>['options'] = {
     responsive: true,
     plugins: {
       legend: { display: false }
@@ -208,11 +271,25 @@ export class ExpenseChartsComponent implements OnChanges
           callback: (value) => value + '€'
         }
       }
+    },
+    elements: {
+      line: { tension: 0.3 }
     }
   };
 
-  doughnutChartData: ChartData<'doughnut'> = { labels: [], datasets: [] };
-  doughnutChartOptions: ChartConfiguration<'doughnut'>['options'] = {
+  // Gráfica donut por supermercado
+  storeDoughnutData: ChartData<'doughnut'> = { labels: [], datasets: [] };
+  storeDoughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    cutout: '50%',
+    plugins: {
+      legend: { display: true, position: 'bottom' }
+    }
+  };
+
+  // Gráfica donut de presupuesto
+  budgetDoughnutData: ChartData<'doughnut'> = { labels: [], datasets: [] };
+  budgetDoughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
     cutout: '65%',
     plugins: {
@@ -220,13 +297,17 @@ export class ExpenseChartsComponent implements OnChanges
     }
   };
 
+  private storeColors = ['#4ade80', '#60a5fa', '#f97316', '#a78bfa', '#f472b6', '#facc15', '#34d399', '#fb923c'];
+
   ngOnChanges(): void
   {
     this.activeLimit = this.getLimitForPeriod();
     this.hasPrevData = this.summary.length > 0;
+    this.totalSpent = this.summary.reduce((sum, s) => sum + s.totalAmount, 0);
     this.buildRangeLabel();
-    this.buildBarChart();
-    this.buildDoughnutChart();
+    this.buildLineChart();
+    this.buildStoreDoughnut();
+    this.buildBudgetDoughnut();
   }
 
   onPeriodChange(period: string): void
@@ -269,35 +350,66 @@ export class ExpenseChartsComponent implements OnChanges
     this.rangeLabel = first === last ? first : `${first} — ${last}`;
   }
 
-  private buildBarChart(): void
+  private buildLineChart(): void
   {
     const labels = this.summary.map(s => s.periodLabel);
     const data = this.summary.map(s => s.totalAmount);
-    const limit = this.activeLimit;
 
-    const backgroundColors = data.map(amount =>
-    {
-      if (limit && amount > limit)
-      {
-        return '#ef4444';
-      }
-      return '#4ade80';
-    });
-
-    this.barChartData = {
+    this.lineChartData = {
       labels,
       datasets: [
         {
           data,
-          backgroundColor: backgroundColors,
-          borderRadius: 6,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.15)',
+          fill: true,
+          pointBackgroundColor: '#4ade80',
+          pointBorderColor: '#fff',
+          pointRadius: 5,
           label: 'Gasto'
         }
       ]
     };
+
+    // Añadir línea del límite si existe
+    if (this.activeLimit) {
+      this.lineChartData.datasets.push({
+        data: Array(labels.length).fill(this.activeLimit),
+        borderColor: '#ef4444',
+        borderDash: [8, 4],
+        pointRadius: 0,
+        fill: false,
+        label: 'Límite'
+      } as any);
+
+      this.lineChartOptions = {
+        ...this.lineChartOptions,
+        plugins: { legend: { display: true, position: 'bottom' } }
+      };
+    }
   }
 
-  private buildDoughnutChart(): void
+  private buildStoreDoughnut(): void
+  {
+    if (!this.storeExpenses || this.storeExpenses.length === 0) {
+      this.storeDoughnutData = { labels: [], datasets: [] };
+      return;
+    }
+
+    const labels = this.storeExpenses.map(se => se.storeName);
+    const data = this.storeExpenses.map(se => se.totalAmount);
+    const colors = labels.map((_, i) => this.storeColors[i % this.storeColors.length]);
+
+    this.storeDoughnutData = {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors
+      }]
+    };
+  }
+
+  private buildBudgetDoughnut(): void
   {
     if (!this.activeLimit || this.summary.length === 0) return;
 
@@ -309,7 +421,7 @@ export class ExpenseChartsComponent implements OnChanges
 
     if (exceeded > 0)
     {
-      this.doughnutChartData = {
+      this.budgetDoughnutData = {
         labels: ['Gastado', 'Excedido'],
         datasets: [{
           data: [this.activeLimit, exceeded],
@@ -319,7 +431,7 @@ export class ExpenseChartsComponent implements OnChanges
     }
     else
     {
-      this.doughnutChartData = {
+      this.budgetDoughnutData = {
         labels: ['Gastado', 'Restante'],
         datasets: [{
           data: [this.currentPeriodSpent, remaining],

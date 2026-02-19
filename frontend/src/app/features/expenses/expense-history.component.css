@@ -1,5 +1,8 @@
+/* ============================================
+   Expense History — Layout & Structure
+   ============================================ */
 .expense-container {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 24px;
 }
@@ -9,17 +12,32 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
-.expense-header h1 {
-  font-size: 28px;
-  font-weight: 500;
-  margin: 0;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
   color: var(--smartcart-accent);
 }
 
-/* Pill buttons (reutilizando patrón de la app) */
+.expense-header h1 {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--smartcart-text);
+}
+
+/* ============================================
+   Pill Buttons
+   ============================================ */
 .pill-button {
   display: inline-flex;
   align-items: center;
@@ -77,91 +95,161 @@
   display: inline-block;
 }
 
-/* Section headings */
-section h2 {
+/* ============================================
+   Section Headings
+   ============================================ */
+section h2,
+.limits-block h2,
+.charts-block h2 {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   margin: 0 0 16px;
   color: var(--smartcart-text);
 }
 
-section h2 mat-icon {
+section h2 mat-icon,
+.limits-block h2 mat-icon,
+.charts-block h2 mat-icon {
   color: var(--smartcart-accent);
   font-size: 22px;
   width: 22px;
   height: 22px;
 }
 
-/* Limits section */
-.limits-section {
-  margin-bottom: 32px;
+/* ============================================
+   Dashboard Section (Limits + Charts)
+   ============================================ */
+.dashboard-section {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
+.limits-block,
+.charts-block {
+  background: var(--smartcart-card);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Limits */
 .limits-cards {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
 }
 
 .limit-card {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background: var(--smartcart-card);
-  border-radius: 12px;
-  min-width: 120px;
+  padding: 12px 16px;
+  background: var(--smartcart-background);
+  border-radius: 10px;
 }
 
 .limit-type {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--smartcart-text-light);
-  margin-bottom: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .limit-amount {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--smartcart-accent);
-  font-family: 'Courier New', Courier, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .no-limits {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--smartcart-text-light);
   margin-bottom: 16px;
 }
 
 .limit-form {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.limit-type-field {
-  width: 140px;
-}
-
+.limit-type-field,
 .limit-amount-field {
-  width: 160px;
+  width: 100%;
 }
 
-/* Charts section */
-.charts-section {
-  margin-bottom: 32px;
+/* ============================================
+   Store Expenses
+   ============================================ */
+.store-expenses-section {
+  margin-bottom: 28px;
 }
 
-/* Filters section */
-.filters-section {
-  margin-bottom: 24px;
+.store-expenses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.store-expense-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--smartcart-card);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.store-expense-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.store-expense-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.store-expense-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--smartcart-text-light);
+}
+
+.store-expense-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--smartcart-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   History Section
+   ============================================ */
+.history-section {
+  background: var(--smartcart-card);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.history-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .filters-row {
@@ -169,6 +257,7 @@ section h2 mat-icon {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .filter-text-field {
@@ -177,10 +266,12 @@ section h2 mat-icon {
 }
 
 .filter-select-field {
-  width: 140px;
+  width: 130px;
 }
 
-/* Loading */
+/* ============================================
+   Loading & Empty State
+   ============================================ */
 .loading-spinner {
   display: flex;
   flex-direction: column;
@@ -196,24 +287,24 @@ section h2 mat-icon {
   margin: 0;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
-  padding: 60px 24px;
+  padding: 48px 24px;
   color: var(--smartcart-text-light);
 }
 
 .empty-icon {
-  font-size: 64px;
-  width: 64px;
-  height: 64px;
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
   color: var(--smartcart-text-light);
-  margin: 0 auto 16px;
+  margin: 0 auto 12px;
+  opacity: 0.5;
 }
 
 .empty-state p {
   margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .empty-hint {
@@ -221,41 +312,47 @@ section h2 mat-icon {
   color: var(--smartcart-text-light);
 }
 
-/* Month groups */
+/* ============================================
+   Month Groups
+   ============================================ */
 .month-groups {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .month-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--smartcart-card);
+  padding: 10px 14px;
+  background: var(--smartcart-background);
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .month-label {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--smartcart-text);
 }
 
 .month-total {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--smartcart-accent);
-  font-family: 'Courier New', Courier, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Bill panels */
+/* ============================================
+   Bill Panels
+   ============================================ */
 .bill-panel {
   border-radius: 8px !important;
   background-color: var(--smartcart-card) !important;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  box-shadow: none !important;
+  border: 1px solid var(--smartcart-border);
 }
 
 .bill-title {
@@ -269,10 +366,14 @@ section h2 mat-icon {
 .bill-icon {
   color: var(--smartcart-accent);
   flex-shrink: 0;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
 .bill-name {
   font-weight: 500;
+  font-size: 14px;
   color: var(--smartcart-text);
   white-space: nowrap;
   overflow: hidden;
@@ -305,27 +406,28 @@ section h2 mat-icon {
 
 .bill-total {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--smartcart-accent);
-  font-family: 'Courier New', Courier, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .bill-total.exceeded {
   color: #ef4444;
 }
 
-/* Ticket content (desktop) */
+/* ============================================
+   Ticket Content (Desktop)
+   ============================================ */
 .ticket-content {
   padding: 8px 0;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .ticket-header-row {
   display: grid;
-  grid-template-columns: 1fr 100px 60px 80px 80px;
+  grid-template-columns: 1fr 100px 50px 80px 80px;
   gap: 8px;
-  padding: 8px 0;
+  padding: 6px 0;
   font-weight: 600;
   color: var(--smartcart-text-light);
   font-size: 12px;
@@ -334,7 +436,7 @@ section h2 mat-icon {
 
 .ticket-item-row {
   display: grid;
-  grid-template-columns: 1fr 100px 60px 80px 80px;
+  grid-template-columns: 1fr 100px 50px 80px 80px;
   gap: 8px;
   padding: 8px 0;
   color: var(--smartcart-text);
@@ -351,12 +453,17 @@ section h2 mat-icon {
   text-align: right;
 }
 
+.col-store {
+  font-size: 12px;
+  color: var(--smartcart-text-light);
+}
+
 .ticket-total-row {
   display: flex;
   justify-content: space-between;
   padding: 12px 0 4px;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--smartcart-text);
 }
 
@@ -364,59 +471,46 @@ section h2 mat-icon {
   color: var(--smartcart-accent);
 }
 
-/* Store expenses section */
-.store-expenses-section {
-  margin-bottom: 32px;
-}
-
-.store-expenses-grid {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.store-expense-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 24px;
-  background: var(--smartcart-card);
-  border-radius: 12px;
-  min-width: 120px;
-  gap: 6px;
-}
-
-.store-expense-logo {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-}
-
-.store-expense-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--smartcart-text-light);
-}
-
-.store-expense-amount {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--smartcart-accent);
-  font-family: 'Courier New', Courier, monospace;
-}
-
-/* Store column in ticket */
-.col-store {
-  font-size: 12px;
-  color: var(--smartcart-text-light);
-}
-
-/* Mobile cards (hidden on desktop) */
+/* ============================================
+   Mobile Cards (hidden on desktop)
+   ============================================ */
 .ticket-cards-mobile {
   display: none;
 }
 
-/* Responsive */
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 900px) {
+  .dashboard-section {
+    grid-template-columns: 1fr;
+  }
+
+  .limit-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .limit-type-field {
+    width: 140px;
+  }
+
+  .limit-amount-field {
+    width: 140px;
+  }
+
+  .limits-cards {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .limit-card {
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+  }
+}
+
 @media (max-width: 768px) {
   .expense-container {
     padding: 16px;
@@ -431,14 +525,8 @@ section h2 mat-icon {
     gap: 12px;
   }
 
-  .limits-cards {
-    flex-direction: column;
-  }
-
-  .limit-card {
-    flex-direction: row;
-    justify-content: space-between;
-    min-width: unset;
+  .dashboard-section {
+    grid-template-columns: 1fr;
   }
 
   .limit-form {
@@ -451,6 +539,15 @@ section h2 mat-icon {
     width: 100%;
   }
 
+  .limits-cards {
+    flex-direction: column;
+  }
+
+  .limit-card {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
   .filters-row {
     flex-direction: column;
     align-items: stretch;
@@ -460,6 +557,10 @@ section h2 mat-icon {
   .filter-select-field {
     width: 100%;
     min-width: unset;
+  }
+
+  .store-expenses-grid {
+    grid-template-columns: 1fr;
   }
 
   .bill-title {
@@ -481,17 +582,6 @@ section h2 mat-icon {
     flex-direction: column;
     gap: 8px;
     padding: 8px 0;
-  }
-
-  .store-expenses-grid {
-    flex-direction: column;
-  }
-
-  .store-expense-card {
-    flex-direction: row;
-    justify-content: space-between;
-    min-width: unset;
-    padding: 12px 16px;
   }
 
   .mobile-item-card {
@@ -534,7 +624,7 @@ section h2 mat-icon {
   .mobile-item-total {
     font-weight: 600;
     color: var(--smartcart-accent);
-    font-family: 'Courier New', Courier, monospace;
+    font-variant-numeric: tabular-nums;
   }
 
   .mobile-total {
@@ -550,6 +640,6 @@ section h2 mat-icon {
 
   .mobile-total-value {
     color: var(--smartcart-accent);
-    font-family: 'Courier New', Courier, monospace;
+    font-variant-numeric: tabular-nums;
   }
 }
