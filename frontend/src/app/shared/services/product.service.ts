@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Apollo } from 'apollo-angular';
-import { Observable, map, of, forkJoin } from 'rxjs';
+import { Observable, map, of, forkJoin, switchMap, catchError } from 'rxjs';
 import { Product, ProductPage, ProductSearchResult, ProductFilters } from '../../core/models/product.model';
 import { Category } from '../../core/models/category.model';
 import { Store } from '../../core/models/store.model';
@@ -25,10 +25,9 @@ export class ProductService {
   constructor(private apollo: Apollo) {}
 
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
-    // Determinar cómo obtener los productos base
     let baseQuery$: Observable<Product[]>;
 
-    // Prioridad 1: Si hay búsqueda Y una sola tienda, usar búsqueda específica en esa tienda
+    // Prioridad 1: Búsqueda + 1 tienda
     if (filters.search && filters.storeIds?.length === 1) {
       baseQuery$ = this.apollo.query<any>({
         query: SEARCH_PRODUCTS_BY_STORE,
@@ -43,7 +42,7 @@ export class ProductService {
         map(result => (result.data?.searchProductsByStore?.content || []).map((p: any) => this.mapToProduct(p)))
       );
     }
-    // Prioridad 2: Si hay búsqueda Y múltiples tiendas, buscar en todas y combinar
+    // Prioridad 2: Búsqueda + múltiples tiendas
     else if (filters.search && filters.storeIds && filters.storeIds.length > 1) {
       const queries = filters.storeIds.map(storeId =>
         this.apollo.query<any>({
@@ -77,57 +76,187 @@ export class ProductService {
         })
       );
     }
-    // Prioridad 3: Si hay búsqueda Y categorías, obtener productos de esas categorías y buscar
+    // Prioridad 3: Búsqueda + categorías
     else if (filters.search && filters.categoryIds && filters.categoryIds.length > 0) {
-      const queries = filters.categoryIds.map(catId =>
+      if (filters.categoryNames && filters.categoryNames.length > 0) {
+        baseQuery$ = this.apollo.query<any>({
+          query: GET_ALL_PRODUCTS,
+          variables: { page: 0, size: 10000 },
+          fetchPolicy: 'network-only'
+        }).pipe(
+          map(result => (result.data?.allProducts?.content || []).map((p: any) => this.mapToProduct(p))),
+          map(products => {
+            const categoryFiltered = this.filterByCategoryNames(products, filters.categoryNames || []);
+            const query = this.normalizeText(filters.search || '');
+            return categoryFiltered.filter(p => {
+              const productText = this.normalizeText(`${p.name} ${p.brand || ''}`);
+              return productText.includes(query);
+            });
+          })
+        );
+      } else {
+        const queries = filters.categoryIds.map(catId =>
+          this.apollo.query<any>({
+            query: GET_PRODUCTS_BY_CATEGORY,
+            variables: {
+              categoryId: catId.toString(),
+              page: 0,
+              size: 10000
+            },
+            fetchPolicy: 'network-only'
+          })
+        );
+
+        baseQuery$ = forkJoin(queries).pipe(
+          map(results => {
+            let allProductsInCategory: Product[] = [];
+            const seenIds = new Set<number>();
+
+            results.forEach(result => {
+              const products = (result.data?.productsByCategoryPaginated?.content || [])
+                .map((p: any) => this.mapToProduct(p));
+              products.forEach((p: Product) => {
+                if (!seenIds.has(p.id)) {
+                  seenIds.add(p.id);
+                  allProductsInCategory.push(p);
+                }
+              });
+            });
+            
+            // Filtrar por búsqueda en cliente
+            return allProductsInCategory.filter(p => {
+              const name = (p.name || '').toLowerCase();
+              const brand = (p.brand || '').toLowerCase();
+              const query = (filters.search || '').toLowerCase();
+              return name.includes(query) || brand.includes(query);
+            });
+          })
+        );
+      }
+    }
+    // Prioridad 4: Solo búsqueda - intentar búsqueda específica por tienda
+    else if (filters.search) {
+      baseQuery$ = this.getStores().pipe(
+        switchMap(stores => {
+          const storeIds = stores.map(s => s.id);
+          console.log('[DEBUG-SEARCH] Buscando "' + filters.search + '" en tiendas:', storeIds);
+          
+          if (storeIds.length === 0) {
+            console.log('[DEBUG-SEARCH] No hay tiendas disponibles');
+            return of([]);
+          }
+          
+          // Crear consultas SEARCH_PRODUCTS_BY_STORE para TODAS las tiendas en paralelo
+          const queries = storeIds.map(storeId =>
+            this.apollo.query<any>({
+              query: SEARCH_PRODUCTS_BY_STORE,
+              variables: {
+                query: filters.search,
+                storeId: storeId.toString(),
+                page: 0,
+                size: 1000
+              },
+              fetchPolicy: 'network-only'
+            }).pipe(
+              catchError(err => {
+                console.warn(`[DEBUG-SEARCH] Error en tienda ${storeId}:`, err);
+                return of({ data: { searchProductsByStore: { content: [] } } });
+              })
+            )
+          );
+
+          return forkJoin(queries).pipe(
+            map(results => {
+              let allProducts: Product[] = [];
+              const seenIds = new Set<number>();
+
+              results.forEach((result, index) => {
+                const storeId = storeIds[index];
+                const products = (result.data?.searchProductsByStore?.content || [])
+                  .map((p: any) => this.mapToProduct(p));
+                console.log(`[DEBUG-SEARCH] Tienda ${storeId}: ${products.length} productos`);
+                
+                products.forEach((p: Product) => {
+                  if (!seenIds.has(p.id)) {
+                    seenIds.add(p.id);
+                    allProducts.push(p);
+                  }
+                });
+              });
+              
+              console.log('[DEBUG-SEARCH] Total productos únicos: ' + allProducts.length);
+              return allProducts;
+            })
+          );
+        })
+      );
+    }
+    // Prioridad 5: Tienda(s) + Categoría(s) - sin búsqueda
+    else if ((filters.storeIds && filters.storeIds.length > 0) && (filters.categoryIds && filters.categoryIds.length > 0)) {
+      // Estrategia: obtener productos de categoría(s) y verificar que estén en tienda(s)
+      const categoryQueries = filters.categoryIds.map(catId =>
         this.apollo.query<any>({
           query: GET_PRODUCTS_BY_CATEGORY,
           variables: {
             categoryId: catId.toString(),
             page: 0,
-            size: 200
+            size: 10000
           },
           fetchPolicy: 'network-only'
         })
       );
 
-      baseQuery$ = forkJoin(queries).pipe(
-        map(results => {
-          let allProductsInCategory: Product[] = [];
-          const seenIds = new Set<number>();
+      baseQuery$ = forkJoin(categoryQueries).pipe(
+        // Primero obtener productos de categoría
+        switchMap(categoryResults => {
+          // Productos de todas las categorías
+          const categoryProducts: Product[] = [];
+          const categoryProductIds = new Set<number>();
 
-          results.forEach(result => {
+          categoryResults.forEach(result => {
             const products = (result.data?.productsByCategoryPaginated?.content || [])
               .map((p: any) => this.mapToProduct(p));
             products.forEach((p: Product) => {
-              if (!seenIds.has(p.id)) {
-                seenIds.add(p.id);
-                allProductsInCategory.push(p);
+              if (!categoryProductIds.has(p.id)) {
+                categoryProductIds.add(p.id);
+                categoryProducts.push(p);
               }
             });
           });
-          
-          // Filtrar por búsqueda en cliente
-          return allProductsInCategory.filter(p => {
-            const name = (p.name || '').toLowerCase();
-            const brand = (p.brand || '').toLowerCase();
-            const query = (filters.search || '').toLowerCase();
-            return name.includes(query) || brand.includes(query);
-          });
+
+          // Ahora obtener productos de tienda(s) para intersección
+          const storeQueries = filters.storeIds!.map(storeId =>
+            this.apollo.query<any>({
+              query: GET_PRODUCTS_BY_STORE,
+              variables: {
+                storeId: storeId.toString(),
+                page: 0,
+                size: 10000
+              },
+              fetchPolicy: 'network-only'
+            })
+          );
+
+          return forkJoin(storeQueries).pipe(
+            map(storeResults => {
+              // IDs de productos en las tiendas
+              const storeProductIds = new Set<number>();
+              storeResults.forEach(result => {
+                const products = (result.data?.productsByStore?.content || [])
+                  .map((p: any) => this.mapToProduct(p));
+                products.forEach((p: Product) => {
+                  storeProductIds.add(p.id);
+                });
+              });
+
+              // Retornar productos de categoría que existen en tiendas
+              return categoryProducts.filter(p => storeProductIds.has(p.id));
+            })
+          );
         })
       );
     }
-    // Prioridad 4: Solo búsqueda, sin tienda ni categoría
-    else if (filters.search) {
-      baseQuery$ = this.apollo.query<any>({
-        query: SEARCH_PRODUCTS,
-        variables: { query: filters.search, page: 0, size: 1000 },
-        fetchPolicy: 'network-only'
-      }).pipe(
-        map(result => (result.data?.searchProducts?.content || []).map((p: any) => this.mapToProduct(p)))
-      );
-    }
-    // Prioridad 5: Si hay múltiples tiendas (sin búsqueda)
+    // Prioridad 6: Múltiples tiendas (sin categoría, sin búsqueda)
     else if (filters.storeIds && filters.storeIds.length > 1) {
       const queries = filters.storeIds.map(storeId =>
         this.apollo.query<any>({
@@ -160,7 +289,7 @@ export class ProductService {
         })
       );
     }
-    // Prioridad 6: Una sola tienda (sin búsqueda)
+    // Prioridad 7: Una tienda (sin categoría, sin búsqueda)
     else if (filters.storeIds && filters.storeIds.length === 1) {
       baseQuery$ = this.apollo.query<any>({
         query: GET_PRODUCTS_BY_STORE,
@@ -174,40 +303,29 @@ export class ProductService {
         map(result => (result.data?.productsByStore?.content || []).map((p: any) => this.mapToProduct(p)))
       );
     }
-    // Prioridad 7: Múltiples categorías (sin búsqueda, sin tienda)
+    // Prioridad 8: Múltiples categorías (sin tienda, sin búsqueda)
     else if (filters.categoryIds && filters.categoryIds.length > 0) {
-      const queries = filters.categoryIds.map(catId =>
-        this.apollo.query<any>({
-          query: GET_PRODUCTS_BY_CATEGORY,
-          variables: {
-            categoryId: catId.toString(),
-            page: 0,
-            size: 200
-          },
-          fetchPolicy: 'network-only'
-        })
-      );
-
-      baseQuery$ = forkJoin(queries).pipe(
-        map(results => {
-          let allProducts: Product[] = [];
-          const seenIds = new Set<number>();
-
-          results.forEach(result => {
-            const products = (result.data?.productsByCategoryPaginated?.content || [])
-              .map((p: any) => this.mapToProduct(p));
-            products.forEach((p: Product) => {
-              if (!seenIds.has(p.id)) {
-                seenIds.add(p.id);
-                allProducts.push(p);
-              }
-            });
-          });
-          return allProducts;
+      // Obtener TODOS los productos y filtrar por nombre de categoría
+      // Esto permite búsqueda parcial y encuentra productos de todas las tiendas
+      // con categorías similares (ej: "Tomate frito" incluye "Tomate")
+      baseQuery$ = this.apollo.query<any>({
+        query: GET_ALL_PRODUCTS,
+        variables: { page: 0, size: 10000 },
+        fetchPolicy: 'network-only'
+      }).pipe(
+        map(result => (result.data?.allProducts?.content || []).map((p: any) => this.mapToProduct(p))),
+        map(products => {
+          if (!filters.categoryNames || filters.categoryNames.length === 0) {
+            return products;
+          }
+          
+          const filtered = this.filterByCategoryNames(products, filters.categoryNames);
+          console.log('[DEBUG-CATEGORY] Total productos filtrados por categoría:', filtered.length);
+          return filtered;
         })
       );
     }
-    // Prioridad 8: Una sola categoría (sin búsqueda, sin tienda)
+    // Prioridad 9: Una categoría (sin tienda, sin búsqueda)
     else if (filters.categoryId) {
       baseQuery$ = this.apollo.query<any>({
         query: GET_PRODUCTS_BY_CATEGORY,
@@ -221,7 +339,7 @@ export class ProductService {
         map(result => (result.data?.productsByCategoryPaginated?.content || []).map((p: any) => this.mapToProduct(p)))
       );
     }
-    // Sin filtros específicos, obtener todos
+    // Prioridad 10: Sin filtros
     else {
       baseQuery$ = this.apollo.query<any>({
         query: GET_ALL_PRODUCTS,
@@ -232,17 +350,19 @@ export class ProductService {
       );
     }
 
-    // Aplicar ordenamiento, filtrado adicional en cliente y paginación
+    // Aplicar ordenamiento, filtrado y paginación
     return baseQuery$.pipe(
       map(allProducts => {
-        // Aplicar ordenamiento
+        console.log('[DEBUG-SERVICE] Raw products from backend:', allProducts.length, 'productos');
+        
         let filtered = this.applySorting(allProducts, filters.sortBy);
 
-        // Aplicar paginación manual
         const totalElements = filtered.length;
         const start = page * size;
         const end = start + size;
         const paginatedContent = filtered.slice(start, end);
+
+        console.log('[DEBUG-SERVICE] Después de paginación:', paginatedContent.length, 'de', totalElements);
 
         return {
           content: paginatedContent,
@@ -301,6 +421,29 @@ export class ProductService {
         break;
     }
     return sorted;
+  }
+
+  private normalizeText(value: string): string {
+    return (value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private filterByCategoryNames(products: Product[], categoryNames: string[]): Product[] {
+    const normalizedNames = categoryNames
+      .map(name => this.normalizeText(name))
+      .filter(name => name.length > 0);
+
+    if (normalizedNames.length === 0) {
+      return products;
+    }
+
+    return products.filter(product => {
+      const category = this.normalizeText(product.categoryName || '');
+      // Coincidencia exacta del nombre completo de la categoría
+      return normalizedNames.some(name => category.includes(name));
+    });
   }
 
   private mapToProduct(data: any): Product {

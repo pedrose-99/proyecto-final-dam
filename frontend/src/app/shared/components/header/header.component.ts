@@ -133,12 +133,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   addSearchTerm(term: string): void {
     const trimmedTerm = term.trim().toLowerCase();
+    console.log('[DEBUG-HEADER] addSearchTerm llamado con:', term, 'trimmed:', trimmedTerm);
     if (trimmedTerm && !this.searchTerms.includes(trimmedTerm)) {
       this.searchTerms.push(trimmedTerm);
+      console.log('[DEBUG-HEADER] searchTerms actualizado a:', this.searchTerms);
     }
     this.searchControl.setValue('');
     this.searchResults = [];
     this.navigateWithSearchTerms();
+    console.log('[DEBUG-HEADER] navigateWithSearchTerms ejecutado');
   }
 
   removeSearchTerm(term: string): void {
