@@ -47,9 +47,9 @@ public class ExpenseController
     }
 
     @MutationMapping
-    public BillsHistory createBillFromList(@Argument Integer listId, @Argument String billName)
+    public BillsHistory createBillFromList(@Argument Integer listId, @Argument String billName, @Argument String purchaseDate)
     {
-        return expenseService.createBillFromList(getCurrentUserId(), listId, billName);
+        return expenseService.createBillFromList(getCurrentUserId(), listId, billName, purchaseDate);
     }
 
     @QueryMapping

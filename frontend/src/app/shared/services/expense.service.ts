@@ -11,10 +11,10 @@ import { Bill, SpendingLimit, MonthlyExpenseSummary } from '../../core/models/ex
 export class ExpenseService {
   constructor(private apollo: Apollo) {}
 
-  createBillFromList(listId: number, billName: string): Observable<Bill> {
+  createBillFromList(listId: number, billName: string, purchaseDate?: string): Observable<Bill> {
     return this.apollo.mutate<{ createBillFromList: Bill }>({
       mutation: CREATE_BILL_FROM_LIST,
-      variables: { listId: listId.toString(), billName }
+      variables: { listId: listId.toString(), billName, purchaseDate: purchaseDate || null }
     }).pipe(
       map(result => result.data?.createBillFromList as Bill)
     );
