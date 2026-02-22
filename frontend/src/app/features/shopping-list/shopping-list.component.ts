@@ -419,7 +419,7 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       .subscribe((result: SimulatePurchaseDialogResult | undefined) => {
         if (!result || !this.selectedList) return;
 
-        this.expenseService.createBillFromList(this.selectedList.listId, result.billName)
+        this.expenseService.createBillFromList(this.selectedList.listId, result.billName, result.purchaseDate)
           .pipe(takeUntil(this.destroy$))
           .subscribe({
             next: () => {

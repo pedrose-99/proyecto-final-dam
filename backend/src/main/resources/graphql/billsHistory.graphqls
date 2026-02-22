@@ -24,7 +24,7 @@ type MonthlyExpenseSummary {
 
 extend type Mutation {
     registerBill(name: String!): BillsHistory
-    createBillFromList(listId: ID!, billName: String!): BillsHistory
+    createBillFromList(listId: ID!, billName: String!, purchaseDate: String): BillsHistory
 }
 
 extend type Query {
