@@ -57,7 +57,6 @@ public class ProductStore {
     private Integer stock;
 
 
-    // Constructors
     public ProductStore() {
     }
 
@@ -73,7 +72,6 @@ public class ProductStore {
         this.url = url;
     }
 
-    //Automatic update of lastUpdate field
     @PreUpdate
     @PrePersist
     protected void onUpdate() {

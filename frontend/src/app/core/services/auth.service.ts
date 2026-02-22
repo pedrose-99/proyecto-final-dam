@@ -101,7 +101,6 @@ export class AuthService
     {
         const accessToken = this.getAccessToken();
 
-        // Llamar al backend para invalidar el token
         if (accessToken) {
             this.http.post(`${this.apiUrl}/auth/logout`, {}).subscribe({
                 error: () => {} // Ignorar errores del logout
@@ -125,7 +124,6 @@ export class AuthService
         return localStorage.getItem('refresh_token');
     }
 
-    // Mantener compatibilidad con código existente
     getToken(): string | null
     {
         return this.getAccessToken();

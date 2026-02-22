@@ -193,7 +193,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy
     {
         if (!this.group) return;
 
-        // Confirmar eliminación
         if (!confirm(`¿Estás seguro de que deseas eliminar el grupo "${this.group.name}"? Esta acción no se puede deshacer.`)) {
             return;
         }

@@ -26,8 +26,6 @@ export class AdminService
 
     constructor(private http: HttpClient) {}
 
-    // --- Dashboard ---
-
     getStats(): Observable<AdminStats>
     {
         return this.http.get<AdminStats>(`${this.apiUrl}/admin/dashboard/stats`);
@@ -37,8 +35,6 @@ export class AdminService
     {
         return this.http.get<ServiceHealth>(`${this.apiUrl}/admin/dashboard/health`);
     }
-
-    // --- User Management ---
 
     getUsers(page: number, size: number, role?: string, search?: string): Observable<PageResponse<UserAdmin>>
     {
@@ -72,8 +68,6 @@ export class AdminService
         return this.http.delete<void>(`${this.apiUrl}/admin/users/${userId}`);
     }
 
-    // --- Scrape Logs ---
-
     getScrapeLogs(page: number, size: number, store?: string, status?: string): Observable<PageResponse<ScrapeLogEntry>>
     {
         let params = new HttpParams()
@@ -100,8 +94,6 @@ export class AdminService
         return this.http.get<ScrapeErrorEntry[]>(`${this.apiUrl}/admin/scrape-logs/${logId}/errors`);
     }
 
-    // --- Scraping Control ---
-
     triggerScraping(storeSlug: string): Observable<ScrapingResponse>
     {
         return this.http.post<ScrapingResponse>(
@@ -119,8 +111,6 @@ export class AdminService
         return this.http.get<StoreScrapingStatus>(`${this.apiUrl}/admin/scraping/${storeSlug}/status`);
     }
 
-    // --- CSV Export ---
-
     exportCsv(storeSlug: string): Observable<Blob>
     {
         return this.http.get(`${this.apiUrl}/admin/export/csv/${storeSlug}`, { responseType: 'blob' });
@@ -130,8 +120,6 @@ export class AdminService
     {
         return this.http.get(`${this.apiUrl}/admin/export/csv/all`, { responseType: 'blob' });
     }
-
-    // --- Store Management ---
 
     getStores(): Observable<StoreAdmin[]>
     {

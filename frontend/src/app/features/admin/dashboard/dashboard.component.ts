@@ -45,7 +45,6 @@ export class DashboardComponent implements OnInit, AfterViewInit
                 this.stats = stats;
                 this.loading = false;
                 this.cdr.detectChanges();
-                // Esperar al siguiente ciclo de render para que el canvas exista en el DOM
                 setTimeout(() => this.renderChart(), 50);
             },
             error: (err) => {
@@ -88,7 +87,6 @@ export class DashboardComponent implements OnInit, AfterViewInit
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw bars
         const storeColors: Record<string, string> = {
             'mercadona': '#22c55e',
             'alcampo': '#f59e0b',
@@ -106,13 +104,11 @@ export class DashboardComponent implements OnInit, AfterViewInit
             ctx.roundRect(x, y, barWidth, barHeight, 4);
             ctx.fill();
 
-            // Label
             ctx.fillStyle = '#64748b';
             ctx.font = '11px Roboto';
             ctx.textAlign = 'center';
             ctx.fillText(item.storeName, x + barWidth / 2, canvas.height - 5);
 
-            // Value
             ctx.fillStyle = '#1e293b';
             ctx.font = 'bold 12px Roboto';
             ctx.fillText(item.count.toString(), x + barWidth / 2, y - 6);

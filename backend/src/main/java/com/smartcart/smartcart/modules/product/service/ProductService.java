@@ -63,8 +63,6 @@ public class ProductService {
         }
     }
 
-    // ─── CRUD ──────────────────────────────────────────────
-
     public List<ProductDTO> findAll() {
         Set<Integer> favoriteIds = getFavoriteProductIds();
         return productRepository.findAll().stream()
@@ -221,16 +219,12 @@ public class ProductService {
         return true;
     }
 
-    // ─── NAVEGACIÓN: Filtrar productos por categoría ───────
-
     public List<ProductDTO> findByCategory(Integer categoryId) {
         Set<Integer> favoriteIds = getFavoriteProductIds();
         return productRepository.findByCategoryId_CategoryId(categoryId).stream()
                 .map(product -> ProductMapper.toDTO(product, favoriteIds.contains(product.getProductId())))
                 .toList();
     }
-
-    // ─── COMPARADOR: Producto con precios en todas las tiendas ─
 
     public ProductComparisonDTO compareProduct(Integer productId) {
         Product product = productRepository.findById(productId)
@@ -273,8 +267,6 @@ public class ProductService {
                 bestPrice
         );
     }
-
-    // ─── OPTIMIZACIÓN DE CESTA ─────────────────────────────
 
     public BasketOptimizationDTO optimizeBasket(List<Integer> productIds) {
         int totalProducts = productIds.size();

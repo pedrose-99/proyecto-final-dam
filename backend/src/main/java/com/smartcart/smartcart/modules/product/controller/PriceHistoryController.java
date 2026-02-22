@@ -20,8 +20,6 @@ public class PriceHistoryController {
         this.priceHistoryService = priceHistoryService;
     }
 
-    // ─── HISTORIAL: Evolución de precios ───────────────────
-
     @QueryMapping
     public List<PriceHistoryDTO> priceHistoryByProduct(@Argument Integer productId) {
         return priceHistoryService.findByProductId(productId);
@@ -38,10 +36,8 @@ public class PriceHistoryController {
         return priceHistoryService.findByProductAndStore(productId, storeId);
     }
 
-    // ─── SINCRONIZACIÓN: El Scraper llama a esto ───────────
-
     @MutationMapping
-    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) { // Usamos el DTO como entrada
+    public PriceHistoryDTO registerNewPrice(@Argument PriceUpdateDTO input) {
         return priceHistoryService.register(input);
     }
 }

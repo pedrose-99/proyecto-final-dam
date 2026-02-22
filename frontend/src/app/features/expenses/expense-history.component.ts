@@ -62,18 +62,15 @@ export class ExpenseHistoryComponent implements OnInit, OnDestroy
   storeExpenses: StoreExpense[] = [];
   isLoading = false;
 
-  // Filters
   filterControl = new FormControl('');
   monthControl = new FormControl<number | null>(null);
   yearControl = new FormControl<number | null>(null);
 
-  // Spending limits
   limits: SpendingLimit[] = [];
   limitTypeControl = new FormControl('MONTHLY');
   limitAmountControl = new FormControl<number | null>(null);
   isSavingLimit = false;
 
-  // Charts
   summary: MonthlyExpenseSummary[] = [];
   selectedPeriod = 'MONTHLY';
   chartOffset = 0;
@@ -81,7 +78,6 @@ export class ExpenseHistoryComponent implements OnInit, OnDestroy
   monthlyLimit: number | null = null;
   yearlyLimit: number | null = null;
 
-  // Month/Year options for filters
   monthOptions = [
     { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
     { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },

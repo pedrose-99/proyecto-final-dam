@@ -31,8 +31,6 @@ public class PriceHistoryService {
         this.productAlertRepository = productAlertRepository;
     }
 
-    // ─── SINCRONIZACIÓN: Mutation para el Scraper ──────────
-
     @Transactional
     public PriceHistoryDTO register(PriceUpdateDTO input) {
         ProductStore ps = productStoreRepository
@@ -42,27 +40,22 @@ public class PriceHistoryService {
         boolean priceChanged = ps.getCurrentPrice() == null
                 || !ps.getCurrentPrice().equals(input.price());
 
-        // Actualizar precio actual en ProductStore
         ps.setCurrentPrice(input.price());
         ps.setAvailable(input.price() > 0);
         if (input.stock() != null) ps.setStock(input.stock());
         if (input.externaId() != null) ps.setExternaId(input.externaId());
         productStoreRepository.save(ps);
 
-        // Crear registro histórico solo si cambió el precio
         if (priceChanged) {
             PriceHistory history = PriceHistoryMapper.toEntity(input, ps);
             PriceHistoryDTO dto = PriceHistoryMapper.toDTO(priceHistoryRepository.save(history));
 
-            // Comprobar alertas activas para este producto
             checkAlerts(ps.getProductId().getProductId(), input.price());
 
             return dto;
         }
         return null;
     }
-
-    // ─── HISTORIAL: Evolución de precios de un producto ────
 
     public List<PriceHistoryDTO> findByProductId(Integer productId) {
         return priceHistoryRepository
@@ -80,8 +73,6 @@ public class PriceHistoryService {
                 .map(PriceHistoryMapper::toDTO)
                 .toList();
     }
-
-    // ─── ALERTAS: Comprobar si el precio disparó alguna alerta ─
 
     private void checkAlerts(Integer productId, Double newPrice) {
         List<ProductAlert> activeAlerts = productAlertRepository

@@ -20,8 +20,6 @@ public class GroupResolver {
 
     private final CollaborationService collaborationService;
 
-    // ==================== QUERIES ====================
-
     @QueryMapping
     public List<GroupDTO> getMyGroups() {
         return collaborationService.getMyGroups();
@@ -44,8 +42,6 @@ public class GroupResolver {
                 size != null ? size : 10
         );
     }
-
-    // ==================== MUTATIONS ====================
 
     @MutationMapping
     public GroupDTO createGroup(@Argument String name) {
