@@ -22,22 +22,18 @@ public class BudgetProducerService {
     private static final String TOPIC = "budget-alerts";
 
     public void checkLimitsAndNotify(Long userId, Double currentCartTotal) {
-        // Obtenemos todos los límites activos del usuario
         List<SpendingLimit> activeLimits = limitRepository.findByIdUserAndIsActiveTrue(userId);
 
         for (SpendingLimit limit : activeLimits) {
-            // Lógica simplificada: Compara total actual vs límite.
-            // NOTA: Para producción real, aquí sumarías el historial de la semana/mes + carrito actual.
             if (BigDecimal.valueOf(currentCartTotal).compareTo(limit.getAmount()) > 0) {
-                
+
                 BudgetAlertEvent event = new BudgetAlertEvent(
-                    userId, 
-                    currentCartTotal, 
-                    limit.getAmount(), 
+                    userId,
+                    currentCartTotal,
+                    limit.getAmount(),
                     limit.getType()
                 );
-                
-                // Enviamos alerta asíncrona a Kafka
+
                 kafkaTemplate.send(TOPIC, userId.toString(), event);
                 System.out.println("🚨 Alerta Kafka enviada para usuario: " + userId);
             }

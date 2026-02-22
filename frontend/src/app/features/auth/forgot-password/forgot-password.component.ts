@@ -58,7 +58,6 @@ export class ForgotPasswordComponent {
         next: (message) => {
           this.successMessage = message || 'Si el email existe, recibirás una nueva contraseña';
           this.forgotPasswordForm.reset();
-          // Redirigir al login después de 3 segundos
           setTimeout(() => {
             this.router.navigate(['/login']);
           }, 3000);

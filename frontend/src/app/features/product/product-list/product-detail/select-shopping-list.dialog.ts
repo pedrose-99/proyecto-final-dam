@@ -153,7 +153,6 @@ export class SelectShoppingListDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: any,
     private shoppingListService: ShoppingListService
   ) {
-    // Validar y filtrar listas al inicializar
     this.validLists = (data.lists || []).filter((list: any) => 
       list && list.listId && list.name && Array.isArray(list.items)
     );
@@ -181,14 +180,11 @@ export class SelectShoppingListDialogComponent {
 
     this.isAdding = true;
 
-    // Refrescar las listas desde el servidor para tener datos actuales
     this.shoppingListService.getMyLists().subscribe({
       next: (freshLists: any[]) => {
         console.log('Listas frescas obtenidas:', freshLists);
-        
-        // Crear observables para cada lista USANDO LOS DATOS FRESCOS
+
         const operations = this.selectedLists.map(selectedList => {
-          // Encontrar la versión fresca de la lista seleccionada
           const freshList = freshLists.find(l => l.listId === selectedList.listId);
           
           if (!freshList) {
@@ -196,7 +192,6 @@ export class SelectShoppingListDialogComponent {
             return of(null);
           }
 
-          // Buscar si el producto ya está en la lista fresca (convertir a número para comparar)
           const productId = Number(this.data.productId);
           const existingItem = freshList.items?.find((item: any) => {
             const itemProdId = Number(item.productId);
@@ -205,7 +200,6 @@ export class SelectShoppingListDialogComponent {
           });
           
           if (existingItem) {
-            // Si ya existe, actualizar la cantidad (incrementar en 1)
             console.log(`✅ EXISTE: Actualizando ${existingItem.displayName} de ${existingItem.quantity} a ${existingItem.quantity + 1}`);
             return this.shoppingListService.updateItem(
               freshList.listId,
@@ -213,7 +207,6 @@ export class SelectShoppingListDialogComponent {
               existingItem.quantity + 1
             );
           } else {
-            // Si no existe, añadir nuevo
             console.log(`❌ NO EXISTE: Añadiendo nuevo producto a lista ${freshList.name}`);
             return this.shoppingListService.addItem(
               freshList.listId,
@@ -224,7 +217,6 @@ export class SelectShoppingListDialogComponent {
           }
         });
 
-        // Ejecutar todas las operaciones en paralelo
         forkJoin(operations).subscribe({
           next: () => {
             this.dialogRef.close({

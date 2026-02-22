@@ -25,7 +25,6 @@ export class ProductService {
   constructor(private apollo: Apollo) {}
 
   clearCache(): void {
-    // No-op: la paginación se hace en servidor
   }
 
   getProducts(filters: ProductFilters, page: number = 0, size: number = 24): Observable<ProductPage> {
@@ -412,7 +411,6 @@ export class ProductService {
     );
   }
 
-  // Estas funciones necesitaran mutations en el backend
   addToFavorites(productId: number): Observable<void> {
     return this.apollo.mutate<any>({
       mutation: ADD_TO_FAVORITES,
@@ -431,9 +429,4 @@ export class ProductService {
     );
   }
 
-  addToList(productId: number, listId?: number): Observable<void> {
-    // TODO: Implementar mutation GraphQL
-    console.log('addToList - pendiente mutation GraphQL', productId, listId);
-    return of(void 0);
-  }
 }

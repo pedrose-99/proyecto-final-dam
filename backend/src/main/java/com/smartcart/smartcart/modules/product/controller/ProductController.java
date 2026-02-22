@@ -22,8 +22,6 @@ public class ProductController {
         this.productService = productService;
     }
 
-    // ─── CRUD Queries ─────────────────────────────────────
-
     @QueryMapping
     public ProductPageDTO allProducts(@Argument Integer page, @Argument Integer size) {
         return productService.findAllPaginated(page != null ? page : 0, size != null ? size : 24);
@@ -44,28 +42,20 @@ public class ProductController {
         return productService.findByEan(ean);
     }
 
-    // ─── NAVEGACIÓN: Filtrar por categoría ─────────────────
-
     @QueryMapping
     public ProductPageDTO productsByCategoryPaginated(@Argument Integer categoryId, @Argument Integer page, @Argument Integer size) {
         return productService.findByCategoryIdPaginated(categoryId, page != null ? page : 0, size != null ? size : 24);
     }
-
-    // ─── COMPARADOR: Producto con todos sus precios ────────
 
     @QueryMapping
     public ProductComparisonDTO compareProduct(@Argument Integer productId) {
         return productService.compareProduct(productId);
     }
 
-    // ─── OPTIMIZACIÓN DE CESTA ─────────────────────────────
-
     @QueryMapping
     public BasketOptimizationDTO optimizeBasket(@Argument List<Integer> productIds) {
         return productService.optimizeBasket(productIds);
     }
-
-    // ─── CRUD Mutations ───────────────────────────────────
 
     @QueryMapping
     public ProductPageDTO productsByStore(@Argument Integer storeId, @Argument Integer page, @Argument Integer size) {

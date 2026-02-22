@@ -129,7 +129,6 @@ public class ProductSyncService {
         if (isNew) {
             createInitialPriceHistory(productStore, store, scraped);
             result.created++;
-            // Añadir al cache para futuros lookups dentro del mismo batch
             if (scraped.externalId() != null && !scraped.externalId().isBlank()) {
                 psCache.put(scraped.externalId(), productStore);
             }
@@ -195,7 +194,6 @@ public class ProductSyncService {
         log.debug("Creating new product: {}", scraped.name());
         newProduct = productRepository.save(newProduct);
 
-        // Añadir al cache
         if (scraped.name() != null) {
             byNameCache.put(scraped.name().toLowerCase(), newProduct);
         }
@@ -207,7 +205,6 @@ public class ProductSyncService {
 
     private ProductStore findOrCreateProductStoreCached(ScrapedProduct scraped, Product product, Store store,
                                                        Map<String, ProductStore> psCache) {
-        // Buscar por externalId en cache
         if (scraped.externalId() != null && !scraped.externalId().isBlank()) {
             ProductStore cached = psCache.get(scraped.externalId());
             if (cached != null) {
@@ -215,7 +212,6 @@ public class ProductSyncService {
             }
         }
 
-        // Fallback: buscar por productId + storeId en BD (no cacheado por externalId)
         Optional<ProductStore> existing = productStoreRepository
                 .findByProductId_ProductIdAndStoreId_StoreId(product.getProductId(), store.getStoreId());
 

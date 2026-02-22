@@ -40,7 +40,7 @@ public class Product {
     @Column(name = "description", length = 1000)
     private String description;
 
-    @Column(name = "ean") //código de barras
+    @Column(name = "ean")
     private String ean;
 
     @Column(name = "image_url", length = 1000)
@@ -49,10 +49,9 @@ public class Product {
     @Column(name = "quantity")
     private Double quantity;
 
-    @Column(name = "unit") // unidad de medida
+    @Column(name = "unit")
     private String unit;
 
-    //constructors
     public Product() {}
 
     public Product(Integer productId, Category categoryId, String name, String ean, String brand, String description,

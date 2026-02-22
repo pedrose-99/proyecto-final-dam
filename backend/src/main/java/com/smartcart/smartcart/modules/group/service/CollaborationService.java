@@ -47,8 +47,6 @@ public class CollaborationService {
     private final ShoppingListRepository shoppingListRepository;
     private final ListChangeProducer listChangeProducer;
 
-    // ==================== CREACIÓN DE GRUPO ====================
-
     @Transactional
     public GroupDTO createGroup(String name) {
         User currentUser = getAuthenticatedUser();
@@ -57,7 +55,6 @@ public class CollaborationService {
         group.setName(name);
         group.setOwner(currentUser);
 
-        // Generar código único
         String code;
         do {
             code = Group.generateGroupCode();
@@ -66,7 +63,6 @@ public class CollaborationService {
 
         group = groupRepository.save(group);
 
-        // El creador se añade como miembro ACCEPTED
         GroupMember ownerMember = new GroupMember();
         ownerMember.setGroup(group);
         ownerMember.setUser(currentUser);
@@ -76,19 +72,15 @@ public class CollaborationService {
         return toGroupDTO(group);
     }
 
-    // ==================== INVITACIÓN TRIPLE VÍA ====================
-
     @Transactional
     public boolean inviteToGroup(Integer groupId, String target) {
         User currentUser = getAuthenticatedUser();
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
 
-        // Verificar que el usuario actual es miembro ACCEPTED del grupo
         groupMemberRepository.findAcceptedMember(groupId, currentUser.getIdUser())
                 .orElseThrow(() -> new UnauthorizedException("No tienes permisos para invitar a este grupo"));
 
-        // Detectar si es email o username
         if (target.contains("@")) {
             return inviteByEmail(group, target);
         } else {
@@ -104,14 +96,12 @@ public class CollaborationService {
             throw new BadRequestException("El usuario ya es miembro o tiene una invitación pendiente");
         }
 
-        // Crear GroupMember PENDING
         GroupMember member = new GroupMember();
         member.setGroup(group);
         member.setUser(targetUser);
         member.setStatus(MemberStatus.PENDING);
         groupMemberRepository.save(member);
 
-        // Crear Notificación de invitación
         Notification notification = new Notification();
         notification.setRecipient(targetUser);
         notification.setMessage("Te han invitado al grupo '" + group.getName() + "'");
@@ -131,7 +121,6 @@ public class CollaborationService {
                 throw new BadRequestException("El usuario ya es miembro o tiene una invitación pendiente");
             }
 
-            // Usuario existe: igual que por username
             GroupMember member = new GroupMember();
             member.setGroup(group);
             member.setUser(targetUser);
@@ -151,8 +140,6 @@ public class CollaborationService {
         }
     }
 
-    // ==================== UNIRSE POR CÓDIGO ====================
-
     @Transactional
     public GroupDTO joinGroupByCode(String code) {
         User currentUser = getAuthenticatedUser();
@@ -164,14 +151,12 @@ public class CollaborationService {
             throw new BadRequestException("Ya eres miembro de este grupo");
         }
 
-        // Unirse al instante con status ACCEPTED
         GroupMember member = new GroupMember();
         member.setGroup(group);
         member.setUser(currentUser);
         member.setStatus(MemberStatus.ACCEPTED);
         groupMemberRepository.save(member);
 
-        // Notificar al owner
         Notification notification = new Notification();
         notification.setRecipient(group.getOwner());
         notification.setMessage(currentUser.getRealUsername() + " se ha unido al grupo '" + group.getName() + "'");
@@ -182,8 +167,6 @@ public class CollaborationService {
         return toGroupDTO(group);
     }
 
-    // ==================== ELIMINAR GRUPO ====================
-
     @Transactional
     public boolean deleteGroup(Integer groupId) {
         User currentUser = getAuthenticatedUser();
@@ -191,24 +174,18 @@ public class CollaborationService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
 
-        // Verificar que el usuario es el propietario del grupo
         if (!group.getOwner().getIdUser().equals(currentUser.getIdUser())) {
             throw new UnauthorizedException("Solo el propietario puede eliminar el grupo");
         }
 
-        // Eliminar todos los miembros del grupo
         groupMemberRepository.deleteByGroup(group);
 
-        // Eliminar todas las notificaciones relacionadas con el grupo
         notificationRepository.deleteByRelatedGroup(group);
 
-        // Eliminar el grupo
         groupRepository.delete(group);
 
         return true;
     }
-
-    // ==================== GESTION DE MIEMBROS ====================
 
     @Transactional
     public boolean leaveGroup(Integer groupId) {
@@ -255,7 +232,6 @@ public class CollaborationService {
 
         groupMemberRepository.delete(membership);
 
-        // Notificar al usuario expulsado
         Notification notification = new Notification();
         notification.setRecipient(targetUser);
         notification.setMessage("Has sido eliminado del grupo '" + group.getName() + "'");
@@ -265,8 +241,6 @@ public class CollaborationService {
 
         return true;
     }
-
-    // ==================== ELIMINAR NOTIFICACIÓN ====================
 
     @Transactional
     public boolean deleteNotification(Integer notificationId) {
@@ -282,8 +256,6 @@ public class CollaborationService {
         notificationRepository.delete(notification);
         return true;
     }
-
-    // ==================== RESPONDER A INVITACIÓN ====================
 
     @Transactional
     public boolean respondToInvite(Integer notificationId, boolean accept) {
@@ -312,7 +284,6 @@ public class CollaborationService {
             membership.setStatus(MemberStatus.ACCEPTED);
             groupMemberRepository.save(membership);
 
-            // Notificar al owner que se aceptó
             Notification acceptNotif = new Notification();
             acceptNotif.setRecipient(group.getOwner());
             acceptNotif.setMessage(currentUser.getRealUsername() + " aceptó la invitación al grupo '" + group.getName() + "'");
@@ -323,14 +294,11 @@ public class CollaborationService {
             groupMemberRepository.delete(membership);
         }
 
-        // Marcar la notificación como leída
         notification.setIsRead(true);
         notificationRepository.save(notification);
 
         return true;
     }
-
-    // ==================== MARK AS READ ====================
 
     @Transactional
     public boolean markNotificationAsRead(Integer notificationId) {
@@ -354,8 +322,6 @@ public class CollaborationService {
         notificationRepository.markAllAsReadByRecipient(currentUser);
         return true;
     }
-
-    // ==================== QUERIES ====================
 
     public List<GroupDTO> getMyGroups() {
         User currentUser = getAuthenticatedUser();
@@ -399,22 +365,17 @@ public class CollaborationService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo no encontrado"));
 
-        // Verificar que el usuario es miembro ACCEPTED
         groupMemberRepository.findAcceptedMember(groupId, currentUser.getIdUser())
                 .orElseThrow(() -> new UnauthorizedException("No tienes acceso a este grupo"));
 
         return toGroupDTOWithDetails(group);
     }
 
-    // ==================== SEGURIDAD: Validación de pertenencia a grupo ====================
-
     public void validateGroupMembership(Integer groupId, Integer userId) {
         groupMemberRepository.findAcceptedMember(groupId, userId)
                 .orElseThrow(() -> new UnauthorizedException(
                         "No tienes permisos para editar listas de este grupo"));
     }
-
-    // ==================== MAPPERS ====================
 
     private GroupDTO toGroupDTO(Group group) {
         List<GroupMemberDTO> memberDTOs = group.getMembers() != null
@@ -498,8 +459,6 @@ public class CollaborationService {
                 n.getCreatedAt()
         );
     }
-
-    // ==================== UTILS ====================
 
     private User getAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

@@ -66,10 +66,8 @@ public class ShoppingListService
         {
             Integer userId = user.get().getIdUser();
 
-            // Listas propias del usuario
             List<ShoppingList> ownLists = slRepository.findByUser_IdUserOrderByCreatedAtDesc(userId);
 
-            // Listas de grupos a los que pertenece el usuario
             List<GroupMember> memberships = groupMemberRepository.findAcceptedMembershipsByUserId(userId);
             List<Integer> groupIds = memberships.stream()
                     .map(gm -> gm.getGroup().getGroupId())
@@ -79,7 +77,6 @@ public class ShoppingListService
                     ? List.of()
                     : slRepository.findByGroup_GroupIdInOrderByCreatedAtDesc(groupIds);
 
-            // Combinar sin duplicados (las propias que ya tienen grupo se meten por ownLists)
             Set<Integer> seenIds = new LinkedHashSet<>();
             List<ShoppingListDTO> result = new ArrayList<>();
 
@@ -121,14 +118,12 @@ public class ShoppingListService
 
     private Optional<ShoppingList> findAccessibleList(Integer listId, User user)
     {
-        // Primero buscar como propietario (esta query ya tiene JOIN FETCH)
         Optional<ShoppingList> ownList = slRepository.findByListIdAndUser_IdUser(listId, user.getIdUser());
         if (ownList.isPresent())
         {
             return ownList;
         }
 
-        // Si no es propietario, buscar en listas de grupos del usuario con JOIN FETCH
         Optional<ShoppingList> listOpt = slRepository.findByIdWithUser(listId);
         if (listOpt.isPresent() && listOpt.get().getGroup() != null)
         {
@@ -180,7 +175,6 @@ public class ShoppingListService
         
         try
         {
-            // Usar findAccessibleList para buscar tanto listas propias como de grupo
             Optional<ShoppingList> listOpt = findAccessibleList(listId, user.get());
             if (listOpt.isEmpty()) {
                 log.error("Lista no encontrada o no pertenece al usuario");
@@ -189,18 +183,15 @@ public class ShoppingListService
             
             ShoppingList list = listOpt.get();
             
-            // Verificar permisos para eliminar
             boolean canDelete = false;
             
             if (list.getGroup() != null) {
-                // Si la lista pertenece a un grupo, cualquier miembro del grupo puede eliminarla
                 Optional<GroupMember> membership = groupMemberRepository.findAcceptedMember(
                     list.getGroup().getGroupId(), 
                     user.get().getIdUser()
                 );
                 canDelete = membership.isPresent();
             } else {
-                // Si la lista no pertenece a un grupo, solo el propietario puede eliminarla
                 canDelete = list.getUser().getIdUser().equals(user.get().getIdUser());
             }
             
@@ -209,18 +200,15 @@ public class ShoppingListService
                 return false;
             }
             
-            // Desasociar la lista del grupo si tiene uno asociado
             if (list.getGroup() != null) {
                 Group group = list.getGroup();
                 list.setGroup(null);
                 group.getShoppingLists().remove(list);
             }
             
-            // Limpiar los items antes de eliminar (por si acaso)
             list.getItems().clear();
             slRepository.flush();
             
-            // Eliminar la lista
             slRepository.delete(list);
             slRepository.flush();
             

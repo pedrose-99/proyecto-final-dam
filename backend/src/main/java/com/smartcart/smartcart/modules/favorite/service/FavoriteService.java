@@ -93,7 +93,6 @@ public class FavoriteService
 
             Integer userId = user.get().getIdUser();
             
-            // Verificar si ya existe el favorito
             if (favRepository.existsByUser_IdUserAndProduct_ProductId(userId, productId))
             {
                 return true;

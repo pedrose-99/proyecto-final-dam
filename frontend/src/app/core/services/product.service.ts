@@ -10,14 +10,12 @@ import { GET_STORES_BY_PRODUCT, GET_PRODUCT_COMPARISON, GET_PRICE_HISTORY, GET_P
 export class ProductService {
   constructor(private apollo: Apollo) {}
 
-  // Trae la información completa para la ficha
   getComparison(productId: string): Observable<any> {
     return this.apollo.watchQuery<any>({
       query: GET_PRODUCT_COMPARISON,
       variables: { productId }
     }).valueChanges.pipe(
       map(result => {
-        // Corregido: 'error' en singular
         if (result.error) {
           console.error('Error de Apollo:', result.error);
         }
@@ -43,7 +41,6 @@ export class ProductService {
   }
 
   getRelatedProducts(categoryId: string, excludeProductId: number): Observable<any[]> {
-    // Página aleatoria para variar los resultados
     const randomPage = Math.floor(Math.random() * 5);
     return this.apollo.query<any>({
       query: GET_PRODUCTS_BY_CATEGORY,
@@ -53,7 +50,6 @@ export class ProductService {
       map(result => {
         const products = (result.data?.productsByCategoryPaginated?.content || [])
           .filter((p: any) => p.productId !== excludeProductId);
-        // Barajar y tomar 6
         for (let i = products.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [products[i], products[j]] = [products[j], products[i]];

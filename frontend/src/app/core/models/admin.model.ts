@@ -1,5 +1,3 @@
-// --- Dashboard ---
-
 export interface AdminStats {
     totalProducts: number;
     totalUsers: number;
@@ -21,8 +19,6 @@ export interface StoreProductCount {
     storeSlug: string;
     count: number;
 }
-
-// --- Scrape Logs ---
 
 export interface ScrapeLogEntry {
     id: number;
@@ -48,8 +44,6 @@ export interface ScrapeErrorEntry {
     occurredAt: string;
 }
 
-// --- Users ---
-
 export interface UserAdmin {
     id: number;
     username: string;
@@ -69,8 +63,6 @@ export interface ChangeRoleRequest {
     roleName: string;
 }
 
-// --- Stores ---
-
 export interface StoreAdmin {
     id: number;
     name: string;
@@ -89,8 +81,6 @@ export interface UpdateStoreRequest {
     scrapingUrl?: string;
 }
 
-// --- Scraping trigger response ---
-
 export interface ScrapingResponse {
     scraped: number;
     scrapingErrors: number;
@@ -101,8 +91,6 @@ export interface ScrapingResponse {
     durationSeconds: number;
 }
 
-// --- Scraping Status ---
-
 export interface StoreScrapingStatus {
     store: string;
     enabled?: boolean;
@@ -111,8 +99,6 @@ export interface StoreScrapingStatus {
     lastScrapeStatus: string | null;
     lastScrapeTime: string | null;
 }
-
-// --- Paginación genérica ---
 
 export interface PageResponse<T> {
     content: T[];

@@ -66,11 +66,9 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   isOptimizing = false;
   isCreatingSublists = false;
 
-  // Per-store view
   byStoreResult: OptimizedStore[] | null = null;
   isLoadingByStore = false;
 
-  // Alternatives panel
   showAlternatives = false;
   alternativesStoreIdx = -1;
   alternativesItemIdx = -1;
@@ -82,7 +80,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   alternativesMode: 'optimize' | 'byStore' = 'optimize';
   alternativesSearchControl = new FormControl<string>('');
 
-  // Edit list name
   isEditingName = false;
   editNameControl = new FormControl<string>('');
 
@@ -205,7 +202,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           if (this.selectedList?.listId === list.listId) {
             this.selectedList = null;
           }
-          // La lista se actualizará automáticamente con refetchQueries
           this.loadLists();
         },
         error: () => {
@@ -470,8 +466,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ─── Per-store view ────────────────────────────────────
-
   optimizeByStore(): void {
     if (!this.selectedList) return;
     if (!this.selectedList.items || this.selectedList.items.length === 0) {
@@ -508,8 +502,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
     }
     return cheapest.storeId;
   }
-
-  // ─── Alternatives ─────────────────────────────────────
 
   openAlternatives(storeId: number, searchTerm: string, storeIdx: number, itemIdx: number, mode: 'optimize' | 'byStore'): void {
     this.showAlternatives = true;
@@ -597,7 +589,6 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   }
 
   getStoreLogo(logoUrl: string | undefined | null, storeName: string): string {
-    // Usar logos locales; fallback si la URL de la BD no funciona
     const slug = storeName?.toLowerCase().replace(/\s+/g, '');
     const localLogos: Record<string, string> = {
       'mercadona': '/assets/images/stores/mercadona.svg',
