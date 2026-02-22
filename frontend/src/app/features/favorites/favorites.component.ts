@@ -17,8 +17,8 @@ import { MatDialog } from '@angular/material/dialog';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatProgressSpinnerModule,
-
     MatIconModule,
     ProductCardComponent
   ],

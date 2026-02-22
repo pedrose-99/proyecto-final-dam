@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, effect } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,8 @@ import { ProductService } from '../../../../core/services/product.service';
 import { FavoriteService } from '../../../../shared/services/favorite.service';
 import { ShoppingListService } from '../../../../shared/services/shopping-list.service';
 import { ProductCardComponent } from '../../../../shared/components/product-card/product-card.component';
-import { SelectShoppingListDialogComponent } from './select-shopping-list.dialog';
+import { AddToListDialogComponent, AddToListDialogResult } from '../../../../shared/components/add-to-list-dialog/add-to-list-dialog.component';
+import { ThemeService } from '../../../../core/services/theme.service';
 import { Chart, registerables } from 'chart.js';
 
 @Component({
@@ -65,8 +66,16 @@ export class ProductDetailComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private location: Location,
     private dialog: MatDialog,
-    private router: Router
-  ) {}
+    private router: Router,
+    private themeService: ThemeService
+  ) {
+    effect(() => {
+      this.themeService.isDark();
+      if (this.priceHistory.length >= 2) {
+        setTimeout(() => this.renderChart(), 50);
+      }
+    });
+  }
 
   goBack(): void {
   this.location.back(); // Esto vuelve a la página anterior (donde estaba la lista)
@@ -236,36 +245,20 @@ export class ProductDetailComponent implements OnInit {
       return;
     }
 
-    this.shoppingListService.getMyLists().subscribe({
-      next: (lists: any[]) => {
-        const validLists = lists.filter(list => list && list.listId && list.name);
-        
-        if (validLists.length === 0) {
-          return;
+    const dialogRef = this.dialog.open(AddToListDialogComponent, {
+      width: '420px',
+      data: { productId: this.productId, productName: this.product.name }
+    });
+
+    dialogRef.afterClosed().subscribe((result: AddToListDialogResult | undefined) => {
+      if (!result) return;
+
+      this.shoppingListService.addItem(result.listId, this.productId!, null, 1).subscribe({
+        next: () => {
+          this.isInShoppingList = true;
+          this.cdr.detectChanges();
         }
-
-        console.log('Listas disponibles:', validLists);
-
-        this.dialog.open(SelectShoppingListDialogComponent, {
-          width: '400px',
-          data: { lists: validLists, productId: this.productId, productName: this.product.name }
-        }).afterClosed().subscribe(result => {
-          if (result && result.success) {
-            console.log('✅ Producto añadido exitosamente a', result.addedCount, 'listas');
-            
-            this.isInShoppingList = true;
-            this.cdr.detectChanges();
-            
-            setTimeout(() => {
-              console.log('🔄 Refrescando verificación...');
-              this.checkIfInShoppingList();
-            }, 1000);
-          }
-        });
-      },
-      error: (err) => {
-        console.error('Error al obtener listas:', err);
-      }
+      });
     });
   }
   loadHistoryData() {
@@ -347,6 +340,12 @@ export class ProductDetailComponent implements OnInit {
     this.chart.destroy();
   }
 
+  const isDark = document.documentElement.classList.contains('dark');
+  const lineColor = isDark ? '#60a5fa' : '#1a237e';
+  const fillColor = isDark ? 'rgba(96, 165, 250, 0.15)' : 'rgba(26, 35, 126, 0.1)';
+  const textColor = isDark ? '#e2e8f0' : '#1e293b';
+  const gridColor = isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+
   this.chart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -354,12 +353,12 @@ export class ProductDetailComponent implements OnInit {
       datasets: [{
         label: 'Evolución del Precio (€)',
         data: this.priceHistory.map(h => h.price),
-        borderColor: '#1a237e',
-        backgroundColor: 'rgba(26, 35, 126, 0.1)',
+        borderColor: lineColor,
+        backgroundColor: fillColor,
         fill: true,
         tension: 0.3,
         pointRadius: 4,
-        pointBackgroundColor: '#1a237e'
+        pointBackgroundColor: lineColor
       }]
     },
     options: {
@@ -369,11 +368,17 @@ export class ProductDetailComponent implements OnInit {
         legend: { display: false }
       },
       scales: {
-        y: { 
+        x: {
+          ticks: { color: textColor },
+          grid: { color: gridColor }
+        },
+        y: {
           beginAtZero: false,
-          ticks: { 
+          ticks: {
+            color: textColor,
             callback: (value: string | number) => Number(value).toFixed(2) + '€'
-          }
+          },
+          grid: { color: gridColor }
         }
       }
     }

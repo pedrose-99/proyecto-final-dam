@@ -54,7 +54,7 @@ interface StoreExpenseInput {
     <div class="charts-grid">
       <!-- Gráfica de líneas - evolución del gasto -->
       <div class="chart-card" *ngIf="lineChartData.labels!.length > 0">
-        <h3>Evolución del gasto {{ periodLabels[selectedPeriod] }}</h3>
+        <h3>Evolución del gasto — {{ rangeLabel }}</h3>
         <canvas baseChart
           [data]="lineChartData"
           [options]="lineChartOptions"
@@ -74,7 +74,7 @@ interface StoreExpenseInput {
 
       <!-- Gráfica doughnut presupuesto -->
       <div class="chart-card" *ngIf="activeLimit && budgetDoughnutData.labels!.length > 0">
-        <h3>Presupuesto {{ periodLabels[selectedPeriod] }}</h3>
+        <h3>Presupuesto — {{ rangeLabel }}</h3>
         <canvas baseChart
           [data]="budgetDoughnutData"
           [options]="budgetDoughnutOptions"
@@ -301,6 +301,7 @@ export class ExpenseChartsComponent implements OnChanges
     this.activeLimit = this.getLimitForPeriod();
     this.hasPrevData = this.summary.length > 0;
     this.totalSpent = this.summary.reduce((sum, s) => sum + s.totalAmount, 0);
+    this.currentPeriodSpent = this.totalSpent;
     this.buildRangeLabel();
     this.buildLineChart();
     this.buildStoreDoughnut();
@@ -335,6 +336,11 @@ export class ExpenseChartsComponent implements OnChanges
     }
   }
 
+  private static readonly MONTH_NAMES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
   private buildRangeLabel(): void
   {
     if (this.summary.length === 0)
@@ -342,9 +348,41 @@ export class ExpenseChartsComponent implements OnChanges
       this.rangeLabel = 'Sin datos';
       return;
     }
-    const first = this.summary[0].periodLabel;
-    const last = this.summary[this.summary.length - 1].periodLabel;
-    this.rangeLabel = first === last ? first : `${first} — ${last}`;
+
+    const now = new Date();
+
+    switch (this.selectedPeriod)
+    {
+      case 'WEEKLY':
+      {
+        // Calculate the Monday of the target week
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const dow = today.getDay() === 0 ? 7 : today.getDay(); // 1=Mon..7=Sun
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - (dow - 1) - (this.offset * 7));
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+
+        const monMonth = ExpenseChartsComponent.MONTH_NAMES[monday.getMonth()];
+        const sunMonth = ExpenseChartsComponent.MONTH_NAMES[sunday.getMonth()];
+        this.rangeLabel = monMonth === sunMonth
+          ? monMonth
+          : `${monMonth} — ${sunMonth}`;
+        break;
+      }
+      case 'YEARLY':
+      {
+        const year = now.getFullYear() - this.offset;
+        this.rangeLabel = `${year}`;
+        break;
+      }
+      default: // MONTHLY
+      {
+        const d = new Date(now.getFullYear(), now.getMonth() - this.offset, 1);
+        this.rangeLabel = `${ExpenseChartsComponent.MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+        break;
+      }
+    }
   }
 
   private buildLineChart(): void
@@ -408,9 +446,6 @@ export class ExpenseChartsComponent implements OnChanges
   private buildBudgetDoughnut(): void
   {
     if (!this.activeLimit || this.summary.length === 0) return;
-
-    const lastEntry = this.summary[this.summary.length - 1];
-    this.currentPeriodSpent = lastEntry?.totalAmount || 0;
 
     const remaining = Math.max(0, this.activeLimit - this.currentPeriodSpent);
     const exceeded = Math.max(0, this.currentPeriodSpent - this.activeLimit);

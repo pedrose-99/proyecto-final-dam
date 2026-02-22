@@ -123,6 +123,17 @@ Una vez que todos los servicios esten levantados:
 | PostgreSQL | `localhost:5434` |
 | Kafka | `localhost:9092` |
 
+## Primeros pasos
+
+La aplicacion no tiene cuentas creadas por defecto. Es necesario **registrarse** desde la pantalla de login para poder acceder.
+
+Para acceder al **panel de administracion**, utiliza las siguientes credenciales:
+
+| Campo | Valor |
+|---|---|
+| Email | `admin@admin.com` |
+| Password | `pass` |
+
 ---
 
 ## Servicios Docker

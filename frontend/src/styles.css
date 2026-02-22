@@ -380,3 +380,31 @@ body {
 .mat-mdc-snack-bar-container.error-snackbar .mat-mdc-button {
   color: #ffffff !important;
 }
+
+/* ============================================
+   Datepicker / Calendar — Both modes
+   ============================================ */
+:root {
+  --mat-datepicker-calendar-container-background-color: var(--smartcart-surface);
+  --mat-datepicker-calendar-container-text-color: var(--smartcart-text);
+  --mat-datepicker-calendar-date-text-color: var(--smartcart-text);
+  --mat-datepicker-calendar-date-selected-state-background-color: var(--smartcart-accent);
+  --mat-datepicker-calendar-date-selected-state-text-color: #ffffff;
+  --mat-datepicker-calendar-date-today-outline-color: var(--smartcart-accent);
+  --mat-datepicker-calendar-header-text-color: var(--smartcart-text-light);
+  --mat-datepicker-calendar-header-divider-color: var(--smartcart-border);
+  --mat-datepicker-calendar-body-label-text-color: var(--smartcart-text-light);
+  --mat-datepicker-calendar-period-button-text-color: var(--smartcart-text);
+  --mat-datepicker-calendar-period-button-icon-color: var(--smartcart-text);
+  --mat-datepicker-calendar-navigation-button-icon-color: var(--smartcart-text);
+  --mat-datepicker-calendar-date-hover-state-background-color: var(--smartcart-accent-light);
+  --mat-datepicker-calendar-date-focus-state-background-color: var(--smartcart-accent-light);
+  --mat-datepicker-calendar-container-elevation-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.mat-datepicker-content {
+  background-color: var(--smartcart-surface) !important;
+  color: var(--smartcart-text) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
