@@ -38,28 +38,34 @@
               "zone.js"
             ]
           },
-          "configurations": {
-            "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "2MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "8kB",
-                  "maximumError": "16kB"
-                }
-              ],
-              "outputHashing": "all"
-            },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true
-            }
-          },
+"configurations": {
+  "production": {
+    "budgets": [
+      {
+        "type": "initial",
+        "maximumWarning": "1MB",
+        "maximumError": "2MB"
+      },
+      {
+        "type": "anyComponentStyle",
+        "maximumWarning": "8kB",
+        "maximumError": "16kB"
+      }
+    ],
+    "outputHashing": "all",
+    "fileReplacements": [
+      {
+        "replace": "src/environments/environment.ts",
+        "with": "src/environments/environment.prod.ts"
+      }
+    ]
+  },
+  "development": {
+    "optimization": false,
+    "extractLicenses": false,
+    "sourceMap": true
+  }
+},
           "defaultConfiguration": "production"
         },
         "serve": {
